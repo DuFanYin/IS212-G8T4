@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/app/contexts/UserContext';
+import { useUser } from '@/contexts/UserContext';
 import UserProfile from '@/components/UserProfile';
 
 export default function HomePage() {
