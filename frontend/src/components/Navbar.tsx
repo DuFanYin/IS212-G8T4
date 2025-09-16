@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '@/app/contexts/UserContext';
 
 export default function Navbar() {
   const { user, logout } = useUser();

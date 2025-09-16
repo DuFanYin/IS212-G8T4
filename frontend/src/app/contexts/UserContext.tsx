@@ -2,13 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { User } from '@/types/user';
+import { authService } from '@/services/api';
+import { storage } from '@/utils/storage';
 
 interface UserContextType {
   user: User | null;
@@ -23,24 +19,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
+    storage.removeToken();
     setUser(null);
     router.push('/login');
   }, [router]);
 
   const refreshUser = useCallback(async () => {
-    const token = localStorage.getItem('token');
+    const token = storage.getToken();
     if (!token) {
       logout();
       return;
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/users/profile', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const data = await res.json();
+      const data = await authService.getProfile(token);
       if (data.status === 'success') {
         setUser(data.data);
       } else {

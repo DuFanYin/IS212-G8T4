@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '@/app/contexts/UserContext';
+import { authService } from '@/services/api';
+import { storage } from '@/utils/storage';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,7 +15,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push('/home');
     }
   }, [user, router]);
 
@@ -24,17 +26,12 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
+      const data = await authService.login(email, password);
       
       if (data.status === 'success') {
-        localStorage.setItem('token', data.data.token);
+        storage.setToken(data.data.token);
         await refreshUser();
-        router.push('/');
+        router.push('/home');
       } else {
         setError('Invalid credentials');
       }
