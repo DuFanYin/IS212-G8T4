@@ -79,6 +79,11 @@ backend/
 ## Quick Start
 
 ### Backend Setup
+use this comand to genrate a JET token
+node src/scripts/generateSecret.js
+
+
+
 ```bash
 cd backend
 npm install

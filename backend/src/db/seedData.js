@@ -18,9 +18,9 @@ const seedDatabase = async () => {
 
     // Create a sample user
     const sampleUser = await User.create({
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      passwordHash: await bcrypt.hash('password123', 10),
+      name: 'test123',
+      email: 'test123@example.com',
+      passwordHash: await bcrypt.hash('123456', 10),
       role: 'manager'
     });
     console.log('Created sample user:', sampleUser.email);

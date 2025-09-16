@@ -12,9 +12,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Import routes
 const testRoutes = require('./routes/testRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // Routes
 app.use('/api/test', testRoutes);
+app.use('/api/auth', authRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
