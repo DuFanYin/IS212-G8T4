@@ -84,6 +84,14 @@ node src/scripts/generateSecret.js
 
 
 
+# use with caution!!!!!!
+
+cd backend
+npm run seed
+
+
+this will WIPE and populate db with dunmmy data
+
 ```bash
 cd backend
 npm install

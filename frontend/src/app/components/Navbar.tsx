@@ -1,26 +1,29 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { logout } from '../utils/auth';
+import { useUser } from '../contexts/UserContext';
 
 export default function Navbar() {
-  const router = useRouter();
+  const { user, logout } = useUser();
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
+  if (!user) return null;
 
   return (
-    <nav className="bg-white shadow-sm p-4">
-      <div className="flex justify-between items-center">
-        <span>IS212-G8T4</span>
-        <button
-          onClick={handleLogout}
-          className="bg-gray-100 px-3 py-1 rounded hover:bg-gray-200"
-        >
-          Logout
-        </button>
+    <nav className="fixed top-0 left-0 right-0 bg-white shadow-sm z-10">
+      <div className="max-w-7xl mx-auto px-4 h-14 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <span className="font-medium">IS212-G8T4</span>
+          <span className="text-sm text-gray-500">{user.role}</span>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600">{user.name}</span>
+          <button
+            onClick={logout}
+            className="px-3 py-1.5 bg-gray-100 text-sm text-gray-700 rounded hover:bg-gray-200"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </nav>
   );

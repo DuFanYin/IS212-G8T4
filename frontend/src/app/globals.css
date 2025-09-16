@@ -5,7 +5,7 @@
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 255, 255, 255;
-  --background-end-rgb: 243, 244, 246;
+  --background-end-rgb: 249, 250, 251;
 }
 
 body {
@@ -15,10 +15,4 @@ body {
     rgb(var(--background-start-rgb)),
     rgb(var(--background-end-rgb))
   );
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
 }
