@@ -38,6 +38,10 @@ class ProjectService {
     }
   }
 
+  static async getProjects(){
+    return Project.find();
+  }
+
   /**
    * Update a project
    * @param {string} projectId - Project ID

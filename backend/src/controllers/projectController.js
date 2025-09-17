@@ -15,7 +15,7 @@ const createProject = async (req, res) => {
 
     await ProjectService.createProject(req.body, userId);
 
-    res.status(201).json({
+    res.status(200).json({
       status: "success",
       message: "Project is successfully created"
     });
@@ -27,6 +27,24 @@ const createProject = async (req, res) => {
   }
 };
 
+const getProjects = async (req, res) => {
+  try{
+    const projects = await ProjectService.getProjects();
+
+    res.status(200).json({
+      status: "success",
+      data: projects,
+      message: "Project data is successfully retrieved"
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message
+    });
+  }
+}
+
 module.exports = {
-  createProject
+  createProject,
+  getProjects
 };
