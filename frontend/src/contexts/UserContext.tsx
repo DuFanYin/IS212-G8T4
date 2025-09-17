@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { User } from '@/types/user';
 import { authService } from '@/services/api';
 import { storage } from '@/utils/storage';
+import { setupInactivityTracker } from '@/utils/inactivityTracker';
 
 interface UserContextType {
   user: User | null;
@@ -46,6 +47,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  // Set up inactivity tracking
+  useEffect(() => {
+    if (user) {
+      const cleanup = setupInactivityTracker(() => {
+        logout();
+      });
+      return cleanup;
+    }
+  }, [user, logout]);
 
   return (
     <UserContext.Provider value={{ user, logout, refreshUser }}>
