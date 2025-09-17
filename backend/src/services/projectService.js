@@ -1,4 +1,5 @@
 const { Project, User, Task } = require('../db/models');
+const UserService = require('./userService');
 
 class ProjectService {
   /**
@@ -7,35 +8,34 @@ class ProjectService {
    * @param {string} userId - ID of user creating the project
    */
   static async createProject(projectData, userId) {
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
 
     // Ensure owner is a collaborator
-    if (!projectData.collaborators) projectData.collaborators = [];
     if (!projectData.collaborators.includes(userId)) {
       projectData.collaborators.push(userId);
     }
 
-    // If department is specified, validate collaborators
-    if (projectData.departmentId) {
-      const invalidCollaborators = [];
-      for (const collaboratorId of projectData.collaborators) {
-        const collaborator = await User.findById(collaboratorId);
-        if (collaborator && collaborator.departmentId) {
-          if (!collaborator.departmentId.equals(projectData.departmentId)) {
-            invalidCollaborators.push(collaboratorId);
-          }
-        }
-      }
-      if (invalidCollaborators.length > 0) {
-        throw new Error('All collaborators must be from the same department');
-      }
-    }
+    // If department is specified, validate collaborators (errors are thrown naturally)
+    await ProjectService.validateCollaborators(projectData.collaborators, projectData.departmentId);
 
     return Project.create({
       ...projectData,
       ownerId: userId
     });
+  }
+
+  static async validateCollaborators(collaborators, departmentId){
+
+    //error is thrown naturally
+    for(const collaboratorId of collaborators){
+      const collaborator = await UserService.getUserById(collaboratorId);
+
+      if(collaborator && collaborator.departmentId){
+
+        if(!collaborator.departmentId.equals(departmentId)){
+          throw new Error("All collaborators must be from the same department");
+        }
+      }
+    }
   }
 
   /**
