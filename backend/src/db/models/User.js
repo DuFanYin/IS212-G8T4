@@ -26,8 +26,31 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ['staff', 'manager', 'director', 'hr'],
-    default: 'staff'
+    enum: ['staff', 'manager', 'director', 'hr', 'sm'],
+    default: 'staff',
+    validate: {
+      validator: function(role) {
+        // Additional validation to ensure role assignments follow hierarchy
+        return ['staff', 'manager', 'director', 'hr', 'sm'].includes(role);
+      },
+      message: props => `${props.value} is not a valid role! Valid roles are: Staff, Manager, Director, HR, Senior Management (SM)`
+    }
+  },
+  teamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    required: function() {
+      // Team membership required for staff, manager roles
+      return ['staff', 'manager'].includes(this.role);
+    }
+  },
+  departmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+    required: function() {
+      // Department association required for all except HR and SM
+      return !['hr', 'sm'].includes(this.role);
+    }
   },
   resetToken: {
     type: String,
