@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ['staff', 'manager', 'director', 'hr'],
     default: 'staff'
+  },
+  resetToken: {
+    type: String,
+    default: null
+  },
+  resetTokenExpiry: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true, // This automatically adds createdAt and updatedAt fields
