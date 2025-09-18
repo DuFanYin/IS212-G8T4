@@ -45,7 +45,7 @@ const Input = ({
       placeholder={placeholder}
       className={`w-full p-2 border rounded focus:ring-1 focus:ring-blue-500 ${error ? 'border-red-500' : ''}`}
     />
-    {error && <p className="text-sm text-red-600">{error}</p>}
+    {error && <div data-testid="input-error" className="text-sm text-red-600 error-message">{error}</div>}
   </div>
 );
 
@@ -113,7 +113,11 @@ export default function LoginPage() {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              const validationErrors = validate(e.target.value, password);
+              setErrors(prev => ({ ...prev, email: validationErrors.email }));
+            }}
             error={errors.email}
           />
 

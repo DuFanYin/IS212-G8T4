@@ -1,12 +1,17 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const connectDB = require('./connect');
+const { connectDB } = require('./connect');
 const { User, Task, Project, Subtask, Comment, ActivityLog, Department, Team } = require('./models');
+
 const TaskService = require('../services/taskService');
 const ProjectService = require('../services/projectService');
 const SubtaskService = require('../services/subtaskService');
 
 const seedDatabase = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    console.log('❌ Seeding not allowed in production');
+    process.exit(1);
+  }
   try {
     await connectDB();
     console.log('Connected to MongoDB');

@@ -6,12 +6,20 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email and password are required'
+      });
+    }
+
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
         status: 'error',
-        message: 'Invalid credentials'
+        message: 'Invalid email or password'
       });
     }
 
@@ -20,7 +28,7 @@ const login = async (req, res) => {
     if (!isValidPassword) {
       return res.status(401).json({
         status: 'error',
-        message: 'Invalid credentials'
+        message: 'Invalid email or password'
       });
     }
 
