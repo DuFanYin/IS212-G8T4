@@ -1,46 +1,48 @@
 const request = require('supertest');
-const { describe, it, expect, beforeEach } = require('@jest/globals');
-const bcrypt = require('bcryptjs');
+const { describe, it, expect } = require('@jest/globals');
 const app = require('../src/app');
-const User = require('../src/db/models/User');
 
-// Increase timeout for all tests in this file
-jest.setTimeout(30000);
-
-// Tests will use is212_test database from the same MongoDB Atlas cluster
-
+// Tests will use is212_test database which is already seeded
 describe('Auth Endpoints', () => {
-  beforeEach(async () => {
-    await User.deleteMany({});
-  });
-
   describe('POST /api/auth/login', () => {
-    it('should authenticate valid user', async () => {
-      // Create a test user
-      const hashedPassword = await bcrypt.hash('password123', 10);
-      const user = await User.create({
-        name: 'Test User',
-        email: 'test@example.com',
-        passwordHash: hashedPassword,
-        role: 'hr'  // HR role doesn't require department or team
-      });
-
+    it('should authenticate valid user (HR)', async () => {
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'test@example.com',
-          password: 'password123'
+          email: 'hr@example.com',
+          password: '123456'
         });
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(response.body.data).toHaveProperty('token');
-      expect(response.body.data.user).toEqual({
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        role: user.role
-      });
+      expect(response.body.data.user).toEqual(
+        expect.objectContaining({
+          name: 'HR Personnel',
+          email: 'hr@example.com',
+          role: 'hr'
+        })
+      );
+    });
+
+    it('should authenticate valid user (Staff)', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'staff@example.com',
+          password: '123456'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('success');
+      expect(response.body.data).toHaveProperty('token');
+      expect(response.body.data.user).toEqual(
+        expect.objectContaining({
+          name: 'Staff Member',
+          email: 'staff@example.com',
+          role: 'staff'
+        })
+      );
     });
 
     it('should reject invalid credentials', async () => {
