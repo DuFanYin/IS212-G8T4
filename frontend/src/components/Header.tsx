@@ -2,16 +2,47 @@
 
 import { useUser } from '@/contexts/UserContext';
 import type { User } from '@/types/user';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Header() {
   const { user, logout }: { user: User | null; logout: () => void } = useUser();
+  const pathname = usePathname();
+
+  const isActive = (path: string) => {
+    return pathname === path ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900';
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <h1 className="text-xl font-semibold">Task Management System</h1>
+          <div className="flex items-center space-x-8">
+            <Link href="/home" className="text-xl font-semibold">
+              Task Management System
+            </Link>
+            {user && (
+              <nav className="hidden md:flex space-x-6">
+                <Link
+                  href="/home"
+                  className={`${isActive('/home')} flex items-center px-1 py-2 text-sm font-medium`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/tasks"
+                  className={`${isActive('/tasks')} flex items-center px-1 py-2 text-sm font-medium`}
+                >
+                  Tasks
+                </Link>
+                <Link
+                  href="/projects"
+                  className={`${isActive('/projects')} flex items-center px-1 py-2 text-sm font-medium`}
+                >
+                  Projects
+                </Link>
+              </nav>
+            )}
           </div>
           {user && (
             <div className="flex items-center space-x-4">

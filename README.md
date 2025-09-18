@@ -75,37 +75,12 @@ JWT_SECRET=your_generated_secret
 The project uses MongoDB Atlas with three databases:
 - `is212_dev`: Development database
 - `is212_test`: Testing database
-- `is212_prod`: Production database
 
 ```bash
 # Seed development/test data (only for dev/test environments)
 NODE_ENV=development npm run seed  # For development
 NODE_ENV=test npm run seed        # For testing
 ```
-
-### Test Credentials
-```
-Email: test123@example.com
-Password: 123456
-```
-
-
-Backend Testing:
-    Jest configuration for Node.js environment
-    Example API test structure
-    Test setup with environment handling
-    Coverage reporting setup
-Frontend Testing:
-    Next.js-specific Jest configuration
-    React Testing Library setup
-    Component test example
-    Mock setup for Next.js features
-Common Features for Both:
-    Separate test directories
-    Coverage reporting
-    Watch mode for development
-    Basic setup files
-
 
 cloc . --exclude-dir=node_modules,.next,coverage,.git --exclude-ext=json,lock,map,svg,ico --not-match-f="next.config|postcss.config|tailwind.config|jest.config|vitest.config"
 
