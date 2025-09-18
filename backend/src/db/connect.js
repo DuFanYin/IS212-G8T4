@@ -1,32 +1,28 @@
 const mongoose = require("mongoose");
 
 const getConnectionString = () => {
-  const env = process.env.NODE_ENV || 'development';
-  const baseUrl = process.env.MONGO_URL;
+  const env = process.env.NODE_ENV;
+  let baseUrl = process.env.MONGO_URL;
   
-  if (!baseUrl) {
-    throw new Error('MONGO_URL not set in environment variables');
-  }
+  if (!baseUrl) throw new Error('MONGO_URL not set');
 
-  // Extract the database name from the connection string
-  const dbNameMatch = baseUrl.match(/\/([^/?]+)(\?|$)/);
-  const defaultDbName = dbNameMatch ? dbNameMatch[1] : 'is212';
-  
-  // Replace or append the database name based on environment
   let dbName;
   switch (env) {
-    case 'test':
-      dbName = 'is212_test';
-      break;
-    case 'production':
-      dbName = 'is212_prod';
-      break;
-    default:
-      dbName = 'is212_dev';
+    case 'test': dbName = 'is212_test'; break;
+    case 'production': dbName = 'is212_prod'; break;
+    default: dbName = 'is212_dev';
   }
-  
-  // Replace the database name in the connection string
-  return baseUrl.replace(defaultDbName, dbName);
+
+  // Extract the base URL without the database name and query parameters
+  const urlParts = baseUrl.split('?');
+  const baseUrlWithoutQuery = urlParts[0];
+  const queryParams = urlParts[1] ? `?${urlParts[1]}` : '';
+
+  // Remove any existing database name from the URL
+  const baseUrlWithoutDB = baseUrlWithoutQuery.replace(/\/[^/]*$/, '');
+
+  // Construct the new URL with the correct database name
+  return `${baseUrlWithoutDB}/${dbName}${queryParams}`;
 };
 
 const connectDB = async () => {

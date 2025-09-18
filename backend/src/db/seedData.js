@@ -8,10 +8,7 @@ const ProjectService = require('../services/projectService');
 const SubtaskService = require('../services/subtaskService');
 
 const seedDatabase = async () => {
-  if (process.env.NODE_ENV === 'production') {
-    console.log('❌ Seeding not allowed in production');
-    process.exit(1);
-  }
+
   try {
     await connectDB();
     console.log('Connected to MongoDB');

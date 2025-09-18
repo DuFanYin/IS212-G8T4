@@ -105,3 +105,7 @@ Common Features for Both:
     Coverage reporting
     Watch mode for development
     Basic setup files
+
+
+cloc . --exclude-dir=node_modules,.next,coverage,.git --exclude-ext=json,lock,map,svg,ico --not-match-f="next.config|postcss.config|tailwind.config|jest.config|vitest.config"
+
