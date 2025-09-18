@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { UserProvider } from '@/contexts/UserContext';
-import Navbar from '@/components/Navbar';
+import Header from '@/components/Header';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,8 +20,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <UserProvider>
-          <Navbar />
-          {children}
+          <Header />
+          <div className="pt-16"> {/* Add padding for fixed header */}
+            {children}
+          </div>
         </UserProvider>
       </body>
     </html>
