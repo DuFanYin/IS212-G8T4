@@ -1,58 +1,61 @@
-const { Task, User, Project, Subtask, ActivityLog } = require('../db/models');
+const TaskRepository = require('../repositories/TaskRepository');
+const Task = require('../domain/Task');
+const UserRepository = require('../repositories/UserRepository');
+const ProjectRepository = require('../repositories/ProjectRepository');
+const projectService = require('./projectService');
+const User = require('../domain/User');
 
 class TaskService {
+  constructor(taskRepository) {
+    this.taskRepository = taskRepository;
+  }
+
   /**
    * Create a new task
    * @param {Object} taskData - Task data
    * @param {string} userId - ID of user creating the task
    */
-  static async createTask(taskData, userId) {
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
+  async createTask(taskData, userId) {
+    try {
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
 
-    // Validate project collaborators if task belongs to project
-    if (taskData.projectId) {
-      const project = await Project.findById(taskData.projectId);
-      if (!project) throw new Error('Project not found');
+      // Validate project collaborators if task belongs to project
+      if (taskData.projectId) {
+        const projectRepository = new ProjectRepository();
+        const project = await projectRepository.findById(taskData.projectId);
 
-      // Validate collaborators are subset of project collaborators
-      const invalidCollaborators = (taskData.collaborators || []).filter(
-        c => !project.collaborators.includes(c)
-      );
-      if (invalidCollaborators.length > 0) {
-        throw new Error('Task collaborators must be a subset of project collaborators');
+        // Validate collaborators are subset of project collaborators
+        const invalidCollaborators = (taskData.collaborators || []).filter(
+          c => !project.collaborators.includes(c)
+        );
+        if (invalidCollaborators.length > 0) {
+          throw new Error('Task collaborators must be a subset of project collaborators');
+        }
+
+        // Add task creator to project collaborators if not already included
+        if (!project.collaborators.includes(userId)) {
+          const projectRepository = new ProjectRepository();
+          await projectRepository.addCollaborator(taskData.projectId, userId);
+        }
       }
 
-      // Add task creator to project collaborators if not already included
-      if (!project.collaborators.includes(userId)) {
-        project.collaborators.push(userId);
-        await project.save();
+      // Set creator as collaborator
+      if (!taskData.collaborators) taskData.collaborators = [];
+      if (!taskData.collaborators.includes(userId)) {
+        taskData.collaborators.push(userId);
       }
+
+      const taskDoc = await this.taskRepository.create({
+        ...taskData,
+        createdBy: userId
+      });
+
+      return new Task(taskDoc);
+    } catch (error) {
+      throw new Error('Error creating task');
     }
-
-    // Set creator as collaborator
-    if (!taskData.collaborators) taskData.collaborators = [];
-    if (!taskData.collaborators.includes(userId)) {
-      taskData.collaborators.push(userId);
-    }
-
-    const task = await Task.create({
-      ...taskData,
-      createdBy: userId
-    });
-
-    // Log task creation
-    await ActivityLog.create({
-      taskId: task._id,
-      userId,
-      action: 'created',
-      details: {
-        title: task.title,
-        description: task.description
-      }
-    });
-
-    return task;
   }
 
   /**
@@ -61,161 +64,241 @@ class TaskService {
    * @param {Object} updateData - Data to update
    * @param {string} userId - ID of user making the update
    */
-  static async updateTask(taskId, updateData, userId) {
-    const task = await Task.findById(taskId);
-    if (!task) throw new Error('Task not found');
+  async updateTask(taskId, updateData, userId) {
+    try {
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) throw new Error('Task not found');
 
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
+      const task = new Task(taskDoc);
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
 
-    // Check edit permissions
-    if (!task.collaborators.includes(userId)) {
-      throw new Error('Must be a collaborator to edit task');
-    }
-
-    // Staff can only edit tasks they created, except for status updates
-    if (user.role === 'staff') {
-      const isStatusUpdate = Object.keys(updateData).length === 1 && updateData.hasOwnProperty('status');
-      if (!isStatusUpdate) {
-        if (!task.createdBy.equals(userId)) {
-          throw new Error('Staff can only edit tasks they created');
-        }
-        // Staff can only update specific fields
-        const allowedFields = ['title', 'dueDate', 'collaborators'];
-        const attemptedFields = Object.keys(updateData);
-        const invalidFields = attemptedFields.filter(f => !allowedFields.includes(f));
-        if (invalidFields.length > 0) {
-          throw new Error(`Staff cannot modify these fields: ${invalidFields.join(', ')}`);
-        }
-      }
-    }
-
-    // Handle status changes
-    if (updateData.status) {
-      if (!await this.canUpdateStatus(task, userId)) {
-        throw new Error('Not authorized to update task status');
+      // Check edit permissions
+      if (!task.canBeEditedBy(user)) {
+        throw new Error('Not authorized to edit this task');
       }
 
-      if (updateData.status === 'completed') {
-        const subtasks = await Subtask.find({ parentTaskId: taskId });
-        if (subtasks.length > 0 && !subtasks.every(st => st.status === 'completed')) {
-          throw new Error('All subtasks must be completed before marking task as completed');
+      // Staff can only update specific fields
+      if (user.isStaff()) {
+        const isStatusUpdate = Object.keys(updateData).length === 1 && updateData.hasOwnProperty('status');
+        if (!isStatusUpdate) {
+          const allowedFields = ['title', 'dueDate', 'collaborators'];
+          const attemptedFields = Object.keys(updateData);
+          const invalidFields = attemptedFields.filter(f => !allowedFields.includes(f));
+          if (invalidFields.length > 0) {
+            throw new Error(`Staff cannot modify these fields: ${invalidFields.join(', ')}`);
+          }
         }
       }
 
-      task.lastStatusUpdate = {
-        status: updateData.status,
-        updatedBy: userId,
-        updatedAt: new Date()
-      };
-    }
+      // Handle assignment changes
+      if (updateData.assigneeId) {
+        const userRepository = new UserRepository();
+        const assigneeDoc = await userRepository.findById(updateData.assigneeId);
+        const assignee = new User(assigneeDoc);
+        if (!assignee) throw new Error('Assignee not found');
 
-    // Handle assignment changes
-    if (updateData.assigneeId) {
-      const assignee = await User.findById(updateData.assigneeId);
-      if (!assignee) throw new Error('Assignee not found');
+        // Managers/Directors can assign tasks to lower roles only
+        if (!user.canAssignTasks()) {
+          throw new Error('Only managers and above can assign tasks');
+        }
+
+        const roleHierarchy = { 'sm': 4, 'director': 3, 'manager': 2, 'staff': 1 };
+        if (roleHierarchy[user.role] <= roleHierarchy[assignee.role]) {
+          throw new Error('Can only assign tasks to lower-ranked roles');
+        }
+      }
+
+      const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
+      return new Task(updatedTaskDoc);
+    } catch (error) {
+      throw new Error('Error updating task');
+    }
+  }
+
+  /**
+   * Check task visibility for a user
+   * @param {string} taskId - Task ID
+   * @param {string} userId - User ID
+   */
+  async isVisibleToUser(taskId, userId) {
+    try {
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) return false;
+
+      const task = new Task(taskDoc);
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+
+      // HR/SM: see all tasks/projects
+      if (user.canSeeAllTasks()) return true;
+
+      // Director: see department tasks
+      if (user.canSeeDepartmentTasks()) {
+        if (task.projectId) {
+          const project = await projectService.getProjectById(task.projectId);
+          if (project && project.departmentId) {
+            return user.canAccessDepartment(project.departmentId);
+          }
+        }
+        if (task.assigneeId) {
+          const userRepository = new UserRepository();
+          const assigneeDoc = await userRepository.findById(task.assigneeId);
+          const assignee = new User(assigneeDoc);
+          if (assignee && assignee.departmentId) {
+            return user.canAccessDepartment(assignee.departmentId);
+          }
+        }
+      }
+
+      // Manager: see team tasks
+      if (user.canSeeTeamTasks()) {
+        if (task.assigneeId) {
+          const userRepository = new UserRepository();
+          const assigneeDoc = await userRepository.findById(task.assigneeId);
+          const assignee = new User(assigneeDoc);
+          if (assignee && assignee.teamId) {
+            return user.teamId?.toString() === assignee.teamId?.toString();
+          }
+        }
+      }
+
+      // Staff: see own tasks, teammates' tasks, project tasks they're in
+      if (user.isStaff()) {
+        // Own tasks
+        if (task.assigneeId?.toString() === user.id) return true;
+        
+        // Team members' tasks
+        if (task.assigneeId) {
+          const userRepository = new UserRepository();
+          const assigneeDoc = await userRepository.findById(task.assigneeId);
+          const assignee = new User(assigneeDoc);
+          if (assignee && assignee.teamId) {
+            return user.teamId?.toString() === assignee.teamId?.toString();
+          }
+        }
+        
+        // Project tasks they're collaborating on
+        if (task.isCollaborator(user.id)) return true;
+      }
+
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async getTasksByAssignee(assigneeId) {
+    try {
+      const taskDocs = await this.taskRepository.findTasksByAssignee(assigneeId);
+      return taskDocs.map(doc => new Task(doc));
+    } catch (error) {
+      throw new Error('Error fetching tasks by assignee');
+    }
+  }
+
+  async getTasksByCreator(creatorId) {
+    try {
+      const taskDocs = await this.taskRepository.findTasksByCreator(creatorId);
+      return taskDocs.map(doc => new Task(doc));
+    } catch (error) {
+      throw new Error('Error fetching tasks by creator');
+    }
+  }
+
+  async getTasksByProject(projectId) {
+    try {
+      const taskDocs = await this.taskRepository.findTasksByProject(projectId);
+      return taskDocs.map(doc => new Task(doc));
+    } catch (error) {
+      throw new Error('Error fetching tasks by project');
+    }
+  }
+
+  async getTasksByCollaborator(userId) {
+    try {
+      const taskDocs = await this.taskRepository.findTasksByCollaborator(userId);
+      return taskDocs.map(doc => new Task(doc));
+    } catch (error) {
+      throw new Error('Error fetching tasks by collaborator');
+    }
+  }
+
+  async assignTask(taskId, assigneeId, userId) {
+    try {
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) throw new Error('Task not found');
+
+      const task = new Task(taskDoc);
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+      const assigneeDoc = await userRepository.findById(assigneeId);
+      const assignee = new User(assigneeDoc);
+
+      if (!task.canBeAssignedBy(user)) {
+        throw new Error('Not authorized to assign this task');
+      }
 
       const roleHierarchy = { 'sm': 4, 'director': 3, 'manager': 2, 'staff': 1 };
       if (roleHierarchy[user.role] <= roleHierarchy[assignee.role]) {
         throw new Error('Can only assign tasks to lower-ranked roles');
       }
+
+      const updatedTaskDoc = await this.taskRepository.assignTask(taskId, assigneeId);
+      return new Task(updatedTaskDoc);
+    } catch (error) {
+      throw new Error('Error assigning task');
     }
-
-    Object.assign(task, updateData);
-    await task.save();
-
-    // Log the update
-    await ActivityLog.create({
-      taskId: task._id,
-      userId,
-      action: updateData.status ? 'status_changed' : 'updated',
-      details: updateData
-    });
-
-    return task;
   }
 
-  /**
-   * Check if user can update task status
-   * @param {Object} task - Task object
-   * @param {string} userId - User ID
-   */
-  static async canUpdateStatus(task, userId) {
-    const user = await User.findById(userId);
-    if (!user) return false;
+  async updateTaskStatus(taskId, status, userId) {
+    try {
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) throw new Error('Task not found');
 
-    // Must be a collaborator
-    if (!task.collaborators.includes(userId)) return false;
+      const task = new Task(taskDoc);
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
 
-    // Staff can only update their own tasks
-    if (user.role === 'staff' && !task.assigneeId.equals(userId)) return false;
-
-    return true;
-  }
-
-  /**
-   * Check task visibility for a user
-   * @param {Object} task - Task object
-   * @param {string} userId - User ID
-   */
-  static async isVisibleToUser(task, userId) {
-    const user = await User.findById(userId);
-    if (!user) return false;
-
-    // HR and SM can see all tasks
-    if (['hr', 'sm'].includes(user.role)) return true;
-
-    // Director can see all department tasks
-    if (user.role === 'director') {
-      if (task.projectId) {
-        const project = await Project.findById(task.projectId);
-        if (project && project.departmentId.equals(user.departmentId)) return true;
+      if (!task.canBeCompletedBy(user)) {
+        throw new Error('Not authorized to update task status');
       }
-      const assignee = await User.findById(task.assigneeId);
-      if (assignee && assignee.departmentId.equals(user.departmentId)) return true;
-    }
 
-    // Manager can see team tasks
-    if (user.role === 'manager') {
-      const assignee = await User.findById(task.assigneeId);
-      if (assignee && assignee.teamId.equals(user.teamId)) return true;
+      const updatedTaskDoc = await this.taskRepository.updateStatus(taskId, status, userId);
+      return new Task(updatedTaskDoc);
+    } catch (error) {
+      throw new Error('Error updating task status');
     }
-
-    // Staff visibility
-    if (user.role === 'staff') {
-      // Own tasks
-      if (task.assigneeId.equals(userId)) return true;
-      // Team members' tasks
-      const assignee = await User.findById(task.assigneeId);
-      if (assignee && assignee.teamId.equals(user.teamId)) return true;
-      // Project tasks they're collaborating on
-      if (task.collaborators.includes(userId)) return true;
-    }
-
-    return false;
   }
 
-  /**
-   * Archive a task (soft delete)
-   * @param {string} taskId - Task ID
-   * @param {string} userId - User ID performing the action
-   */
-  static async archiveTask(taskId, userId) {
-    const task = await Task.findById(taskId);
-    if (!task) throw new Error('Task not found');
+  async softDeleteTask(taskId, userId) {
+    try {
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) throw new Error('Task not found');
 
-    task.isDeleted = true;
-    await task.save();
+      const task = new Task(taskDoc);
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
 
-    await ActivityLog.create({
-      taskId: task._id,
-      userId,
-      action: 'archived',
-      details: { archivedAt: new Date() }
-    });
+      if (!task.canBeEditedBy(user)) {
+        throw new Error('Not authorized to delete this task');
+      }
 
-    return task;
+      const updatedTaskDoc = await this.taskRepository.softDelete(taskId);
+      return new Task(updatedTaskDoc);
+    } catch (error) {
+      throw new Error('Error deleting task');
+    }
   }
 }
 
-module.exports = TaskService;
+// Create singleton instance
+const taskRepository = new TaskRepository();
+const taskService = new TaskService(taskRepository);
+
+module.exports = taskService;

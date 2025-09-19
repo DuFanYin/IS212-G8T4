@@ -1,105 +1,171 @@
-const { Subtask, Task, ActivityLog } = require('../db/models');
+const SubtaskRepository = require('../repositories/SubtaskRepository');
+const Subtask = require('../domain/Subtask');
+const UserRepository = require('../repositories/UserRepository');
+const TaskRepository = require('../repositories/TaskRepository');
+const User = require('../domain/User');
 
 class SubtaskService {
+  constructor(subtaskRepository) {
+    this.subtaskRepository = subtaskRepository;
+  }
+
   /**
    * Create a new subtask
    * @param {string} parentTaskId - Parent task ID
    * @param {Object} subtaskData - Subtask data
    * @param {string} userId - ID of user creating the subtask
    */
-  static async createSubtask(parentTaskId, subtaskData, userId) {
-    const parentTask = await Task.findById(parentTaskId);
-    if (!parentTask) throw new Error('Parent task not found');
-
-    // Validate collaborators are subset of parent task
-    const invalidCollaborators = (subtaskData.collaborators || []).filter(
-      c => !parentTask.collaborators.includes(c)
-    );
-    if (invalidCollaborators.length > 0) {
-      throw new Error('Subtask collaborators must be a subset of parent task collaborators');
-    }
-
-    const subtask = await Subtask.create({
-      ...subtaskData,
-      parentTaskId
-    });
-
-    // Log subtask creation
-    await ActivityLog.create({
-      taskId: parentTaskId,
-      userId,
-      action: 'subtask_added',
-      details: {
-        subtaskId: subtask._id,
-        title: subtask.title
+  async createSubtask(parentTaskId, subtaskData, userId) {
+    try {
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+      if (!user) {
+        throw new Error('User not found');
       }
-    });
 
-    return subtask;
+      const taskRepository = new TaskRepository();
+      const parentTaskDoc = await taskRepository.findById(parentTaskId);
+      if (!parentTaskDoc) {
+        throw new Error('Parent task not found');
+      }
+
+      // Validate subtask collaborators are subset of task collaborators
+      const invalidCollaborators = (subtaskData.collaborators || []).filter(
+        c => !parentTaskDoc.collaborators.includes(c)
+      );
+      if (invalidCollaborators.length > 0) {
+        throw new Error('Subtask collaborators must be a subset of task collaborators');
+      }
+
+      // Set creator as collaborator
+      if (!subtaskData.collaborators) subtaskData.collaborators = [];
+      if (!subtaskData.collaborators.includes(userId)) {
+        subtaskData.collaborators.push(userId);
+      }
+
+      const subtaskDoc = await this.subtaskRepository.create({
+        ...subtaskData,
+        parentTaskId
+      });
+
+      return new Subtask(subtaskDoc);
+    } catch (error) {
+      throw new Error('Error creating subtask');
+    }
   }
 
   /**
    * Update a subtask
    * @param {string} subtaskId - Subtask ID
-   * @param {Object} updateData - Data to update
-   * @param {string} userId - ID of user making the update
+   * @param {Object} updates - Updates to apply
+   * @param {string} userId - ID of user updating the subtask
    */
-  static async updateSubtask(subtaskId, updateData, userId) {
-    const subtask = await Subtask.findById(subtaskId);
-    if (!subtask) throw new Error('Subtask not found');
+  async updateSubtask(subtaskId, updates, userId) {
+    try {
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+      const subtask = await this.getSubtaskById(subtaskId);
 
-    const parentTask = await Task.findById(subtask.parentTaskId);
-    if (!parentTask) throw new Error('Parent task not found');
-
-    // Validate collaborators if being updated
-    if (updateData.collaborators) {
-      const invalidCollaborators = updateData.collaborators.filter(
-        c => !parentTask.collaborators.includes(c)
-      );
-      if (invalidCollaborators.length > 0) {
-        throw new Error('Subtask collaborators must be a subset of parent task collaborators');
-      }
-    }
-
-    // Handle status changes
-    if (updateData.status) {
-      if (!parentTask.collaborators.includes(userId)) {
-        throw new Error('Must be a task collaborator to update subtask status');
+      // Check if user can edit this subtask
+      if (!subtask.canBeEditedBy(user)) {
+        throw new Error('User not authorized to edit this subtask');
       }
 
-      // Log status change
-      await ActivityLog.create({
-        taskId: parentTask._id,
-        userId,
-        action: 'subtask_status_changed',
-        details: {
-          subtaskId: subtask._id,
-          oldStatus: subtask.status,
-          newStatus: updateData.status
-        }
-      });
-    }
+      const subtaskDoc = await this.subtaskRepository.updateById(subtaskId, updates);
+      if (!subtaskDoc) throw new Error('Subtask not found');
 
-    Object.assign(subtask, updateData);
-    return subtask.save();
+      return new Subtask(subtaskDoc);
+    } catch (error) {
+      throw new Error('Error updating subtask');
+    }
   }
 
   /**
-   * Check if all subtasks of a task are completed
-   * @param {string} taskId - Task ID
+   * Update subtask status
+   * @param {string} subtaskId - Subtask ID
+   * @param {string} status - New status
+   * @param {string} userId - ID of user updating status
    */
-  static async areAllSubtasksCompleted(taskId) {
-    const subtasks = await Subtask.find({ parentTaskId: taskId });
-    return subtasks.length > 0 && subtasks.every(subtask => subtask.status === 'completed');
+  async updateSubtaskStatus(subtaskId, status, userId) {
+    try {
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+      const subtask = await this.getSubtaskById(subtaskId);
+
+      // Check if user can update status
+      if (!subtask.canBeCompletedBy(user)) {
+        throw new Error('User not authorized to update subtask status');
+      }
+
+      const subtaskDoc = await this.subtaskRepository.updateStatus(subtaskId, status, userId);
+      if (!subtaskDoc) throw new Error('Subtask not found');
+
+      return new Subtask(subtaskDoc);
+    } catch (error) {
+      throw new Error('Error updating subtask status');
+    }
   }
 
   /**
-   * Get all subtasks for a task
-   * @param {string} taskId - Task ID
+   * Get subtask by ID
+   * @param {string} subtaskId - Subtask ID
    */
-  static async getTaskSubtasks(taskId) {
-    return Subtask.find({ parentTaskId: taskId }).sort('dueDate');
+  async getSubtaskById(subtaskId) {
+    try {
+      const subtaskDoc = await this.subtaskRepository.findById(subtaskId);
+      if (!subtaskDoc) throw new Error('Subtask not found');
+      
+      return new Subtask(subtaskDoc);
+    } catch (error) {
+      throw new Error('Error fetching subtask');
+    }
+  }
+
+  /**
+   * Get subtasks by parent task
+   * @param {string} parentTaskId - Parent task ID
+   */
+  async getSubtasksByParentTask(parentTaskId) {
+    try {
+      const subtaskDocs = await this.subtaskRepository.findByParentTask(parentTaskId);
+      return subtaskDocs.map(doc => new Subtask(doc));
+    } catch (error) {
+      throw new Error('Error fetching subtasks');
+    }
+  }
+
+  /**
+   * Soft delete a subtask
+   * @param {string} subtaskId - Subtask ID
+   * @param {string} userId - ID of user deleting the subtask
+   */
+  async softDeleteSubtask(subtaskId, userId) {
+    try {
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+      const subtask = await this.getSubtaskById(subtaskId);
+
+      // Check if user can delete this subtask
+      if (!subtask.canBeEditedBy(user)) {
+        throw new Error('User not authorized to delete this subtask');
+      }
+
+      const subtaskDoc = await this.subtaskRepository.softDelete(subtaskId);
+      if (!subtaskDoc) throw new Error('Subtask not found');
+
+      return new Subtask(subtaskDoc);
+    } catch (error) {
+      throw new Error('Error deleting subtask');
+    }
   }
 }
 
-module.exports = SubtaskService;
+// Create singleton instance
+const subtaskRepository = new SubtaskRepository();
+const subtaskService = new SubtaskService(subtaskRepository);
+
+module.exports = subtaskService;

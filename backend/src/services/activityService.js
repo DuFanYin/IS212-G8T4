@@ -1,73 +1,80 @@
-const { ActivityLog, Task } = require('../db/models');
+const ActivityLogRepository = require('../repositories/ActivityLogRepository');
+const ActivityLog = require('../domain/ActivityLog');
 
-class ActivityService {
-  /**
-   * Log a task activity
-   * @param {string} taskId - Task ID
-   * @param {string} userId - User ID performing the action
-   * @param {string} action - Type of action
-   * @param {Object} details - Additional details about the action
-   */
-  static async logActivity(taskId, userId, action, details) {
-    const task = await Task.findById(taskId);
-    if (!task) throw new Error('Task not found');
-
-    return ActivityLog.create({
-      taskId,
-      userId,
-      action,
-      details
-    });
+class ActivityLogService {
+  constructor(activityLogRepository) {
+    this.activityLogRepository = activityLogRepository;
   }
 
   /**
-   * Get activity history for a task
-   * @param {string} taskId - Task ID
-   * @param {Object} options - Query options (limit, skip, etc.)
-   */
-  static async getTaskActivity(taskId, options = {}) {
-    const query = ActivityLog.find({ taskId })
-      .sort('-createdAt')
-      .populate('userId', 'name email role');
-
-    if (options.limit) query.limit(options.limit);
-    if (options.skip) query.skip(options.skip);
-
-    return query.exec();
-  }
-
-  /**
-   * Get recent activity for a user
+   * Log user activity
    * @param {string} userId - User ID
-   * @param {number} limit - Number of activities to return
+   * @param {string} action - Action performed
+   * @param {Object} details - Additional details
+   * @param {string} resourceType - Type of resource (task, project, etc.)
+   * @param {string} resourceId - Resource ID
    */
-  static async getUserRecentActivity(userId, limit = 10) {
-    return ActivityLog.find({ userId })
-      .sort('-createdAt')
-      .limit(limit)
-      .populate('taskId', 'title status')
-      .exec();
+  async logActivity(userId, action, details = {}, resourceType = null, resourceId = null) {
+    try {
+      const activityDoc = await this.activityLogRepository.create({
+        userId,
+        action,
+        details,
+        resourceType,
+        resourceId,
+        timestamp: new Date()
+      });
+
+      return new ActivityLog(activityDoc);
+    } catch (error) {
+      throw new Error('Error logging activity');
+    }
   }
 
   /**
-   * Get project activity
-   * @param {string} projectId - Project ID
-   * @param {Object} options - Query options
+   * Get activity logs for a user
+   * @param {string} userId - User ID
+   * @param {Object} filters - Optional filters
    */
-  static async getProjectActivity(projectId, options = {}) {
-    const tasks = await Task.find({ projectId }).select('_id');
-    const taskIds = tasks.map(t => t._id);
+  async getUserActivityLogs(userId, filters = {}) {
+    try {
+      const activityDocs = await this.activityLogRepository.findByUser(userId, filters);
+      return activityDocs.map(doc => new ActivityLog(doc));
+    } catch (error) {
+      throw new Error('Error fetching user activity logs');
+    }
+  }
 
-    const query = ActivityLog.find({ taskId: { $in: taskIds } })
-      .sort('-createdAt')
-      .populate('userId', 'name email role')
-      .populate('taskId', 'title');
+  /**
+   * Get activity logs for a resource
+   * @param {string} resourceType - Resource type
+   * @param {string} resourceId - Resource ID
+   */
+  async getResourceActivityLogs(resourceType, resourceId) {
+    try {
+      const activityDocs = await this.activityLogRepository.findByResource(resourceType, resourceId);
+      return activityDocs.map(doc => new ActivityLog(doc));
+    } catch (error) {
+      throw new Error('Error fetching resource activity logs');
+    }
+  }
 
-    if (options.limit) query.limit(options.limit);
-    if (options.skip) query.skip(options.skip);
-
-    return query.exec();
+  /**
+   * Get all activity logs with filters
+   * @param {Object} filters - Filters to apply
+   */
+  async getAllActivityLogs(filters = {}) {
+    try {
+      const activityDocs = await this.activityLogRepository.findAll(filters);
+      return activityDocs.map(doc => new ActivityLog(doc));
+    } catch (error) {
+      throw new Error('Error fetching activity logs');
+    }
   }
 }
 
-module.exports = ActivityService;
+// Create singleton instance
+const activityLogRepository = new ActivityLogRepository();
+const activityLogService = new ActivityLogService(activityLogRepository);
+
+module.exports = activityLogService;

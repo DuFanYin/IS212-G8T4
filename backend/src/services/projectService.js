@@ -1,45 +1,81 @@
-const { Project, User, Task } = require('../db/models');
-const UserService = require('./userService');
+const ProjectRepository = require('../repositories/ProjectRepository');
+const Project = require('../domain/Project');
+const UserRepository = require('../repositories/UserRepository');
+const User = require('../domain/User');
 
 class ProjectService {
+  constructor(projectRepository) {
+    this.projectRepository = projectRepository;
+  }
+
   /**
    * Create a new project
    * @param {Object} projectData - Project data
    * @param {string} userId - ID of user creating the project
    */
-  static async createProject(projectData, userId) {
+  async createProject(projectData, userId) {
+    try {
+      // Ensure owner is a collaborator
+      if (!projectData.collaborators) {
+        projectData.collaborators = [];
+      }
+      if (!projectData.collaborators.includes(userId)) {
+        projectData.collaborators.push(userId);
+      }
 
-    // Ensure owner is a collaborator
-    if (!projectData.collaborators.includes(userId)) {
-      projectData.collaborators.push(userId);
+      // If department is specified, validate collaborators
+      await this.validateCollaborators(projectData.collaborators, projectData.departmentId);
+
+      const projectDoc = await this.projectRepository.create({
+        ...projectData,
+        ownerId: userId
+      });
+
+      return new Project(projectDoc);
+    } catch (error) {
+      throw new Error('Error creating project');
     }
-
-    // If department is specified, validate collaborators (errors are thrown naturally)
-    await ProjectService.validateCollaborators(projectData.collaborators, projectData.departmentId);
-
-    return Project.create({
-      ...projectData,
-      ownerId: userId
-    });
   }
 
-  static async validateCollaborators(collaborators, departmentId){
+  async validateCollaborators(collaborators, departmentId) {
+    try {
+      const userRepository = new UserRepository();
+      for (const collaboratorId of collaborators) {
+        const collaboratorDoc = await userRepository.findById(collaboratorId);
+        if (!collaboratorDoc) {
+          throw new Error(`Collaborator ${collaboratorId} not found`);
+        }
 
-    //error is thrown naturally
-    for(const collaboratorId of collaborators){
-      const collaborator = await UserService.getUserById(collaboratorId);
-
-      if(collaborator && collaborator.departmentId){
-
-        if(!collaborator.departmentId.equals(departmentId)){
-          throw new Error("All collaborators must be from the same department");
+        const collaborator = new User(collaboratorDoc);
+        if (collaborator.departmentId && departmentId) {
+          if (!collaborator.departmentId.equals(departmentId)) {
+            throw new Error("All collaborators must be from the same department");
+          }
         }
       }
+    } catch (error) {
+      throw new Error('Error validating collaborators');
     }
   }
 
-  static async getProjects(){
-    return Project.find();
+  async getProjects() {
+    try {
+      const projectDocs = await this.projectRepository.findActiveProjects();
+      return projectDocs.map(doc => new Project(doc));
+    } catch (error) {
+      throw new Error('Error fetching projects');
+    }
+  }
+
+  async getProjectById(projectId) {
+    try {
+      const projectDoc = await this.projectRepository.findById(projectId);
+      if (!projectDoc) throw new Error('Project not found');
+      
+      return new Project(projectDoc);
+    } catch (error) {
+      throw new Error('Error fetching project');
+    }
   }
 
   /**
@@ -48,51 +84,61 @@ class ProjectService {
    * @param {Object} updateData - Data to update
    * @param {string} userId - ID of user making the update
    */
-  static async updateProject(projectId, updateData, userId) {
-    const project = await Project.findById(projectId);
-    if (!project) throw new Error('Project not found');
+  async updateProject(projectId, updateData, userId) {
+    try {
+      const projectDoc = await this.projectRepository.findById(projectId);
+      if (!projectDoc) throw new Error('Project not found');
 
-    // Validate department-based collaborators if department is being updated
-    if (updateData.departmentId) {
-      const invalidCollaborators = [];
-      for (const collaboratorId of project.collaborators) {
-        const collaborator = await User.findById(collaboratorId);
-        if (collaborator && collaborator.departmentId) {
-          if (!collaborator.departmentId.equals(updateData.departmentId)) {
-            invalidCollaborators.push(collaboratorId);
-          }
-        }
-      }
-      if (invalidCollaborators.length > 0) {
-        throw new Error('Cannot change department: some collaborators are from different departments');
-      }
-    }
+      const project = new Project(projectDoc);
 
-    // Validate new collaborators
-    if (updateData.collaborators) {
-      if (project.departmentId) {
+      // Validate department-based collaborators if department is being updated
+      if (updateData.departmentId) {
         const invalidCollaborators = [];
-        for (const collaboratorId of updateData.collaborators) {
-          const collaborator = await User.findById(collaboratorId);
+        for (const collaboratorId of project.collaborators) {
+          const userRepository = new UserRepository();
+          const collaboratorDoc = await userRepository.findById(collaboratorId);
+          const collaborator = new User(collaboratorDoc);
           if (collaborator && collaborator.departmentId) {
-            if (!collaborator.departmentId.equals(project.departmentId)) {
+            if (!collaborator.departmentId.equals(updateData.departmentId)) {
               invalidCollaborators.push(collaboratorId);
             }
           }
         }
         if (invalidCollaborators.length > 0) {
-          throw new Error('All collaborators must be from the same department');
+          throw new Error('Cannot change department: some collaborators are from different departments');
         }
       }
 
-      // Ensure owner remains a collaborator
-      if (!updateData.collaborators.includes(project.ownerId)) {
-        updateData.collaborators.push(project.ownerId);
-      }
-    }
+      // Validate new collaborators
+      if (updateData.collaborators) {
+        if (project.departmentId) {
+          const invalidCollaborators = [];
+        for (const collaboratorId of updateData.collaborators) {
+          const userRepository = new UserRepository();
+          const collaboratorDoc = await userRepository.findById(collaboratorId);
+          const collaborator = new User(collaboratorDoc);
+            if (collaborator && collaborator.departmentId) {
+              if (!collaborator.departmentId.equals(project.departmentId)) {
+                invalidCollaborators.push(collaboratorId);
+              }
+            }
+          }
+          if (invalidCollaborators.length > 0) {
+            throw new Error('All collaborators must be from the same department');
+          }
+        }
 
-    Object.assign(project, updateData);
-    return project.save();
+        // Ensure owner remains a collaborator
+        if (!updateData.collaborators.includes(project.ownerId)) {
+          updateData.collaborators.push(project.ownerId);
+        }
+      }
+
+      const updatedProjectDoc = await this.projectRepository.updateById(projectId, updateData);
+      return new Project(updatedProjectDoc);
+    } catch (error) {
+      throw new Error('Error updating project');
+    }
   }
 
   /**
@@ -100,60 +146,76 @@ class ProjectService {
    * @param {string} projectId - Project ID
    * @param {string} collaboratorId - New collaborator's user ID
    */
-  static async addCollaborator(projectId, collaboratorId) {
-    const project = await Project.findById(projectId);
-    if (!project) throw new Error('Project not found');
+  async addCollaborator(projectId, collaboratorId) {
+    try {
+      const projectDoc = await this.projectRepository.findById(projectId);
+      if (!projectDoc) throw new Error('Project not found');
 
-    const collaborator = await User.findById(collaboratorId);
-    if (!collaborator) throw new Error('User not found');
+      const project = new Project(projectDoc);
+      const userRepository = new UserRepository();
+      const collaboratorDoc = await userRepository.findById(collaboratorId);
+      const collaborator = new User(collaboratorDoc);
 
-    // Validate department membership if project has department
-    if (project.departmentId && collaborator.departmentId) {
-      if (!project.departmentId.equals(collaborator.departmentId)) {
-        throw new Error('Collaborator must be from the same department');
+      // Validate department membership if project has department
+      if (project.departmentId && collaborator.departmentId) {
+        if (!project.departmentId.equals(collaborator.departmentId)) {
+          throw new Error('Collaborator must be from the same department');
+        }
       }
-    }
 
-    if (!project.collaborators.includes(collaboratorId)) {
-      project.collaborators.push(collaboratorId);
-      await project.save();
-    }
+      if (!project.collaborators.includes(collaboratorId)) {
+        const updatedProjectDoc = await this.projectRepository.addCollaborator(projectId, collaboratorId);
+        return new Project(updatedProjectDoc);
+      }
 
-    return project;
+      return project;
+    } catch (error) {
+      throw new Error('Error adding collaborator');
+    }
   }
 
   /**
    * Check project visibility for a user
-   * @param {Object} project - Project object
+   * @param {string} projectId - Project ID
    * @param {string} userId - User ID
    */
-  static async isVisibleToUser(project, userId) {
-    const user = await User.findById(userId);
-    if (!user) return false;
+  async isVisibleToUser(projectId, userId) {
+    try {
+      const projectDoc = await this.projectRepository.findById(projectId);
+      if (!projectDoc) return false;
 
-    // HR and SM can see all projects
-    if (['hr', 'sm'].includes(user.role)) return true;
+      const project = new Project(projectDoc);
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
 
-    // Director can see all department projects
-    if (user.role === 'director' && user.departmentId.equals(project.departmentId)) return true;
-
-    // Manager and Staff can see projects they're collaborating on
-    if (['manager', 'staff'].includes(user.role) && project.collaborators.includes(userId)) return true;
-
-    return false;
+      return project.canBeAccessedBy(user);
+    } catch (error) {
+      return false;
+    }
   }
 
-  /**
-   * Archive a project
-   * @param {string} projectId - Project ID
-   */
-  static async archiveProject(projectId) {
-    const project = await Project.findById(projectId);
-    if (!project) throw new Error('Project not found');
+  async getProjectsByOwner(ownerId) {
+    try {
+      const projectDocs = await this.projectRepository.findProjectsByOwner(ownerId);
+      return projectDocs.map(doc => new Project(doc));
+    } catch (error) {
+      throw new Error('Error fetching projects by owner');
+    }
+  }
 
-    project.isArchived = true;
-    return project.save();
+  async getProjectsByDepartment(departmentId) {
+    try {
+      const projectDocs = await this.projectRepository.findProjectsByDepartment(departmentId);
+      return projectDocs.map(doc => new Project(doc));
+    } catch (error) {
+      throw new Error('Error fetching projects by department');
+    }
   }
 }
 
-module.exports = ProjectService;
+// Create singleton instance
+const projectRepository = new ProjectRepository();
+const projectService = new ProjectService(projectRepository);
+
+module.exports = projectService;

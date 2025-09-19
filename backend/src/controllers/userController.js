@@ -1,8 +1,8 @@
-const { getUserById } = require('../services/userService');
+const userService = require('../services/userService');
 
 const getProfile = async (req, res) => {
   try {
-    const user = await getUserById(req.user.userId);
+    const user = await userService.getUserById(req.user.userId);
     if (!user) {
       return res.status(404).json({
         status: 'error',
@@ -13,7 +13,7 @@ const getProfile = async (req, res) => {
     res.json({
       status: 'success',
       data: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role

@@ -14,6 +14,15 @@ const login = async (req, res) => {
       });
     }
 
+    // Validate email format
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide a valid email address'
+      });
+    }
+
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
