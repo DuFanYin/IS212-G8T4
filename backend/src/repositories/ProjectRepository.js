@@ -31,7 +31,7 @@ class ProjectRepository {
       throw new Error('Expected a Project instance');
     }
 
-    const projectData = project.toObject();
+    const projectData = project.toDTO();
     return ProjectModel.create(projectData);
   }
 

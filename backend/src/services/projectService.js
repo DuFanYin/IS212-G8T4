@@ -17,14 +17,16 @@ class ProjectService {
   //Code Reviewed
   async createProject(projectData, userId) {
     try {
-      // If department is specified, validate collaborators
-      await this.validateCollaborators(projectData.collaborators, projectData.departmentId);
+      const project = new Project({ ...projectData, ownerId: userId });
 
-      const project = new Project(projectData);
+      // If department is specified, validate collaborators
+      await this.validateCollaborators(project.collaborators, project.departmentId);
+
       await this.projectRepository.create(project);
 
       return project;
     } catch (error) {
+      console.log(error);
       throw new Error(`Error creating project: ${error.message}`);
     }
   }
