@@ -11,6 +11,14 @@ class Project {
     this.hasContainedTasks = data.hasContainedTasks || false;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
+
+    this.addOwnerToCollaborators();
+  }
+
+  addOwnerToCollaborators() {
+    if (!this.collaborators.includes(this.ownerId)) {
+      this.collaborators.push(this.ownerId);
+    }
   }
 
   // Required checks based on requirements
@@ -61,6 +69,10 @@ class Project {
 
   setHasTasks(hasTasks) {
     this.hasContainedTasks = hasTasks;
+  }
+
+  mergeCollaborators(newCollaborators){
+    this.collaborators = [...new Set([...this.collaborators, ...newCollaborators, this.ownerId])];
   }
 
   // Required DTOs

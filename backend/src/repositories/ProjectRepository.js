@@ -1,4 +1,5 @@
 const ProjectModel = require('../db/models/Project');
+const Project = require('../domain/Project');
 
 class ProjectRepository {
   async findById(id) {
@@ -25,7 +26,12 @@ class ProjectRepository {
     return ProjectModel.find({ collaborators: userId });
   }
 
-  async create(projectData) {
+  async create(project) {
+    if (!(project instanceof Project)) {
+      throw new Error('Expected a Project instance');
+    }
+
+    const projectData = project.toObject();
     return ProjectModel.create(projectData);
   }
 

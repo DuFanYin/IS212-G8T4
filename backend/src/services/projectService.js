@@ -13,28 +13,19 @@ class ProjectService {
    * @param {Object} projectData - Project data
    * @param {string} userId - ID of user creating the project
    */
+
   //Code Reviewed
   async createProject(projectData, userId) {
     try {
-      // Ensure owner is a collaborator (When Integrating with front-end make sure this is handled in the front-end)
-      if (!projectData.collaborators) {
-        projectData.collaborators = [];
-      }
-      if (!projectData.collaborators.includes(userId)) {
-        projectData.collaborators.push(userId);
-      }
-
       // If department is specified, validate collaborators
       await this.validateCollaborators(projectData.collaborators, projectData.departmentId);
 
-      const projectDoc = await this.projectRepository.create({
-        ...projectData,
-        ownerId: userId
-      });
+      const project = new Project(projectData);
+      await this.projectRepository.create(project);
 
-      return new Project(projectDoc);
+      return project;
     } catch (error) {
-      throw new Error('Error creating project');
+      throw new Error(`Error creating project: ${error.message}`);
     }
   }
 
@@ -56,16 +47,17 @@ class ProjectService {
         }
       }
     } catch (error) {
-      throw new Error('Error validating collaborators');
+      throw new Error(`Error validating collaborators: ${error.message}`);
     }
   }
 
+  //Code Reviewed
   async getAllProjects(){
     try{
       const projectDocs = await this.project.findAllProjects();
       return projectDocs.map(doc => new Project(doc));
     } catch (error){
-      throw new Error('Error fetching projects');
+      throw new Error(`Error fetching project: ${error.message}`);
     }
   }
 
@@ -75,10 +67,11 @@ class ProjectService {
       const projectDocs = await this.projectRepository.findActiveProjects();
       return projectDocs.map(doc => new Project(doc));
     } catch (error) {
-      throw new Error('Error fetching projects');
+      throw new Error(`Error fetching project: ${error.message}`);
     }
   }
 
+  //Code Reviewed
   async getProjectById(projectId) {
     try {
       const projectDoc = await this.projectRepository.findById(projectId);
@@ -86,7 +79,7 @@ class ProjectService {
       
       return new Project(projectDoc);
     } catch (error) {
-      throw new Error('Error fetching project');
+      throw new Error(`Error fetching project: ${error.message}`);
     }
   }
 
@@ -96,6 +89,7 @@ class ProjectService {
    * @param {Object} updateData - Data to update
    * @param {string} userId - ID of user making the update
    */
+  //Code Reviewed
   async updateProject(projectId, updateData, userId) {
     try {
       const projectDoc = await this.projectRepository.findById(projectId);
@@ -103,53 +97,19 @@ class ProjectService {
 
       const project = new Project(projectDoc);
 
-      // Validate department-based collaborators if department is being updated
-      if (updateData.departmentId) {
-        const invalidCollaborators = [];
-        for (const collaboratorId of project.collaborators) {
-          const userRepository = new UserRepository();
-          const collaboratorDoc = await userRepository.findById(collaboratorId);
-          const collaborator = new User(collaboratorDoc);
-          if (collaborator && collaborator.departmentId) {
-            if (!collaborator.departmentId.equals(updateData.departmentId)) {
-              invalidCollaborators.push(collaboratorId);
-            }
-          }
-        }
-        if (invalidCollaborators.length > 0) {
-          throw new Error('Cannot change department: some collaborators are from different departments');
-        }
-      }
+      // Merge collaborators (safe even if updateData.collaborators is undefined)
+      project.mergeCollaborators(updateData.collaborators || []);
 
-      // Validate new collaborators
-      if (updateData.collaborators) {
-        if (project.departmentId) {
-          const invalidCollaborators = [];
-        for (const collaboratorId of updateData.collaborators) {
-          const userRepository = new UserRepository();
-          const collaboratorDoc = await userRepository.findById(collaboratorId);
-          const collaborator = new User(collaboratorDoc);
-            if (collaborator && collaborator.departmentId) {
-              if (!collaborator.departmentId.equals(project.departmentId)) {
-                invalidCollaborators.push(collaboratorId);
-              }
-            }
-          }
-          if (invalidCollaborators.length > 0) {
-            throw new Error('All collaborators must be from the same department');
-          }
-        }
+      // Validate department-based collaborators after merge
+      await this.validateCollaborators(project.collaborators, updateData.departmentId || project.departmentId);
 
-        // Ensure owner remains a collaborator
-        if (!updateData.collaborators.includes(project.ownerId)) {
-          updateData.collaborators.push(project.ownerId);
-        }
-      }
+      const fieldsToUpdate = { ...updateData, collaborators: project.collaborators };
+      await this.projectRepository.updateById(projectId, fieldsToUpdate);
 
-      const updatedProjectDoc = await this.projectRepository.updateById(projectId, updateData);
-      return new Project(updatedProjectDoc);
-    } catch (error) {
-      throw new Error('Error updating project');
+      return project;
+    }
+    catch (error) {
+      throw new Error(`Error updating project: ${error.message}`);
     }
   }
 
@@ -158,6 +118,7 @@ class ProjectService {
    * @param {string} projectId - Project ID
    * @param {string} collaboratorId - New collaborator's user ID
    */
+  //Code Reviewed
   async addCollaborator(projectId, collaboratorId) {
     try {
       const projectDoc = await this.projectRepository.findById(projectId);
@@ -174,15 +135,13 @@ class ProjectService {
           throw new Error('Collaborator must be from the same department');
         }
       }
-
-      if (!project.collaborators.includes(collaboratorId)) {
-        const updatedProjectDoc = await this.projectRepository.addCollaborator(projectId, collaboratorId);
-        return new Project(updatedProjectDoc);
-      }
+      
+      project.mergeCollaborators([collaboratorId]);
+      const updatedProjectDoc = await this.projectRepository.addCollaborator(projectId, collaboratorId);
 
       return project;
     } catch (error) {
-      throw new Error('Error adding collaborator');
+      throw new Error(`Error adding collaborator: ${error.message}`);
     }
   }
 
