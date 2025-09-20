@@ -24,16 +24,50 @@ const createProject = async (req, res) => {
 
     const userId = req.user.userId;
 
-    await ProjectService.createProject(req.body, userId);
+    const project = await ProjectService.createProject(req.body, userId);
 
     res.json({
       status: "success",
-      message: "Project is successfully created"
+      data: project.toDTO() 
     });
   } catch (err) {
     res.status(500).json({
       status: "error",
       message: err.message
+    });
+  }
+};
+
+const updateProject = async (req, res) => {
+  const updateData = req.body;
+
+  try {
+    const updatedProject = await ProjectService.updateProject(projectId, updateData, userId);
+    res.status(200).json({ 
+      status: "success",
+      data: updatedProject.toDTO() 
+    });
+  } catch (error) {
+    res.status(400).json({ 
+      status: "error",
+      message: error.message 
+    });
+  }
+};
+
+const addCollaborators = async (req, res) => {
+  const { collaboratorId } = req.body; 
+
+  try {
+    const updatedProject = await ProjectService.addCollaborator(projectId, collaboratorId);
+    res.status(200).json({ 
+      status: "success",
+      data: updatedProject.toDTO() 
+    });
+  } catch (error) {
+    res.status(400).json({ 
+      status: "error",
+      message: error.message 
     });
   }
 };
