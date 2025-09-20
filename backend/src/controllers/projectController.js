@@ -11,11 +11,22 @@ const createProject = async (req, res) => {
       });
     }
 
-    const userId = req.user.id;
+    if(deadline){
+      const today = new Date();
+
+      if(new Date(deadline) < today || isNaN(new Date(deadline).getTime())){
+        return res.status(400).json({
+          status: "error",
+          message: "Invalid date"
+        });
+      }
+    }
+
+    const userId = req.user.userId;
 
     await ProjectService.createProject(req.body, userId);
 
-    res.status(200).json({
+    res.json({
       status: "success",
       message: "Project is successfully created"
     });
@@ -31,7 +42,7 @@ const getProjects = async (req, res) => {
   try{
     const projects = await ProjectService.getProjects();
 
-    res.status(200).json({
+    res.json({
       status: "success",
       data: projects,
       message: "Project data is successfully retrieved"
