@@ -5,6 +5,10 @@ class ProjectRepository {
     return ProjectModel.findById(id);
   }
 
+  async findAllProjects(){
+    return ProjectModel.find();
+  }
+
   async findActiveProjects() {
     return ProjectModel.find({ isArchived: false });
   }

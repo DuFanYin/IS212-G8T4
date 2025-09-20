@@ -2,7 +2,7 @@ const ProjectService = require('../services/projectService');
 
 const createProject = async (req, res) => {
   try {
-    const { name, description, deadline, departmentId, collaborators, isArchived, hasContainedTasks } = req.body;
+    const { name, description, deadline, departmentId, collaborators, isArchived, hasContainedTasks, ownerId } = req.body;
 
     if (!name) {
       return res.status(400).json({

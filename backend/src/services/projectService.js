@@ -13,9 +13,10 @@ class ProjectService {
    * @param {Object} projectData - Project data
    * @param {string} userId - ID of user creating the project
    */
+  //Code Reviewed
   async createProject(projectData, userId) {
     try {
-      // Ensure owner is a collaborator
+      // Ensure owner is a collaborator (When Integrating with front-end make sure this is handled in the front-end)
       if (!projectData.collaborators) {
         projectData.collaborators = [];
       }
@@ -37,6 +38,7 @@ class ProjectService {
     }
   }
 
+  //Code Reviewed
   async validateCollaborators(collaborators, departmentId) {
     try {
       const userRepository = new UserRepository();
@@ -58,6 +60,16 @@ class ProjectService {
     }
   }
 
+  async getAllProjects(){
+    try{
+      const projectDocs = await this.project.findAllProjects();
+      return projectDocs.map(doc => new Project(doc));
+    } catch (error){
+      throw new Error('Error fetching projects');
+    }
+  }
+
+  //Code Reviewed
   async getProjects() {
     try {
       const projectDocs = await this.projectRepository.findActiveProjects();
