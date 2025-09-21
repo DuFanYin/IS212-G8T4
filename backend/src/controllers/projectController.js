@@ -39,10 +39,11 @@ const createProject = async (req, res) => {
 };
 
 const updateProject = async (req, res) => {
+  const { projectId } = req.params;
   const updateData = req.body;
 
   try {
-    const updatedProject = await ProjectService.updateProject(projectId, updateData, userId);
+    const updatedProject = await ProjectService.updateProject(projectId, updateData);
     res.status(200).json({ 
       status: "success",
       data: updatedProject.toDTO() 
@@ -56,6 +57,7 @@ const updateProject = async (req, res) => {
 };
 
 const addCollaborators = async (req, res) => {
+  const { projectId } = req.params;
   const { collaboratorId } = req.body; 
 
   try {
@@ -91,5 +93,7 @@ const getProjects = async (req, res) => {
 
 module.exports = {
   createProject,
-  getProjects
+  getProjects,
+  updateProject,
+  addCollaborators
 };

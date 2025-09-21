@@ -26,7 +26,6 @@ class ProjectService {
 
       return project;
     } catch (error) {
-      console.log(error);
       throw new Error(`Error creating project: ${error.message}`);
     }
   }
@@ -92,25 +91,29 @@ class ProjectService {
    * @param {string} userId - ID of user making the update
    */
   //Code Reviewed
-  async updateProject(projectId, updateData, userId) {
+  async updateProject(projectId, updateData) {
     try {
       const projectDoc = await this.projectRepository.findById(projectId);
       if (!projectDoc) throw new Error('Project not found');
 
-      const project = new Project(projectDoc);
+      const newCollaborators = updateData.collaborators || []
+      
+      const departmentId = updateData.departmentId || projectDoc.departmentId;
 
-      // Merge collaborators (safe even if updateData.collaborators is undefined)
-      project.mergeCollaborators(updateData.collaborators || []);
+      if (newCollaborators.length || updateData.departmentId) {
+        await this.validateCollaborators([...projectDoc.collaborators, ...newCollaborators], departmentId);
+      }
 
-      // Validate department-based collaborators after merge
-      await this.validateCollaborators(project.collaborators, updateData.departmentId || project.departmentId);
+      const { collaborators, ...otherFields } = updateData;
+      await this.projectRepository.updateById(projectId, otherFields);
 
-      const fieldsToUpdate = { ...updateData, collaborators: project.collaborators };
-      await this.projectRepository.updateById(projectId, fieldsToUpdate);
+      if (newCollaborators.length) {
+        await this.projectRepository.addCollaborators(projectId, newCollaborators);
+      }
 
-      return project;
-    }
-    catch (error) {
+      const updatedProjectDoc = await this.projectRepository.findById(projectId);
+      return new Project(updatedProjectDoc);
+    } catch (error) {
       throw new Error(`Error updating project: ${error.message}`);
     }
   }
@@ -126,22 +129,24 @@ class ProjectService {
       const projectDoc = await this.projectRepository.findById(projectId);
       if (!projectDoc) throw new Error('Project not found');
 
-      const project = new Project(projectDoc);
       const userRepository = new UserRepository();
       const collaboratorDoc = await userRepository.findById(collaboratorId);
-      const collaborator = new User(collaboratorDoc);
+      if (!collaboratorDoc) throw new Error('Collaborator not found');
 
       // Validate department membership if project has department
-      if (project.departmentId && collaborator.departmentId) {
-        if (!project.departmentId.equals(collaborator.departmentId)) {
+      if (projectDoc.departmentId && collaboratorDoc.departmentId) {
+        if (!projectDoc.departmentId.equals(collaboratorDoc.departmentId)) {
           throw new Error('Collaborator must be from the same department');
         }
       }
-      
-      project.mergeCollaborators([collaboratorId]);
-      const updatedProjectDoc = await this.projectRepository.addCollaborator(projectId, collaboratorId);
 
-      return project;
+      // Let Mongo handle merging and deduplication
+      await this.projectRepository.addCollaborators(projectId, [collaboratorId]);
+
+      // Return fresh project instance
+      const updatedProjectDoc = await this.projectRepository.findById(projectId);
+      return new Project(updatedProjectDoc);
+
     } catch (error) {
       throw new Error(`Error adding collaborator: ${error.message}`);
     }

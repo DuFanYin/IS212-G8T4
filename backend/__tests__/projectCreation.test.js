@@ -2,6 +2,7 @@ const request = require('supertest');
 const { describe, it, expect, beforeEach } = require('@jest/globals');
 const app = require('../src/app');
 const { User } = require('../src/db/models');
+const {Project} = require('../src/db/models');
 const { generateToken } = require('../src/services/authService');
 
 describe('Project Creation', () => {
@@ -91,6 +92,8 @@ describe('Project Creation', () => {
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(Array.isArray(response.body.data)).toBe(true);
+      console.log(response.body)
     });
   });
 });
+

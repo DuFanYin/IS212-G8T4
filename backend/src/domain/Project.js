@@ -71,10 +71,6 @@ class Project {
     this.hasContainedTasks = hasTasks;
   }
 
-  mergeCollaborators(newCollaborators){
-    this.collaborators = [...new Set([...this.collaborators, ...newCollaborators, this.ownerId])];
-  }
-
   // Required DTOs
   toDTO() {
     return {

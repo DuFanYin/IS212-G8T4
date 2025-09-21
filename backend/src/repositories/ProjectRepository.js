@@ -1,5 +1,6 @@
 const ProjectModel = require('../db/models/Project');
 const Project = require('../domain/Project');
+const mongoose = require('mongoose')
 
 class ProjectRepository {
   async findById(id) {
@@ -39,11 +40,16 @@ class ProjectRepository {
     return ProjectModel.findByIdAndUpdate(id, updates, { new: true });
   }
 
-  async addCollaborator(id, userId) {
-    return ProjectModel.findByIdAndUpdate(id, { 
-      $addToSet: { collaborators: userId } 
-    }, { new: true });
+  async addCollaborators(id, collaboratorIds = []) {
+    const cleanIds = collaboratorIds.map(collaboratorId => new mongoose.Types.ObjectId(collaboratorId));
+
+    return ProjectModel.findByIdAndUpdate(
+      id,
+      { $addToSet: { collaborators: { $each: cleanIds } } },
+      { new: true }
+    );
   }
+
 
   async setHasTasks(id, hasTasks) {
     return ProjectModel.findByIdAndUpdate(id, { hasContainedTasks: hasTasks }, { new: true });
