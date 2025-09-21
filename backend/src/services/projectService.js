@@ -91,10 +91,12 @@ class ProjectService {
    * @param {string} userId - ID of user making the update
    */
   //Code Reviewed
-  async updateProject(projectId, updateData) {
+  async updateProject(projectId, updateData, userId) {
     try {
       const projectDoc = await this.projectRepository.findById(projectId);
       if (!projectDoc) throw new Error('Project not found');
+
+      await this.validateUser(projectDoc, userId);
 
       const newCollaborators = updateData.collaborators || []
       
@@ -124,10 +126,12 @@ class ProjectService {
    * @param {string} collaboratorId - New collaborator's user ID
    */
   //Code Reviewed
-  async addCollaborator(projectId, collaboratorId) {
+  async addCollaborator(projectId, collaboratorId, userId) {
     try {
       const projectDoc = await this.projectRepository.findById(projectId);
       if (!projectDoc) throw new Error('Project not found');
+
+      await this.validateUser(projectDoc, userId);
 
       const userRepository = new UserRepository();
       const collaboratorDoc = await userRepository.findById(collaboratorId);
@@ -149,6 +153,18 @@ class ProjectService {
 
     } catch (error) {
       throw new Error(`Error adding collaborator: ${error.message}`);
+    }
+  }
+
+  async validateUser(projectData, userId){
+    const project = new Project(projectData);
+    
+    const userRepository = new UserRepository();
+    const userDoc = await userRepository.findById(userId);
+    const user = new User(userDoc);
+
+    if (!project.isOwner(userId) && !user.isManager()) {
+      throw new Error('Not authorized');
     }
   }
 

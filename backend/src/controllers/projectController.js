@@ -42,8 +42,10 @@ const updateProject = async (req, res) => {
   const { projectId } = req.params;
   const updateData = req.body;
 
+  const userId = req.user.userId;
+
   try {
-    const updatedProject = await ProjectService.updateProject(projectId, updateData);
+    const updatedProject = await ProjectService.updateProject(projectId, updateData, userId);
     res.status(200).json({ 
       status: "success",
       data: updatedProject.toDTO() 
@@ -60,8 +62,10 @@ const addCollaborators = async (req, res) => {
   const { projectId } = req.params;
   const { collaboratorId } = req.body; 
 
+  const userId = req.user.userId;
+
   try {
-    const updatedProject = await ProjectService.addCollaborator(projectId, collaboratorId);
+    const updatedProject = await ProjectService.addCollaborator(projectId, collaboratorId, userId);
     res.status(200).json({ 
       status: "success",
       data: updatedProject.toDTO() 
@@ -95,8 +99,10 @@ const setStatusProject = async (req, res) => {
   const { projectId } = req.params;
   const updateData = req.body;
 
+  const userId = req.user.userId;
+
   try {
-    const updatedProject = await ProjectService.updateProject(projectId, updateData);
+    const updatedProject = await ProjectService.updateProject(projectId, updateData, userId);
     res.status(200).json({ 
       status: "success",
       data: updatedProject.toDTO() 
