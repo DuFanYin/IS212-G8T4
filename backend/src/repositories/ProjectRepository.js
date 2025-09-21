@@ -50,7 +50,6 @@ class ProjectRepository {
     );
   }
 
-
   async setHasTasks(id, hasTasks) {
     return ProjectModel.findByIdAndUpdate(id, { hasContainedTasks: hasTasks }, { new: true });
   }

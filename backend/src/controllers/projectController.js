@@ -91,9 +91,28 @@ const getProjects = async (req, res) => {
   }
 }
 
+const setStatusProject = async (req, res) => {
+  const { projectId } = req.params;
+  const updateData = req.body;
+
+  try {
+    const updatedProject = await ProjectService.updateProject(projectId, updateData);
+    res.status(200).json({ 
+      status: "success",
+      data: updatedProject.toDTO() 
+    });
+  } catch (error) {
+    res.status(400).json({ 
+      status: "error",
+      message: error.message 
+    });
+  }
+};
+
 module.exports = {
   createProject,
   getProjects,
   updateProject,
-  addCollaborators
+  addCollaborators,
+  setStatusProject
 };
