@@ -11,6 +11,7 @@ describe('Project Management', () => {
   let authToken;
   let staffUser;
   let managerUser;
+  let hrUser;
   let collaborator;
   let project;
 
@@ -18,6 +19,7 @@ describe('Project Management', () => {
   beforeAll(async () => {
     staffUser = await User.findOne({ email: 'staff@example.com' });
     managerUser = await User.findOne({ email: 'manager@example.com' });
+    hrUser = await User.findOne({ email: 'hr@example.com' });
 
     if (!staffUser || !managerUser) {
       throw new Error('Required users not found in DB');
@@ -32,7 +34,8 @@ describe('Project Management', () => {
     afterAll(async () => {
         if (project) {
             await Project.findByIdAndUpdate(project._id, {
-                collaborators: [project.ownerId], // reset to only owner
+                collaborators: [project.ownerId],
+                isArchived: false,
             });
         }
     });
@@ -60,6 +63,32 @@ describe('Project Management', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.collaborators).toContain(project.ownerId.toString());
       expect(res.body.data.collaborators).toContain(collaborator.toString());
+    });
+  });
+
+  describe('PUT /api/projects/:projectId permission checks', () => {
+    it('should not allow HR to update project', async () => {
+      const hrToken = generateToken(hrUser._id);
+
+      const res = await request(app)
+        .put(`/api/projects/${project._id}`)
+        .set('Authorization', `Bearer ${hrToken}`)
+        .send({ name: 'Illegal Update' });
+
+      expect(res.status).toBe(400); 
+      expect(res.body.message).toMatch(/not authorized/i);
+    });
+
+    it('should allow manager to update project', async () => {
+      const managerToken = generateToken(managerUser._id);
+
+      const res = await request(app)
+        .put(`/api/projects/${project._id}`)
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({ name: 'Manager Update' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.name).toBe('Manager Update');
     });
   });
 
@@ -124,6 +153,33 @@ describe('Project Management', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.isArchived).toBe(false);
+    });
+  });
+
+  // --- Archive / Restore Permission Test ---
+  describe('PATCH /api/projects/:projectId/archive permission checks', () => {
+    it('should not allow HR to archive the project', async () => {
+      const hrToken = generateToken(hrUser._id);
+
+      const res = await request(app)
+        .patch(`/api/projects/${project._id}/archive`)
+        .set('Authorization', `Bearer ${hrToken}`)
+        .send({ isArchived: true });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/not authorized/i);
+    });
+
+    it('should allow manager to archive the project', async () => {
+      const managerToken = generateToken(managerUser._id);
+
+      const res = await request(app)
+        .patch(`/api/projects/${project._id}/archive`)
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({ isArchived: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.isArchived).toBe(true);
     });
   });
 });
