@@ -84,7 +84,6 @@ describe('Project Management', () => {
         .send({ collaboratorId: collaborator });
 
       expect(res.status).toBe(200);
-      console.log(res.body);
       const collabs = res.body.data.collaborators.filter(id => id === collaborator.toString());
       expect(collabs.length).toBe(1);
     });
@@ -104,5 +103,27 @@ describe('Project Management', () => {
     //   expect(res.status).toBe(400);
     //   expect(res.body.message).toMatch(/department/i);
     // });
+  });
+
+  describe('PATCH /api/projects/:projectId/archive', () => {
+    it('should archive the project', async () => {
+      const res = await request(app)
+        .patch(`/api/projects/${project._id}/archive`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ isArchived: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.isArchived).toBe(true);
+    });
+
+    it('should unarchive the project', async () => {
+      const res = await request(app)
+        .patch(`/api/projects/${project._id}/archive`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ isArchived: false });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.isArchived).toBe(false);
+    });
   });
 });
