@@ -14,6 +14,8 @@ app.use(express.urlencoded({ extended: true }));
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes');
+const subtaskRoutes = require('./routes/subtaskRoutes');
+
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -22,6 +24,7 @@ app.use('/api/project', projectRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
+app.use('/api', subtaskRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
