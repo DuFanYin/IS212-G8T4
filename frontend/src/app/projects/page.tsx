@@ -12,9 +12,17 @@ export default function ProjectsPage() {
   const [selectedView, setSelectedView] = useState('grid');
 
   useEffect(() => {
+    if (!user) return;
+    
     async function fetchProjects() {
       try {
-        const res = await fetch('http://localhost:3000/api/project/projects');
+        const res = await fetch('http://localhost:3000/api/projects/projects', {
+          method: 'GET', // optional, GET is default
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`
+          },
+        });
         const json = await res.json();
         setProjects(json.data || []);
       } catch (err) {
@@ -30,7 +38,7 @@ export default function ProjectsPage() {
     }
 
     fetchProjects();
-  }, []);
+  }, [user]);
 
   if (!user || loading) {
     return (
