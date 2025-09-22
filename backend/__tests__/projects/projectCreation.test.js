@@ -1,9 +1,9 @@
 const request = require('supertest');
 const { describe, it, expect, beforeEach } = require('@jest/globals');
-const app = require('../src/app');
-const { User } = require('../src/db/models');
-const {Project} = require('../src/db/models');
-const { generateToken } = require('../src/services/authService');
+const app = require('../../src/app');
+const { User } = require('../../src/db/models');
+const {Project} = require('../../src/db/models');
+const { generateToken } = require('../../src/services/authService');
 
 describe('Project Creation', () => {
   let authToken;

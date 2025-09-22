@@ -1,11 +1,9 @@
 const request = require('supertest');
 const { describe, it, expect, beforeAll, beforeEach, afterEach } = require('@jest/globals');
 const mongoose = require('mongoose');
-const app = require('../src/app');
-const { Project, User } = require('../src/db/models');
-const { generateToken } = require('../src/services/authService');
-
-const FIXED_PROJECT_ID = '68cec5c992b198d1faa4ffea'; // your seed project
+const app = require('../../src/app');
+const { Project, User } = require('../../src/db/models');
+const { generateToken } = require('../../src/services/authService');
 
 describe('Project Management', () => {
   let authToken;
@@ -20,12 +18,11 @@ describe('Project Management', () => {
     staffUser = await User.findOne({ email: 'staff@example.com' });
     managerUser = await User.findOne({ email: 'manager@example.com' });
     hrUser = await User.findOne({ email: 'hr@example.com' });
+    project = await Project.findOne({ name: 'Website Revamp'})
 
     if (!staffUser || !managerUser) {
       throw new Error('Required users not found in DB');
     }
-
-    project = await Project.findById(FIXED_PROJECT_ID);
 
     authToken = generateToken(staffUser._id);
     collaborator = managerUser._id;
