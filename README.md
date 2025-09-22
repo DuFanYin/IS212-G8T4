@@ -95,9 +95,18 @@ The project uses MongoDB Atlas with three databases:
 - `is212_test`: Testing database
 
 ```bash
-# Seed development/test data (only for dev/test environments)
-NODE_ENV=development npm run seed  # For development
-NODE_ENV=test npm run seed        # For testing
+# Seed development/test data (run from repo root)
+NODE_ENV=development npm run seed --prefix backend  # Development
+NODE_ENV=test npm run seed --prefix backend        # Testing
+```
+
+Custom volumes example:
+```bash
+NODE_ENV=development \
+SEED_DEPARTMENTS=2 SEED_TEAMS=1 SEED_USERS=5 \
+SEED_PROJECTS=2 SEED_TASKS=4 SEED_SUBTASKS=4 \
+SEED_COMMENTS=5 SEED_ACTIVITY_LOGS=5 \
+npm run seed
 ```
 
 cloc . --exclude-dir=node_modules,.next,coverage,.git --exclude-ext=json,lock,map,svg,ico --not-match-f="next.config|postcss.config|tailwind.config|jest.config|vitest.config"
