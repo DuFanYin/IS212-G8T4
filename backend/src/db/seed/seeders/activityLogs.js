@@ -1,27 +1,32 @@
 const ActivityLog = require('../../models/ActivityLog');
-const { faker } = require('../utils/faker');
 
-module.exports = async function seedActivityLogs(count, { users, tasks }) {
+module.exports = async function seedActivityLogs(_count, { users, tasks }) {
   await ActivityLog.deleteMany({});
-  const ACTIONS = [
-    'created',
-    'updated',
-    'status_changed',
-    'assigned',
-    'comment_added',
-    'attachment_added',
-    'attachment_removed',
-    'subtask_added',
-    'subtask_completed',
-    'subtask_removed'
+  const staff = users.find(u => u.role === 'staff') || users[0];
+  const manager = users.find(u => u.role === 'manager') || users[1] || users[0];
+  const homepage = tasks.find(t => t.title === 'Implement homepage') || tasks[0];
+
+  const docs = [
+    {
+      userId: manager._id,
+      taskId: homepage._id,
+      action: 'created',
+      details: { message: 'Task created' },
+    },
+    {
+      userId: staff._id,
+      taskId: homepage._id,
+      action: 'status_changed',
+      details: { from: 'unassigned', to: 'ongoing' },
+    },
+    {
+      userId: manager._id,
+      taskId: homepage._id,
+      action: 'comment_added',
+      details: { message: 'Please ensure accessibility compliance (WCAG AA).' },
+    },
   ];
-  const docs = Array.from({ length: count }).map(() => ({
-    userId: faker.helpers.arrayElement(users)._id,
-    taskId: faker.helpers.arrayElement(tasks)._id,
-    action: faker.helpers.arrayElement(ACTIONS),
-    details: { message: faker.lorem.sentence() },
-  }));
-  await ActivityLog.insertMany(docs, { ordered: false });
+  await ActivityLog.insertMany(docs, { ordered: true });
   return docs;
 };
 

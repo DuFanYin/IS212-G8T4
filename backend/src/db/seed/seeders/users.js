@@ -2,10 +2,10 @@ const bcrypt = require('bcryptjs');
 const User = require('../../models/User');
 
 // Seed exactly one user for each role with fixed credentials
-// Password for all users: Password123!
+// Password for all users: 123456
 module.exports = async function seedUsers(_count, { departments, teams }) {
   await User.deleteMany({});
-  const passwordHash = await bcrypt.hash('Password123!', 10);
+  const passwordHash = await bcrypt.hash('123456', 10);
 
   // Choose references that satisfy schema constraints
   const anyDepartment = departments[0]?._id;
@@ -14,7 +14,7 @@ module.exports = async function seedUsers(_count, { departments, teams }) {
 
   const docs = [
     {
-      name: 'Staff User',
+      name: 'Staff Member',
       email: 'staff@example.com',
       passwordHash,
       role: 'staff',

@@ -1,13 +1,16 @@
 const Team = require('../../models/Team');
-const { faker } = require('../utils/faker');
 
-module.exports = async function seedTeams(count, { departments }) {
+module.exports = async function seedTeams(_count, { departments }) {
   await Team.deleteMany({});
-  const docs = Array.from({ length: count }).map(() => ({
-    name: `${faker.commerce.department()} Team`,
-    departmentId: faker.helpers.arrayElement(departments)._id,
-  }));
-  const inserted = await Team.insertMany(docs, { ordered: false });
+  const engineering = departments.find(d => d.name === 'Engineering') || departments[0];
+  const operations = departments.find(d => d.name === 'Operations') || departments[1] || departments[0];
+
+  const docs = [
+    { name: 'Platform Team', departmentId: engineering._id },
+    { name: 'Frontend Team', departmentId: engineering._id },
+    { name: 'Support Team', departmentId: operations._id },
+  ];
+  const inserted = await Team.insertMany(docs, { ordered: true });
   return inserted.map((t) => t.toObject());
 };
 

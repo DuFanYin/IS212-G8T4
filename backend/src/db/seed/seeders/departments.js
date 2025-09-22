@@ -1,13 +1,18 @@
 const Department = require('../../models/Department');
-const { faker } = require('../utils/faker');
 
-module.exports = async function seedDepartments(count) {
+module.exports = async function seedDepartments(_count) {
   await Department.deleteMany({});
-  const docs = Array.from({ length: count }).map(() => ({
-    name: faker.company.name(),
-    description: faker.company.catchPhrase(),
-  }));
-  const inserted = await Department.insertMany(docs, { ordered: false });
+  const docs = [
+    {
+      name: 'Engineering',
+      description: 'Software development and platform engineering',
+    },
+    {
+      name: 'Operations',
+      description: 'Business operations and support',
+    },
+  ];
+  const inserted = await Department.insertMany(docs, { ordered: true });
   return inserted.map((d) => d.toObject());
 };
 

@@ -1,18 +1,31 @@
 const Subtask = require('../../models/Subtask');
-const { faker } = require('../utils/faker');
 
-module.exports = async function seedSubtasks(count, { tasks }) {
+module.exports = async function seedSubtasks(_count, { tasks }) {
   await Subtask.deleteMany({});
-  const docs = Array.from({ length: count }).map(() => ({
-    parentTaskId: faker.helpers.arrayElement(tasks)._id,
-    title: faker.hacker.ingverb() + ' ' + faker.hacker.noun(),
-    description: faker.lorem.sentence(),
-    dueDate: faker.date.future(),
-    status: faker.helpers.arrayElement(['unassigned', 'ongoing', 'under_review', 'completed']),
-    assigneeId: undefined,
-    collaborators: [],
-  }));
-  const inserted = await Subtask.insertMany(docs, { ordered: false });
+  const homepage = tasks.find(t => t.title === 'Implement homepage') || tasks[0];
+  const apiLatency = tasks.find(t => t.title === 'Improve API latency') || tasks[1] || tasks[0];
+
+  const docs = [
+    {
+      parentTaskId: homepage._id,
+      title: 'Build hero section',
+      description: 'Responsive hero with CTA',
+      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+      status: 'ongoing',
+      assigneeId: homepage.assigneeId,
+      collaborators: [],
+    },
+    {
+      parentTaskId: apiLatency._id,
+      title: 'Add Redis cache',
+      description: 'Cache common GET responses',
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      status: 'unassigned',
+      assigneeId: undefined,
+      collaborators: [],
+    },
+  ];
+  const inserted = await Subtask.insertMany(docs, { ordered: true });
   return inserted.map((s) => s.toObject());
 };
 

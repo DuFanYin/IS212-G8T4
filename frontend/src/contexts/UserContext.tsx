@@ -40,7 +40,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       const data = await authService.getProfile(token);
       if (data.status === 'success') {
-        setUser(data.data);
+        // Attach token so hooks relying on user.token can function
+        setUser({ ...data.data, token });
       } else {
         logout();
       }

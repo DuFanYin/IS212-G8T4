@@ -5,6 +5,8 @@ import { useUser } from '@/contexts/UserContext';
 import { useTasks } from '@/lib/hooks/useTasks';
 import { TaskItem } from '@/components/features/tasks/TaskItem';
 import { CreateTaskModal } from '@/components/forms/CreateTaskModal';
+import { AssignTaskModal } from '@/components/forms/AssignTaskModal';
+import { EditTaskModal } from '@/components/forms/EditTaskModal';
 import type { User } from '@/lib/types/user';
 import type { Task, CreateTaskRequest } from '@/lib/types/task';
 
@@ -16,11 +18,16 @@ export default function TasksPage() {
     error, 
     createTask, 
     updateTaskStatus, 
-    archiveTask 
+    archiveTask, 
+    assignTask,
+    updateTask
   } = useTasks();
   
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   if (!user) {
     return (
@@ -63,14 +70,34 @@ export default function TasksPage() {
     }
   };
 
-  const handleEditTask = () => {
-    // TODO: Implement edit modal
-    alert('Edit functionality coming soon!');
+  const handleEditTask = (task: Task) => {
+    setActiveTask(task);
+    setIsEditModalOpen(true);
   };
 
-  const handleAssignTask = () => {
-    // TODO: Implement assignment modal
-    alert('Assignment functionality coming soon!');
+  const handleAssignTask = (task: Task) => {
+    setActiveTask(task);
+    setIsAssignModalOpen(true);
+  };
+  
+  const handleConfirmAssign = async (assigneeId: string) => {
+    if (!activeTask) return;
+    try {
+      await assignTask(activeTask.id, { assigneeId });
+    } catch (err) {
+      console.error('Failed to assign task:', err);
+      alert('Failed to assign task');
+    }
+  };
+  
+  const handleConfirmEdit = async (data: { title?: string; description?: string; dueDate?: string; collaborators?: string[] }) => {
+    if (!activeTask) return;
+    try {
+      await updateTask(activeTask.id, data);
+    } catch (err) {
+      console.error('Failed to update task:', err);
+      alert('Failed to update task');
+    }
   };
 
   return (
@@ -190,6 +217,22 @@ export default function TasksPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreateTask={handleCreateTask}
+      />
+
+      {/* Assign Task Modal */}
+      <AssignTaskModal
+        isOpen={isAssignModalOpen}
+        task={activeTask}
+        onClose={() => { setIsAssignModalOpen(false); setActiveTask(null); }}
+        onAssign={async (assigneeId) => { await handleConfirmAssign(assigneeId); }}
+      />
+
+      {/* Edit Task Modal */}
+      <EditTaskModal
+        isOpen={isEditModalOpen}
+        task={activeTask}
+        onClose={() => { setIsEditModalOpen(false); setActiveTask(null); }}
+        onUpdate={async (data) => { await handleConfirmEdit(data); }}
       />
     </div>
   );

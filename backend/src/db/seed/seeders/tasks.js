@@ -1,27 +1,114 @@
 const Task = require('../../models/Task');
-const { faker } = require('../utils/faker');
 
-const STATUSES = ['unassigned', 'ongoing', 'under_review', 'completed'];
-
-module.exports = async function seedTasks(count, { users, projects }) {
+module.exports = async function seedTasks(_count, { users, projects }) {
   await Task.deleteMany({});
-  const docs = Array.from({ length: count }).map(() => {
-    const project = faker.helpers.arrayElement(projects);
-    const assignee = faker.helpers.arrayElement(users);
-    return {
-      title: faker.hacker.verb() + ' ' + faker.hacker.noun(),
-      description: faker.lorem.sentence(),
-      status: faker.helpers.arrayElement(STATUSES),
-      dueDate: faker.date.future(),
-      createdBy: faker.helpers.arrayElement(users)._id,
-      assigneeId: assignee._id,
-      projectId: project._id,
-      collaborators: faker.helpers.arrayElements(users, { min: 0, max: 3 }).map(u => u._id),
+
+  const staff = users.find(u => u.role === 'staff') || users[0];
+  const manager = users.find(u => u.role === 'manager') || staff;
+  const director = users.find(u => u.role === 'director') || manager;
+  const hr = users.find(u => u.role === 'hr') || director;
+  const sm = users.find(u => u.role === 'sm') || hr;
+
+  const websiteProject = projects.find(p => p.name === 'Website Revamp') || projects[0];
+  const platformProject = projects.find(p => p.name === 'Platform Reliability') || projects[1] || projects[0];
+
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+
+  const docs = [
+    // Unassigned
+    {
+      title: 'Design new homepage',
+      description: 'Create wireframes and hi-fi designs for homepage',
+      status: 'unassigned',
+      dueDate: new Date(now + 7 * day),
+      createdBy: manager._id,
+      assigneeId: undefined,
+      projectId: websiteProject._id,
+      collaborators: [manager._id],
       attachments: [],
       isDeleted: false,
-    };
-  });
-  const inserted = await Task.insertMany(docs, { ordered: false });
+    },
+    // Ongoing (Staff)
+    {
+      title: 'Implement homepage',
+      description: 'Build homepage in Next.js with Tailwind',
+      status: 'ongoing',
+      dueDate: new Date(now + 14 * day),
+      createdBy: manager._id,
+      assigneeId: staff._id,
+      projectId: websiteProject._id,
+      collaborators: [manager._id],
+      attachments: [],
+      isDeleted: false,
+    },
+    // Under review (Staff)
+    {
+      title: 'Improve API latency',
+      description: 'Profile slow endpoints and add caching',
+      status: 'under_review',
+      dueDate: new Date(now + 21 * day),
+      createdBy: manager._id,
+      assigneeId: staff._id,
+      projectId: platformProject._id,
+      collaborators: [manager._id],
+      attachments: [],
+      isDeleted: false,
+    },
+    // Completed (Director)
+    {
+      title: 'Finalize Q3 report',
+      description: 'Compile and finalize departmental KPIs',
+      status: 'completed',
+      dueDate: new Date(now - 2 * day),
+      createdBy: director._id,
+      assigneeId: director._id,
+      projectId: platformProject._id,
+      collaborators: [manager._id],
+      attachments: [],
+      isDeleted: false,
+    },
+    // Ongoing (HR)
+    {
+      title: 'HR policy review',
+      description: 'Review and update leave policy',
+      status: 'ongoing',
+      dueDate: new Date(now + 10 * day),
+      createdBy: hr._id,
+      assigneeId: hr._id,
+      projectId: websiteProject._id,
+      collaborators: [],
+      attachments: [],
+      isDeleted: false,
+    },
+    // Under review (SM)
+    {
+      title: 'Strategy brief',
+      description: 'Draft strategic initiatives for H2',
+      status: 'under_review',
+      dueDate: new Date(now + 30 * day),
+      createdBy: sm._id,
+      assigneeId: sm._id,
+      projectId: platformProject._id,
+      collaborators: [],
+      attachments: [],
+      isDeleted: false,
+    },
+    // Ongoing (Manager)
+    {
+      title: 'Team onboarding improvements',
+      description: 'Standardize onboarding checklist and resources',
+      status: 'ongoing',
+      dueDate: new Date(now + 12 * day),
+      createdBy: manager._id,
+      assigneeId: manager._id,
+      projectId: websiteProject._id,
+      collaborators: [staff._id],
+      attachments: [],
+      isDeleted: false,
+    },
+  ];
+  const inserted = await Task.insertMany(docs, { ordered: true });
   return inserted.map((t) => t.toObject());
 };
 
