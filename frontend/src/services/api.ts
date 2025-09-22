@@ -37,3 +37,23 @@ export const authService = {
     return res.json();
   }
 };
+
+export const userService = {
+  getTeamMembers: async (token: string) => {
+    const res = await fetch(`${API_URL}/users/team-members`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.json();
+  },
+
+  getDepartmentMembers: async (token: string, departmentId?: string) => {
+    const url = departmentId 
+      ? `${API_URL}/users/department-members/${departmentId}`
+      : `${API_URL}/users/department-members`;
+    
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.json();
+  }
+};

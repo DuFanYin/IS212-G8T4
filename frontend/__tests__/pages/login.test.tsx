@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LoginPage from '@/app/login/page';
 import { UserProvider } from '@/contexts/UserContext';
-import { mockAuthService } from './mocks/api';
+import { mockAuthService } from '../fixtures/mocks/api';
 import { storage } from '@/utils/storage';
 
 // Mock storage
@@ -22,18 +22,13 @@ vi.mock('next/navigation', () => ({
   useRouter: () => mockRouter
 }));
 
-// Mock refreshUser from UserContext
+// Mock UserContext
 const mockRefreshUser = vi.fn();
-vi.mock('@/contexts/UserContext', async () => {
-  const actual = await vi.importActual('@/contexts/UserContext');
-  return {
-    ...actual,
-    useUser: () => ({
-      user: null,
-      refreshUser: mockRefreshUser
-    })
-  };
-});
+const mockUseUser = vi.fn();
+vi.mock('@/contexts/UserContext', () => ({
+  UserProvider: ({ children }: { children: React.ReactNode }) => children,
+  useUser: mockUseUser
+}));
 
 describe('Login Page', () => {
   beforeEach(() => {
@@ -41,6 +36,18 @@ describe('Login Page', () => {
     mockRouter.push.mockClear();
     mockRefreshUser.mockClear();
     vi.mocked(storage.setToken).mockClear();
+    
+    // Default mock for useUser
+    mockUseUser.mockReturnValue({
+      user: null,
+      logout: vi.fn(),
+      refreshUser: mockRefreshUser,
+      canAssignTasks: () => false,
+      canSeeAllTasks: () => false,
+      canSeeDepartmentTasks: () => false,
+      canSeeTeamTasks: () => false,
+      getVisibleUsersScope: () => 'none'
+    });
   });
 
   it('should handle successful login', async () => {
