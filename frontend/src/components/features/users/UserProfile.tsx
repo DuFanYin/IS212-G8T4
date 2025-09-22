@@ -1,4 +1,4 @@
-import { User } from '@/types/user';
+import { User } from '@/lib/types/user';
 
 interface UserProfileProps {
   user: User;

@@ -2,11 +2,32 @@
 
 import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import type { User } from '@/types/user';
+import { useTasks } from '@/lib/hooks/useTasks';
+import { TaskItem } from '@/components/features/tasks/TaskItem';
+import { CreateTaskModal } from '@/components/forms/CreateTaskModal';
+import { AssignTaskModal } from '@/components/forms/AssignTaskModal';
+import { EditTaskModal } from '@/components/forms/EditTaskModal';
+import type { User } from '@/lib/types/user';
+import type { Task, CreateTaskRequest } from '@/lib/types/task';
 
 export default function TasksPage() {
   const { user }: { user: User | null } = useUser();
+  const { 
+    tasks, 
+    loading, 
+    error, 
+    createTask, 
+    updateTaskStatus, 
+    archiveTask, 
+    assignTask,
+    updateTask
+  } = useTasks();
+  
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   if (!user) {
     return (
@@ -16,6 +37,69 @@ export default function TasksPage() {
     );
   }
 
+  // Filter tasks based on selected filter
+  const filteredTasks = tasks.filter(task => {
+    if (selectedFilter === 'all') return true;
+    return task.status === selectedFilter;
+  });
+
+  // Check if user can assign tasks (managers and above)
+  const canAssignTasks = ['manager', 'director', 'hr', 'sm'].includes(user.role);
+
+  const handleCreateTask = async (taskData: CreateTaskRequest) => {
+    await createTask(taskData);
+  };
+
+  const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
+    try {
+      await updateTaskStatus(task.id, { status: newStatus });
+    } catch (err) {
+      console.error('Failed to update task status:', err);
+      alert('Failed to update task status');
+    }
+  };
+
+  const handleArchiveTask = async (task: Task) => {
+    if (confirm(`Are you sure you want to archive "${task.title}"?`)) {
+      try {
+        await archiveTask(task.id);
+      } catch (err) {
+        console.error('Failed to archive task:', err);
+        alert('Failed to archive task');
+      }
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setActiveTask(task);
+    setIsEditModalOpen(true);
+  };
+
+  const handleAssignTask = (task: Task) => {
+    setActiveTask(task);
+    setIsAssignModalOpen(true);
+  };
+  
+  const handleConfirmAssign = async (assigneeId: string) => {
+    if (!activeTask) return;
+    try {
+      await assignTask(activeTask.id, { assigneeId });
+    } catch (err) {
+      console.error('Failed to assign task:', err);
+      alert('Failed to assign task');
+    }
+  };
+  
+  const handleConfirmEdit = async (data: { title?: string; description?: string; dueDate?: string; collaborators?: string[] }) => {
+    if (!activeTask) return;
+    try {
+      await updateTask(activeTask.id, data);
+    } catch (err) {
+      console.error('Failed to update task:', err);
+      alert('Failed to update task');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main>
@@ -24,11 +108,21 @@ export default function TasksPage() {
           <div className="mb-8">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
-              <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+              <button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
                 Create New Task
               </button>
             </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
 
           {/* Filters */}
           <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -41,7 +135,7 @@ export default function TasksPage() {
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                All Tasks
+                All Tasks ({tasks.length})
               </button>
               <button
                 onClick={() => setSelectedFilter('unassigned')}
@@ -51,7 +145,7 @@ export default function TasksPage() {
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Unassigned
+                Unassigned ({tasks.filter(t => t.status === 'unassigned').length})
               </button>
               <button
                 onClick={() => setSelectedFilter('ongoing')}
@@ -61,17 +155,17 @@ export default function TasksPage() {
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Ongoing
+                Ongoing ({tasks.filter(t => t.status === 'ongoing').length})
               </button>
               <button
-                onClick={() => setSelectedFilter('review')}
+                onClick={() => setSelectedFilter('under_review')}
                 className={`px-4 py-2 rounded ${
-                  selectedFilter === 'review'
+                  selectedFilter === 'under_review'
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Under Review
+                Under Review ({tasks.filter(t => t.status === 'under_review').length})
               </button>
               <button
                 onClick={() => setSelectedFilter('completed')}
@@ -81,90 +175,65 @@ export default function TasksPage() {
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Completed
+                Completed ({tasks.filter(t => t.status === 'completed').length})
               </button>
             </div>
           </div>
 
           {/* Task List */}
           <div className="bg-white rounded-lg shadow">
-            <div className="divide-y">
-              {/* Sample Task Items */}
-              <div className="p-6 hover:bg-gray-50">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center mb-2">
-                      <h3 className="text-lg font-medium mr-3">Implement New Homepage</h3>
-                      <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">
-                        Ongoing
-                      </span>
-                    </div>
-                    <p className="text-gray-600 mb-3">
-                      Design and implement the new homepage layout with responsive design
-                    </p>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Due: Dec 31, 2023</span>
-                      <span>•</span>
-                      <span>Project: Website Redesign</span>
-                      <span>•</span>
-                      <span>2 subtasks</span>
-                      <span>•</span>
-                      <span>3 comments</span>
-                    </div>
-                  </div>
-                  <div className="ml-6 flex items-center space-x-3">
-                    <button className="text-gray-400 hover:text-gray-500">
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button className="text-gray-400 hover:text-gray-500">
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="p-8 text-center text-gray-500">
+                Loading tasks...
               </div>
-
-              <div className="p-6 hover:bg-gray-50">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center mb-2">
-                      <h3 className="text-lg font-medium mr-3">Update Privacy Policy</h3>
-                      <span className="px-2 py-1 rounded bg-purple-100 text-purple-800 text-sm">
-                        Under Review
-                      </span>
-                    </div>
-                    <p className="text-gray-600 mb-3">
-                      Review and update the privacy policy to comply with new regulations
-                    </p>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Due: Dec 25, 2023</span>
-                      <span>•</span>
-                      <span>Project: Legal Compliance</span>
-                      <span>•</span>
-                      <span>1 attachment</span>
-                    </div>
-                  </div>
-                  <div className="ml-6 flex items-center space-x-3">
-                    <button className="text-gray-400 hover:text-gray-500">
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button className="text-gray-400 hover:text-gray-500">
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                {selectedFilter === 'all' 
+                  ? 'No tasks found. Create your first task!' 
+                  : `No ${selectedFilter.replace('_', ' ')} tasks found.`
+                }
               </div>
-            </div>
+            ) : (
+              <div className="divide-y">
+                {filteredTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onEdit={handleEditTask}
+                    onAssign={handleAssignTask}
+                    onStatusChange={handleStatusChange}
+                    onArchive={handleArchiveTask}
+                    canAssign={canAssignTasks}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreateTask={handleCreateTask}
+      />
+
+      {/* Assign Task Modal */}
+      <AssignTaskModal
+        isOpen={isAssignModalOpen}
+        task={activeTask}
+        onClose={() => { setIsAssignModalOpen(false); setActiveTask(null); }}
+        onAssign={async (assigneeId) => { await handleConfirmAssign(assigneeId); }}
+      />
+
+      {/* Edit Task Modal */}
+      <EditTaskModal
+        isOpen={isEditModalOpen}
+        task={activeTask}
+        onClose={() => { setIsEditModalOpen(false); setActiveTask(null); }}
+        onUpdate={async (data) => { await handleConfirmEdit(data); }}
+      />
     </div>
   );
 }

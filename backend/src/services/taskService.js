@@ -19,6 +19,9 @@ class TaskService {
     try {
       const userRepository = new UserRepository();
       const userDoc = await userRepository.findById(userId);
+      if (!userDoc) {
+        throw new Error('User not found');
+      }
       const user = new User(userDoc);
 
       // Validate project collaborators if task belongs to project
@@ -54,7 +57,8 @@ class TaskService {
 
       return new Task(taskDoc);
     } catch (error) {
-      throw new Error('Error creating task');
+      console.error('TaskService.createTask error:', error.message);
+      throw new Error(`Error creating task: ${error.message}`);
     }
   }
 
@@ -130,6 +134,7 @@ class TaskService {
       const task = new Task(taskDoc);
       const userRepository = new UserRepository();
       const userDoc = await userRepository.findById(userId);
+      if (!userDoc) return false;
       const user = new User(userDoc);
 
       // HR/SM: see all tasks/projects
@@ -208,10 +213,20 @@ class TaskService {
     }
   }
 
-  async getTasksByProject(projectId) {
+  async getTasksByProject(projectId, userId) {
     try {
       const taskDocs = await this.taskRepository.findTasksByProject(projectId);
-      return taskDocs.map(doc => new Task(doc));
+      const tasks = taskDocs.map(doc => new Task(doc));
+      
+      // Filter tasks based on user visibility
+      const visibleTasks = [];
+      for (const task of tasks) {
+        if (await this.isVisibleToUser(task, userId)) {
+          visibleTasks.push(task);
+        }
+      }
+      
+      return visibleTasks;
     } catch (error) {
       throw new Error('Error fetching tasks by project');
     }
@@ -223,6 +238,44 @@ class TaskService {
       return taskDocs.map(doc => new Task(doc));
     } catch (error) {
       throw new Error('Error fetching tasks by collaborator');
+    }
+  }
+
+  async getUserTasks(userId) {
+    try {
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+
+      let taskDocs = [];
+
+      if (user.isStaff()) {
+        // Staff: own tasks + team tasks + project tasks they're in
+        const ownTasks = await this.taskRepository.findTasksByAssignee(userId);
+        const teamTasks = await this.taskRepository.findTasksByTeam(user.teamId);
+        const projectTasks = await this.taskRepository.findTasksByCollaborator(userId);
+        
+        taskDocs = [...ownTasks, ...teamTasks, ...projectTasks];
+      } else if (user.isManager()) {
+        // Manager: team tasks
+        taskDocs = await this.taskRepository.findTasksByTeam(user.teamId);
+      } else if (user.isDirector()) {
+        // Director: department tasks
+        taskDocs = await this.taskRepository.findTasksByDepartment(user.departmentId);
+      } else if (user.isHR() || user.isSeniorManagement()) {
+        // HR/SM: all tasks
+        taskDocs = await this.taskRepository.findActiveTasks();
+      }
+
+      // Remove duplicates and return as domain objects
+      const uniqueTasks = taskDocs.filter((task, index, self) => 
+        index === self.findIndex(t => t._id.toString() === task._id.toString())
+      );
+      
+      return uniqueTasks.map(doc => new Task(doc));
+    } catch (error) {
+      console.error('TaskService.getUserTasks error:', error.message);
+      throw new Error(`Error fetching user tasks: ${error.message}`);
     }
   }
 
@@ -293,6 +346,16 @@ class TaskService {
       return new Task(updatedTaskDoc);
     } catch (error) {
       throw new Error('Error deleting task');
+    }
+  }
+
+  async getById(taskId) {
+    try {
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) throw new Error('Task not found');
+      return new Task(taskDoc);
+    } catch (error) {
+      throw new Error('Error fetching task');
     }
   }
 }

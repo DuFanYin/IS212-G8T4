@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import type { User } from '@/types/user';
-import { formatDate } from '../utils/formatDate';
+import type { User } from '@/lib/types/user';
+import { formatDate } from '@/lib/utils/formatDate';
 
 export default function ProjectsPage() {
   const { user }: { user: User | null } = useUser();

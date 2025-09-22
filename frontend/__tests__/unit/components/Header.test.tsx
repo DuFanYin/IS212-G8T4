@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import Header from '@/components/Header';
+import Header from '@/components/layout/Header';
 import { useUser } from '@/contexts/UserContext';
 
 // Mock user context
