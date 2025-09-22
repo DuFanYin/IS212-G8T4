@@ -5,6 +5,7 @@ export interface User {
   role: string;
   teamId?: string;
   departmentId?: string;
+  token?: string; // Added for useTasks hook
 }
 
 export interface AuthResponse {
