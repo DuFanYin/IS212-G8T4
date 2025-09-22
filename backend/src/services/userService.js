@@ -125,3 +125,4 @@ const userRepository = new UserRepository();
 const userService = new UserService(userRepository);
 
 module.exports = userService;
+module.exports.UserService = UserService;

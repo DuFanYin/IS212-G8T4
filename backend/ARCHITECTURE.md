@@ -34,7 +34,7 @@ src/
 │   └── authMiddleware.js
 ├── routes/                   # API route definitions
 │   ├── authRoutes.js
-│   ├── userRoutes.js
+│   ├── userRoutes.js         # User management routes
 │   └── projectRoutes.js
 ├── scripts/                  # Utility scripts
 │   └── generateSecret.js
@@ -93,6 +93,25 @@ src/
 - Time utilities: `isRecent()`, `isToday()`, `isThisWeek()`
 - DTOs: `toDTO()`, `toSafeDTO()`
 
+## Current API Routes
+
+### **User Routes** (`src/routes/userRoutes.js`)
+**Endpoints:**
+- `GET /api/users/profile` - Get current user profile
+- `GET /api/users/team-members` - Get team members (role-based visibility)
+- `GET /api/users/department-members/:departmentId?` - Get department members (Director+ only)
+
+### **Auth Routes** (`src/routes/authRoutes.js`)
+**Endpoints:**
+- `POST /api/auth/login` - User login
+- `POST /api/auth/request-reset` - Request password reset
+- `POST /api/auth/reset-password` - Reset password
+
+### **Project Routes** (`src/routes/projectRoutes.js`)
+**Endpoints:**
+- `POST /api/projects/create` - Create new project
+- `GET /api/projects/projects` - Get projects (role-based visibility)
+
 ## Current Repository Layer (Data Access)
 
 ### **UserRepository** (`src/repositories/UserRepository.js`)
@@ -100,6 +119,7 @@ src/
 - Basic CRUD: `findById()`, `findPublicById()`, `findByEmail()`, `create()`, `updateById()`
 - Auth operations: `updatePasswordHash()`, `setResetToken()`, `clearResetToken()`, `findByResetToken()`
 - Department/Team queries: `findUsersByDepartment()`, `findUsersByTeam()`
+- Global queries: `findAll()`
 
 ### **TaskRepository** (`src/repositories/TaskRepository.js`)
 **Methods:**
@@ -134,6 +154,7 @@ src/
 - Basic operations: `getUserById()`, `getUserByEmail()`, `createUser()`, `updateUser()`
 - Auth operations: `updatePassword()`, `setResetToken()`, `clearResetToken()`, `getUserByResetToken()`
 - Department/Team queries: `getUsersByDepartment()`, `getUsersByTeam()`
+- Global queries: `getAllUsers()`
 
 ### **ProjectService** (`src/services/projectService.js`)
 **Methods:**
