@@ -1,46 +1,30 @@
 const request = require('supertest');
-const { describe, it, expect, beforeEach } = require('@jest/globals');
-const bcrypt = require('bcryptjs');
-const app = require('../src/app');
-const User = require('../src/db/models/User');
+const { describe, it, expect } = require('@jest/globals');
+const app = require('../../src/app');
 
-// Increase timeout for all tests in this file
-jest.setTimeout(30000);
-
-// Tests will use is212_test database from the same MongoDB Atlas cluster
-
+// Tests will use is212_test database which is already seeded
 describe('Auth Endpoints', () => {
-  beforeEach(async () => {
-    await User.deleteMany({});
-  });
-
   describe('POST /api/auth/login', () => {
     it('should authenticate valid user', async () => {
-      // Create a test user
-      const hashedPassword = await bcrypt.hash('password123', 10);
-      const user = await User.create({
-        name: 'Test User',
-        email: 'test@example.com',
-        passwordHash: hashedPassword,
-        role: 'hr'  // HR role doesn't require department or team
-      });
-
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'test@example.com',
-          password: 'password123'
+          email: 'staff@example.com',
+          password: '123456'
         });
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(response.body.data).toHaveProperty('token');
-      expect(response.body.data.user).toEqual({
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        role: user.role
-      });
+      expect(response.body.data.user).toEqual(
+        expect.objectContaining({
+          name: 'Staff Member',
+          email: 'staff@example.com',
+          role: 'staff'
+        })
+      );
+      // Should not include sensitive data
+      expect(response.body.data.user).not.toHaveProperty('passwordHash');
     });
 
     it('should reject invalid credentials', async () => {
@@ -64,6 +48,19 @@ describe('Auth Endpoints', () => {
       expect(response.status).toBe(400);
       expect(response.body.status).toBe('error');
       expect(response.body.message).toBe('Email and password are required');
+    });
+
+    it('should validate email format', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'invalid-email',
+          password: '123456'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBe('Please provide a valid email address');
     });
   });
 });

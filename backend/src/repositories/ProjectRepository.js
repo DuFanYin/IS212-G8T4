@@ -1,0 +1,43 @@
+const ProjectModel = require('../db/models/Project');
+
+class ProjectRepository {
+  async findById(id) {
+    return ProjectModel.findById(id);
+  }
+
+  async findActiveProjects() {
+    return ProjectModel.find({ isArchived: false });
+  }
+
+  async findProjectsByOwner(ownerId) {
+    return ProjectModel.find({ ownerId });
+  }
+
+  async findProjectsByDepartment(departmentId) {
+    return ProjectModel.find({ departmentId });
+  }
+
+  async findProjectsByCollaborator(userId) {
+    return ProjectModel.find({ collaborators: userId });
+  }
+
+  async create(projectData) {
+    return ProjectModel.create(projectData);
+  }
+
+  async updateById(id, updates) {
+    return ProjectModel.findByIdAndUpdate(id, updates, { new: true });
+  }
+
+  async addCollaborator(id, userId) {
+    return ProjectModel.findByIdAndUpdate(id, { 
+      $addToSet: { collaborators: userId } 
+    }, { new: true });
+  }
+
+  async setHasTasks(id, hasTasks) {
+    return ProjectModel.findByIdAndUpdate(id, { hasContainedTasks: hasTasks }, { new: true });
+  }
+}
+
+module.exports = ProjectRepository;

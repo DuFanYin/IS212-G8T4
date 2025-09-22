@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
-import { mockAuthService } from './mocks/api';
+import { mockAuthService } from './fixtures/mocks/api';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -8,6 +8,7 @@ vi.mock('next/navigation', () => ({
     push: vi.fn(),
     replace: vi.fn(),
   }),
+  usePathname: () => '/',
 }));
 
 // Mock API service

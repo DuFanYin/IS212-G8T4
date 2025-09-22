@@ -11,6 +11,11 @@ interface UserContextType {
   user: User | null;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  canAssignTasks: () => boolean;
+  canSeeAllTasks: () => boolean;
+  canSeeDepartmentTasks: () => boolean;
+  canSeeTeamTasks: () => boolean;
+  getVisibleUsersScope: () => 'all' | 'department' | 'team' | 'none';
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -58,8 +63,46 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [user, logout]);
 
+  // Role-based permission helpers
+  const canAssignTasks = useCallback(() => {
+    if (!user) return false;
+    return ['manager', 'director', 'sm'].includes(user.role);
+  }, [user]);
+
+  const canSeeAllTasks = useCallback(() => {
+    if (!user) return false;
+    return ['hr', 'sm'].includes(user.role);
+  }, [user]);
+
+  const canSeeDepartmentTasks = useCallback(() => {
+    if (!user) return false;
+    return user.role === 'director';
+  }, [user]);
+
+  const canSeeTeamTasks = useCallback(() => {
+    if (!user) return false;
+    return user.role === 'manager';
+  }, [user]);
+
+  const getVisibleUsersScope = useCallback(() => {
+    if (!user) return 'none';
+    if (canSeeAllTasks()) return 'all';
+    if (canSeeDepartmentTasks()) return 'department';
+    if (canSeeTeamTasks()) return 'team';
+    return 'none';
+  }, [user, canSeeAllTasks, canSeeDepartmentTasks, canSeeTeamTasks]);
+
   return (
-    <UserContext.Provider value={{ user, logout, refreshUser }}>
+    <UserContext.Provider value={{ 
+      user, 
+      logout, 
+      refreshUser,
+      canAssignTasks,
+      canSeeAllTasks,
+      canSeeDepartmentTasks,
+      canSeeTeamTasks,
+      getVisibleUsersScope
+    }}>
       {children}
     </UserContext.Provider>
   );

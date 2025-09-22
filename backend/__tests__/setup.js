@@ -13,17 +13,10 @@ beforeAll(async () => {
   connection = await connectDB();
 }, 30000); // Increase timeout to 30s for Atlas connection
 
-// Clear database and reset mocks after each test
-afterEach(async () => {
-  if (connection) {
-    // Clear all collections instead of dropping database
-    const collections = await connection.db.collections();
-    for (let collection of collections) {
-      await collection.deleteMany({});
-    }
-  }
+// Clear mocks after each test
+afterEach(() => {
   jest.clearAllMocks();
-}, 30000); // Increase timeout to 30s for database operations
+});
 
 // Disconnect from database after all tests
 afterAll(async () => {

@@ -1,4 +1,37 @@
+  
+User Authorisation and 
+Authentication 
+Allows users to securely access the system using their  login credentials. Depending on their role (e.g., staff,  manager, director, HR), they will be granted access to  different features and information. This ensures that  
+data is protected and accessible only to the appropriate  people.
+Task Management 
+Users can create new tasks/subtasks (can be in a  project or standalone), view their current  
+tasks/subtasks, update task/subtask details, and update their statuses. Tasks can include deadlines, notes,  invited collaborators, and status tracking. Managers  and above can assign tasks/subtasks to their staff,  transferring ownership to them. This forms the  foundation for personal and team productivity. 
+
+Task Grouping and Organisation 
+Users can create projects to house their tasks and  subtasks. Collaborators can be invited to work on  projects. This ensures that there are proper  organisation and navigation for projects, as most staff  work on multiple.
+
+
+
+
+
+
+1. User Authorization & Authentication
  
+Login & Roles
+Local authentication is sufficient.
+Roles: Staff, Manager, Director, HR, Senior Management (SM).
+Hierarchy: SM (org head) → Director (dept head, also SM) → Manager (team head) → Staff.
+Role-Based Permissions
+Staff: can create projects/tasks/subtasks, manage own tasks, cannot assign tasks.
+Manager/Director: can assign tasks downwards; can create unassigned tasks; can update tasks they are collaborators of.
+HR/SM: full company visibility and reporting.
+Other Security Features
+Session timeout for inactivity (QoL feature).
+Failed login attempt lockout + password reset (team to decide).
+No “admin” dashboard/role needed.
+Audit logs for login attempts (future consideration).
+
+
 2. Task Management
  
 Task Basics
