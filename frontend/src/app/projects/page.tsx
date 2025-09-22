@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import type { User } from '@/types/user';
+import type { User } from '@/lib/types/user';
 
 export default function ProjectsPage() {
   const { user }: { user: User | null } = useUser();

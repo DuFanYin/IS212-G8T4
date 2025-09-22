@@ -1,12 +1,23 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import LoginPage from '@/app/login/page';
 import { UserProvider, useUser } from '@/contexts/UserContext';
-import { mockAuthService } from '../fixtures/mocks/api';
-import { storage } from '@/utils/storage';
+import { storage } from '@/lib/utils/storage';
+import { authService } from '@/lib/services/api';
+
+// Mock the auth service
+vi.mock('@/lib/services/api', () => ({
+  authService: {
+    login: vi.fn().mockResolvedValue({
+      status: 'success',
+      data: { token: 'mock-token', user: { id: '1', name: 'Test User' } }
+    })
+  }
+}));
 
 // Mock storage
-vi.mock('@/utils/storage', () => ({
+vi.mock('@/lib/utils/storage', () => ({
   storage: {
     setToken: vi.fn(),
     getToken: vi.fn(),
@@ -30,6 +41,7 @@ vi.mock('@/contexts/UserContext', () => ({
 
 // Get the mocked functions
 const mockUseUser = vi.mocked(useUser);
+const mockAuthService = vi.mocked(authService);
 
 describe('Login Page', () => {
   beforeEach(() => {
@@ -86,7 +98,7 @@ describe('Login Page', () => {
     // Mock failed login response
     mockAuthService.login.mockResolvedValueOnce({
       status: 'error',
-      message: 'Invalid email or password'
+      data: { token: '', user: { id: '', name: '', email: '', role: 'staff', teamId: '', departmentId: '' } }
     });
 
     render(

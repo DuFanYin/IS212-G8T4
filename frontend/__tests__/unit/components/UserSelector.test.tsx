@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { UserSelector } from '@/components/UserSelector';
-import { useTeamMembers, useDepartmentMembers } from '@/hooks/useUsers';
+import { UserSelector } from '@/components/features/users/UserSelector';
+import { useTeamMembers, useDepartmentMembers } from '@/lib/hooks/useUsers';
 
 // Mock the hooks
-vi.mock('@/hooks/useUsers', () => ({
+vi.mock('@/lib/hooks/useUsers', () => ({
   useTeamMembers: vi.fn(),
   useDepartmentMembers: vi.fn()
 }));

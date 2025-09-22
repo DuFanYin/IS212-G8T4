@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { taskService } from '@/services/api';
-import { Task, CreateTaskRequest, UpdateTaskRequest, AssignTaskRequest, UpdateTaskStatusRequest } from '@/types/task';
+import { taskService } from '@/lib/services/api';
+import { Task, CreateTaskRequest, UpdateTaskRequest, AssignTaskRequest, UpdateTaskStatusRequest } from '@/lib/types/task';
 import { useUser } from '@/contexts/UserContext';
 
 export const useTasks = () => {

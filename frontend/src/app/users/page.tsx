@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import { UserList } from '@/components/UserList';
-import { UserSelector } from '@/components/UserSelector';
-import { User } from '@/types/user';
-import { storage } from '@/utils/storage';
+import { UserList } from '@/components/features/users/UserList';
+import { UserSelector } from '@/components/features/users/UserSelector';
+import { User } from '@/lib/types/user';
+import { storage } from '@/lib/utils/storage';
 
 export default function UsersPage() {
   const { user, canAssignTasks, getVisibleUsersScope } = useUser();

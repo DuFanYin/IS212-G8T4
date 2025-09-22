@@ -2,10 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { User } from '@/types/user';
-import { authService } from '@/services/api';
-import { storage } from '@/utils/storage';
-import { setupInactivityTracker } from '@/utils/inactivityTracker';
+import { User } from '@/lib/types/user';
+import { authService } from '@/lib/services/api';
+import { storage } from '@/lib/utils/storage';
+import { setupInactivityTracker } from '@/lib/utils/inactivityTracker';
 
 interface UserContextType {
   user: User | null;

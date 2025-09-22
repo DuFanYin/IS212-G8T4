@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useTeamMembers, useDepartmentMembers } from '@/hooks/useUsers';
-import { User } from '@/types/user';
+import { useTeamMembers, useDepartmentMembers } from '@/lib/hooks/useUsers';
+import { User } from '@/lib/types/user';
 
 interface UserSelectorProps {
   token: string;

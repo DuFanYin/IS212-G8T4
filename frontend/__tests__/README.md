@@ -1,121 +1,110 @@
 # Frontend Test Structure
 
-This directory contains all frontend tests organized by functionality. The tests have been refactored to follow Vitest best practices with clean mocking patterns and essential test coverage.
+Test suite following Next.js best practices with unit and integration test separation.
 
 ## Structure
 
 ```
 __tests__/
-├── components/          # Component tests
-│   ├── Header.test.tsx
-│   ├── UserSelector.test.tsx
-│   └── UserList.test.tsx
-├── pages/               # Page/route tests
-│   ├── login.test.tsx
-│   └── users.test.tsx
-├── hooks/               # Custom hook tests
-│   └── useUsers.test.tsx
-├── utils/               # Utility function tests
-├── fixtures/            # Test data and mocks
-│   └── mocks/
-│       └── api.ts
-└── setup.ts            # Test configuration
+├── unit/                    # Unit tests (isolated components/hooks)
+│   ├── components/         # Component unit tests
+│   │   ├── Header.test.tsx
+│   │   ├── UserSelector.test.tsx
+│   │   ├── UserList.test.tsx
+│   │   ├── TaskItem.test.tsx
+│   │   └── CreateTaskModal.test.tsx
+│   ├── hooks/              # Custom hook unit tests
+│   │   ├── useUsers.test.tsx
+│   │   └── useTasks.test.tsx
+│   └── utils/              # Utility function tests
+├── integration/            # Integration tests (full page flows)
+│   ├── login.test.tsx      # Login page integration
+│   ├── users.test.tsx      # Users page integration
+│   └── tasks.test.tsx      # Tasks page integration
+├── fixtures/              # Test fixtures and mock data
+│   └── mocks/            # API service mocks
+│       └── api.ts        # Mock API responses
+├── utils/                 # Test utilities and shared mocks
+│   ├── mocks.ts          # Mock data and API responses
+│   └── test-utils.tsx    # Custom render functions and helpers
+├── setup.ts               # Global test configuration
+└── README.md              # This file
 ```
 
-## Test Coverage Summary
+## Test Coverage
 
-**Total Tests:** 20 tests across 6 files
-- **Components:** 11 tests (Header: 3, UserList: 5, UserSelector: 3)
-- **Pages:** 6 tests (Login: 3, Users: 3)
-- **Hooks:** 3 tests (useUsers: 3)
+- **Total**: 33 tests across 10 files
+- **Unit Tests**: 20 tests (Components: 14, Hooks: 6)
+- **Integration Tests**: 13 tests
 
-## Test Categories
+### Test Files
 
-### Components (`components/`)
-- **Header.test.tsx**: Tests header component rendering and user interactions
-- **UserSelector.test.tsx**: Tests user selection component with loading states and user interaction
-- **UserList.test.tsx**: Tests user list display with loading, error, and role-based functionality
+**Unit Tests**
+- `Header.test.tsx` (3 tests)
+- `UserSelector.test.tsx` (3 tests) 
+- `UserList.test.tsx` (5 tests)
+- `TaskItem.test.tsx` (3 tests)
+- `CreateTaskModal.test.tsx` (3 tests)
+- `useUsers.test.tsx` (3 tests)
+- `useTasks.test.tsx` (3 tests)
 
-### Pages (`pages/`)
-- **login.test.tsx**: Tests login page functionality, validation, and error handling
-- **users.test.tsx**: Tests users page with role-based visibility and task assignment features
+**Integration Tests**
+- `login.test.tsx` (3 tests)
+- `users.test.tsx` (3 tests)
+- `tasks.test.tsx` (4 tests)
 
-### Hooks (`hooks/`)
-- **useUsers.test.tsx**: Tests custom hooks for fetching team and department members
-
-### Fixtures (`fixtures/`)
-- **mocks/api.ts**: Mock API responses and services for consistent testing
-
-## Running Tests
+## Commands
 
 ```bash
 # Run all tests
 npm test
 
+# Run only unit tests
+npm test -- --run unit/
+
+# Run only integration tests
+npm test -- --run integration/
+
 # Run specific test file
-npm test UserSelector.test.tsx
+npm test TaskItem.test.tsx
 
 # Run tests in watch mode
 npm test -- --watch
 
-# Run specific test suite
-npm test -- --run components/
+# Run with coverage
+npm test -- --coverage
 ```
 
-## Test Patterns & Best Practices
+## Usage
 
-### Mocking Strategy
-- **All `vi.mock()` calls at the top of files** - No nested imports
-- **Single import of mocked functions** - Import once, use `vi.mocked()` globally
-- **Clean mock management** - Use `mockFunction.mockReturnValue()` without re-importing
-- **No nested require/import** - Eliminated `await import()` inside test bodies
+### Mocks
+```typescript
+import { mockUser, mockTask } from '@/__tests__/utils/mocks';
+import { mockAuthService } from '@/__tests__/fixtures/mocks/api';
 
-### Component Testing
-- Render components with necessary providers
-- Test user interactions (clicks, form submissions)
-- Verify conditional rendering based on props/state
-- Mock external dependencies with proper typing
+// Mock API services
+vi.mock('@/services/api', () => ({
+  authService: mockAuthService
+}));
+```
 
-### Hook Testing
-- Use `renderHook` for testing custom hooks
-- Test loading, success, and error states
-- Mock API services with proper Vitest mocks
-- Verify hook return values and state changes
+### Custom Render
+```typescript
+import { renderWithUser } from '@/__tests__/utils/test-utils';
+renderWithUser(<Component />, mockUser);
+```
 
-### Page Testing
-- Test complete page functionality
-- Verify role-based access and permissions
-- Test navigation and state management
-- Mock user context and API calls
+## Recent Updates
 
-## Essential Test Coverage
+### Infrastructure Fixes
+- Fixed JSX syntax errors in `setup.ts`
+- Added comprehensive API mocks in `fixtures/mocks/api.ts`
+- Resolved component property access issues
+- Fixed form validation testing
 
-The tests focus on **meaningful functionality** rather than exhaustive coverage:
-
-### Authentication Flow
-- Login success/failure scenarios
-- Form validation (email format)
-- Error handling and user feedback
-
-### Role-based Access
-- Different user roles see appropriate content
-- Permission-based feature visibility
-- Task assignment capabilities
-
-### Data Loading States
-- Loading indicators
-- Error state handling
-- Success state rendering
-
-### User Interactions
-- Click handlers and form submissions
-- User selection and navigation
-- Dynamic content updates
-
-## Refactoring Benefits
-
-- **Reduced test count** from 23 to 20 tests (13% reduction)
-- **Eliminated redundant tests** while maintaining coverage
-- **Improved maintainability** with clean mocking patterns
-- **Better TypeScript support** with proper mock typing
-- **Faster test execution** with optimized test structure
+### Key Improvements
+- **CreateTaskModal**: Removed HTML5 validation to enable JavaScript validation
+- **TaskItem**: Added safe property access for optional arrays
+- **Login tests**: Fixed auth service mocking
+- **useTasks hook**: Improved state management testing
+- **100% test pass rate**: All 33 tests passing consistently

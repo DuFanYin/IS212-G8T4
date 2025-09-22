@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreateTaskRequest } from '@/types/task';
+import { CreateTaskRequest } from '@/lib/types/task';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -21,6 +21,11 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear any previous errors
+    setError(null);
+    
+    // Validate required fields
     if (!formData.title.trim() || !formData.dueDate) {
       setError('Title and due date are required');
       return;
@@ -28,7 +33,6 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
 
     try {
       setLoading(true);
-      setError(null);
       await onCreateTask(formData);
       onClose();
       setFormData({
@@ -48,7 +52,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: CreateTaskRequest) => ({ ...prev, [name]: value }));
   };
 
   if (!isOpen) return null;
@@ -66,24 +70,25 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
               Title *
             </label>
             <input
+              id="title"
               type="text"
               name="title"
               value={formData.title}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
             />
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
               Description
             </label>
             <textarea
+              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
@@ -93,24 +98,25 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-2">
               Due Date *
             </label>
             <input
+              id="dueDate"
               type="date"
               name="dueDate"
               value={formData.dueDate}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
             />
           </div>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="assigneeId" className="block text-sm font-medium text-gray-700 mb-2">
               Assignee ID (optional)
             </label>
             <input
+              id="assigneeId"
               type="text"
               name="assigneeId"
               value={formData.assigneeId}
@@ -121,10 +127,11 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
           </div>
           
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="projectId" className="block text-sm font-medium text-gray-700 mb-2">
               Project ID (optional)
             </label>
             <input
+              id="projectId"
               type="text"
               name="projectId"
               value={formData.projectId}

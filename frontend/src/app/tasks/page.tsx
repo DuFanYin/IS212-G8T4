@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import { useTasks } from '@/hooks/useTasks';
-import { TaskItem } from '@/components/TaskItem';
-import { CreateTaskModal } from '@/components/CreateTaskModal';
-import type { User } from '@/types/user';
-import type { Task, CreateTaskRequest } from '@/types/task';
+import { useTasks } from '@/lib/hooks/useTasks';
+import { TaskItem } from '@/components/features/tasks/TaskItem';
+import { CreateTaskModal } from '@/components/forms/CreateTaskModal';
+import type { User } from '@/lib/types/user';
+import type { Task, CreateTaskRequest } from '@/lib/types/task';
 
 export default function TasksPage() {
   const { user }: { user: User | null } = useUser();

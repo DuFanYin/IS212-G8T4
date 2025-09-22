@@ -1,4 +1,4 @@
-import { Task } from '@/types/task';
+import { Task } from '@/lib/types/task';
 
 interface TaskItemProps {
   task: Task;
@@ -72,13 +72,13 @@ export const TaskItem = ({
                 <span>Project: {task.projectId}</span>
               </>
             )}
-            {task.collaborators.length > 0 && (
+            {task.collaborators && task.collaborators.length > 0 && (
               <>
                 <span>•</span>
                 <span>{task.collaborators.length} collaborator{task.collaborators.length > 1 ? 's' : ''}</span>
               </>
             )}
-            {task.attachments.length > 0 && (
+            {task.attachments && task.attachments.length > 0 && (
               <>
                 <span>•</span>
                 <span>{task.attachments.length} attachment{task.attachments.length > 1 ? 's' : ''}</span>

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useTeamMembers, useDepartmentMembers } from '@/hooks/useUsers';
-import { userService } from '@/services/api';
+import { useTeamMembers, useDepartmentMembers } from '@/lib/hooks/useUsers';
+import { userService } from '@/lib/services/api';
 
 // Mock the API service
-vi.mock('@/services/api', () => ({
+vi.mock('@/lib/services/api', () => ({
   userService: {
     getTeamMembers: vi.fn(),
     getDepartmentMembers: vi.fn()

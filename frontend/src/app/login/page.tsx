@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
-import { authService } from '@/services/api';
-import { storage } from '@/utils/storage';
+import { authService } from '@/lib/services/api';
+import { storage } from '@/lib/utils/storage';
 
 type Errors = {
   email?: string;

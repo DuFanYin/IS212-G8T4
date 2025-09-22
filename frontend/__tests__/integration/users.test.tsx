@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import UsersPage from '@/app/users/page';
 import { UserProvider, useUser } from '@/contexts/UserContext';
-import { useTeamMembers, useDepartmentMembers } from '@/hooks/useUsers';
+import { useTeamMembers, useDepartmentMembers } from '@/lib/hooks/useUsers';
 
 // Mock storage
 vi.mock('@/utils/storage', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/utils/storage', () => ({
 }));
 
 // Mock the hooks
-vi.mock('@/hooks/useUsers', () => ({
+vi.mock('@/lib/hooks/useUsers', () => ({
   useTeamMembers: vi.fn(),
   useDepartmentMembers: vi.fn()
 }));

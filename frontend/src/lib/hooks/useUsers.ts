@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { userService } from '@/services/api';
-import { User } from '@/types/user';
+import { userService } from '@/lib/services/api';
+import { User } from '@/lib/types/user';
 
 interface UseUsersResult {
   users: User[];

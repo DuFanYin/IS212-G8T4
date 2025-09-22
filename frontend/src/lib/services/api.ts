@@ -1,4 +1,4 @@
-import { AuthResponse } from '@/types/user';
+import { AuthResponse } from '@/lib/types/user';
 import { 
   Task, 
   CreateTaskRequest, 
@@ -7,7 +7,7 @@ import {
   UpdateTaskStatusRequest,
   TaskResponse,
   TasksResponse 
-} from '@/types/task';
+} from '@/lib/types/task';
 
 const API_URL = 'http://localhost:3000/api';
 

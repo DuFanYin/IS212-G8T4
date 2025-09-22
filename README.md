@@ -4,26 +4,44 @@ Task Management System for Modern Teams
 
 ## Project Structure
 
-### Frontend Architecture (Next.js)
+### Frontend Architecture (Next.js 13+ App Router)
 
 ```
 frontend/src/
-├── app/                    # Next.js app router
-│   ├── contexts/          # App-specific contexts (UserContext)
-│   ├── home/             # Home page
-│   ├── login/            # Login page
-│   ├── layout.tsx        # Root layout
-│   └── page.tsx          # Root page
-├── components/            # Shared components
-│   ├── Navbar.tsx
-│   └── UserProfile.tsx
-├── services/             # API services
-│   └── api.ts
-├── types/               # TypeScript interfaces
-│   └── user.ts
-└── utils/              # Helper functions
-    └── storage.ts
+├── app/                    # Next.js App Router
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx           # Root page
+│   ├── globals.css        # Global styles
+│   ├── home/              # Home page
+│   ├── login/             # Authentication pages
+│   ├── users/             # User management pages
+│   ├── tasks/             # Task management pages
+│   └── projects/          # Project pages
+├── components/            # React components
+│   ├── ui/                # Reusable UI primitives
+│   ├── layout/            # Layout components (Header, etc.)
+│   ├── forms/             # Form components (CreateTaskModal, etc.)
+│   └── features/          # Feature-specific components
+│       ├── tasks/         # Task-related components
+│       └── users/         # User-related components
+├── lib/                   # Shared utilities and logic
+│   ├── hooks/             # Custom React hooks
+│   ├── services/          # API services
+│   ├── types/             # TypeScript type definitions
+│   └── utils/             # Utility functions
+└── contexts/              # React contexts
+    └── UserContext.tsx    # User state management
 ```
+
+#### Frontend Organization Principles
+
+- **App Router**: Next.js 13+ file-based routing with `app/` directory
+- **Feature-based Components**: Components organized by domain (tasks, users)
+- **Separation of Concerns**: UI primitives, layout, forms, and features separated
+- **Consolidated Library**: All utilities, hooks, services, and types in `lib/`
+- **Type Safety**: Comprehensive TypeScript coverage throughout
+- **Modern Patterns**: Custom hooks, context providers, and component composition
+ - **Single Hooks Location**: Use hooks from `src/lib/hooks`. Do not create or use `src/hooks`.
 
 ### Backend Architecture (Express)
 
