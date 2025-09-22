@@ -18,7 +18,7 @@ describe('Project Management', () => {
     staffUser = await User.findOne({ email: 'staff@example.com' });
     managerUser = await User.findOne({ email: 'manager@example.com' });
     hrUser = await User.findOne({ email: 'hr@example.com' });
-    project = await Project.findOne({ name: 'Website Revamp'})
+    project = await Project.findOne({ name: 'Manager Update'});
 
     if (!staffUser || !managerUser) {
       throw new Error('Required users not found in DB');
