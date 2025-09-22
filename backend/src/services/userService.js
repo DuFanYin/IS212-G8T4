@@ -109,6 +109,15 @@ class UserService {
       throw new Error('Error validating reset token');
     }
   }
+
+  async getAllUsers() {
+    try {
+      const userDocs = await this.userRepository.findAll();
+      return userDocs.map(doc => new User(doc));
+    } catch (error) {
+      throw new Error('Error fetching all users');
+    }
+  }
 }
 
 // Create singleton instance
@@ -116,3 +125,4 @@ const userRepository = new UserRepository();
 const userService = new UserService(userRepository);
 
 module.exports = userService;
+module.exports.UserService = UserService;

@@ -53,6 +53,10 @@ class UserRepository {
       resetTokenExpiry: { $gt: new Date() }
     });
   }
+
+  async findAll() {
+    return UserModel.find({}).select('-passwordHash');
+  }
 }
 
 module.exports = UserRepository;

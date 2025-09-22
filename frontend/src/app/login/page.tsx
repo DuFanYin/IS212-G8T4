@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
-import { authService } from '@/services/api';
-import { storage } from '@/utils/storage';
+import { authService } from '@/lib/services/api';
+import { storage } from '@/lib/utils/storage';
 
 type Errors = {
   email?: string;
@@ -147,8 +147,8 @@ export default function LoginPage() {
 
 
         <div className="mt-4 text-center text-sm text-gray-500">
-          <div className="font-medium mb-1">Sample Logins (password: 123456)</div>
-          <div>sm@example.com (Senior Manager)</div>
+          <div className="font-medium mb-1">Password: Password123!</div>
+          <div>sm@example.com (Senior Management)</div>
           <div>hr@example.com (HR)</div>
           <div>director@example.com (Director)</div>
           <div>manager@example.com (Manager)</div>
