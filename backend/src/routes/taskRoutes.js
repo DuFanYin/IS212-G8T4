@@ -1,21 +1,39 @@
 const express = require('express');
 const router = express.Router();
-const taskController = require('../controllers/taskController');
-const auth = require('../middleware/authMiddleware'); // users are signed in
-
-
-router.use(auth);
+const authMiddleware = require('../middleware/authMiddleware');
+const { 
+  createTask, 
+  getUserTasks, 
+  getProjectTasks, 
+  getTaskById, 
+  updateTask, 
+  assignTask, 
+  updateTaskStatus, 
+  archiveTask 
+} = require('../controllers/taskController');
 
 // Create a new task
-router.post('/', taskController.createTask);
+router.post('/', authMiddleware, createTask);
+
+// Get user's tasks (role-based visibility)
+router.get('/', authMiddleware, getUserTasks);
+
+// Get tasks by project
+router.get('/project/:projectId', authMiddleware, getProjectTasks);
 
 // Get task by ID
-router.get('/:id', taskController.getTaskById);
+router.get('/:id', authMiddleware, getTaskById);
 
 // Update a task
-router.put('/:id', taskController.updateTask);
+router.put('/:id', authMiddleware, updateTask);
+
+// Assign task to user
+router.put('/:id/assign', authMiddleware, assignTask);
+
+// Update task status
+router.put('/:id/status', authMiddleware, updateTaskStatus);
 
 // Archive a task
-router.delete('/:id', taskController.archiveTask);
+router.delete('/:id', authMiddleware, archiveTask);
 
 module.exports = router;

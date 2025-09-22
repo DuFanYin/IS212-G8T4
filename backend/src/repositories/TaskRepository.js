@@ -28,6 +28,38 @@ class TaskRepository {
     });
   }
 
+  async findTasksByTeam(teamId) {
+    // Find tasks created by users in the team
+    const { User } = require('../db/models');
+    const teamUsers = await User.find({ teamId }).select('_id');
+    const userIds = teamUsers.map(user => user._id);
+    
+    return TaskModel.find({ 
+      $or: [
+        { createdBy: { $in: userIds } },
+        { assigneeId: { $in: userIds } },
+        { collaborators: { $in: userIds } }
+      ],
+      isDeleted: false 
+    });
+  }
+
+  async findTasksByDepartment(departmentId) {
+    // Find tasks created by users in the department
+    const { User } = require('../db/models');
+    const deptUsers = await User.find({ departmentId }).select('_id');
+    const userIds = deptUsers.map(user => user._id);
+    
+    return TaskModel.find({ 
+      $or: [
+        { createdBy: { $in: userIds } },
+        { assigneeId: { $in: userIds } },
+        { collaborators: { $in: userIds } }
+      ],
+      isDeleted: false 
+    });
+  }
+
   async create(taskData) {
     return TaskModel.create(taskData);
   }
