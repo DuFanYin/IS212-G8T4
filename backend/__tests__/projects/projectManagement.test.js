@@ -179,4 +179,39 @@ describe('Project Management', () => {
       expect(res.body.data.isArchived).toBe(true);
     });
   });
+
+  // --- Remove Collaborator Tests ---
+  describe('DELETE /api/projects/:projectId/collaborators', () => {
+    it('should remove a collaborator successfully', async () => {
+      const res = await request(app)
+        .delete(`/api/projects/${project._id}/collaborators`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ collaboratorId: managerUser._id });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.collaborators).not.toContain(managerUser._id.toString());
+      expect(res.body.data.collaborators).toContain(staffUser._id.toString()); // owner still present
+    });
+
+    it('should not allow removing the project owner', async () => {
+      const res = await request(app)
+        .delete(`/api/projects/${project._id}/collaborators`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ collaboratorId: staffUser._id });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/cannot remove project owner/i);
+    });
+
+    it('should return error if collaborator does not exist', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const res = await request(app)
+        .delete(`/api/projects/${project._id}/collaborators`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ collaboratorId: fakeId });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/collaborator not found/i);
+    });
+  });
 });

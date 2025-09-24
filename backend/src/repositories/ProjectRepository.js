@@ -50,6 +50,16 @@ class ProjectRepository {
     );
   }
 
+  async removeCollaborators(id, collaboratorIds = []){
+    const cleanIds = collaboratorIds.map(collaboratorId => new mongoose.Types.ObjectId(collaboratorId));
+
+    return ProjectModel.findByIdAndUpdate(
+      id,
+      { $pull: { collaborators: { $in: cleanIds } } },
+      { new: true }
+    );
+  }
+
   async setHasTasks(id, hasTasks) {
     return ProjectModel.findByIdAndUpdate(id, { hasContainedTasks: hasTasks }, { new: true });
   }

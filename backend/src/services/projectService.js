@@ -57,13 +57,12 @@ class ProjectService {
     }
 
     const { collaborators, ...otherFields } = updateData;
-    await this.projectRepository.updateById(projectId, otherFields);
+    let updatedProjectDoc = await this.projectRepository.updateById(projectId, otherFields);
 
     if (newCollaborators.length) {
-      await this.projectRepository.addCollaborators(projectId, newCollaborators);
+      updatedProjectDoc = await this.projectRepository.addCollaborators(projectId, newCollaborators);
     }
 
-    const updatedProjectDoc = await this.getProjectById(projectId);
     return new Project(updatedProjectDoc);
   }
 
@@ -83,9 +82,22 @@ class ProjectService {
 
     this.validateDepartmentMembership(collaboratorDoc.departmentId, project.departmentId);
 
-    await this.projectRepository.addCollaborators(projectId, [collaboratorId]);
+    const updatedProjectDoc = await this.projectRepository.addCollaborators(projectId, [collaboratorId]);
+    return new Project(updatedProjectDoc);
+  }
 
-    const updatedProjectDoc = await this.getProjectById(projectId);
+  async removeCollaborator(projectId, collaboratorId, userId) {
+    const project = await this.getProjectById(projectId);
+
+    await this.validateUser(project, userId);
+    if(project.isOwner(collaboratorId)){
+      throw new Error("Cannot remove project owner");
+    }
+
+    const collaboratorDoc = await this.userRepository.findById(collaboratorId);
+    if (!collaboratorDoc) throw new Error('Collaborator not found');
+
+    const updatedProjectDoc = await this.projectRepository.removeCollaborators(projectId, [collaboratorId]);
     return new Project(updatedProjectDoc);
   }
 

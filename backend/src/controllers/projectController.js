@@ -31,7 +31,7 @@ const createProject = async (req, res) => {
       data: project.toDTO() 
     });
   } catch (err) {
-    res.status(500).json({
+    res.status(400).json({
       status: "error",
       message: err.message
     });
@@ -78,6 +78,26 @@ const addCollaborators = async (req, res) => {
   }
 };
 
+const removeCollaborators = async (req, res) => {
+  const { projectId } = req.params;
+  const { collaboratorId } = req.body; 
+
+  const userId = req.user.userId;
+
+  try {
+    const updatedProject = await ProjectService.removeCollaborator(projectId, collaboratorId, userId);
+    res.status(200).json({ 
+      status: "success",
+      data: updatedProject.toDTO() 
+    });
+  } catch (error) {
+    res.status(400).json({ 
+      status: "error",
+      message: error.message 
+    });
+  }
+};
+
 const getProjects = async (req, res) => {
   try{
     const projects = await ProjectService.getActiveProjects();
@@ -88,7 +108,7 @@ const getProjects = async (req, res) => {
       message: "Project data is successfully retrieved"
     });
   } catch (err) {
-    res.status(500).json({
+    res.status(400).json({
       status: "error",
       message: err.message
     });
@@ -120,5 +140,6 @@ module.exports = {
   getProjects,
   updateProject,
   addCollaborators,
+  removeCollaborators,
   setStatusProject
 };
