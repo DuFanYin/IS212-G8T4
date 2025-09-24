@@ -16,12 +16,12 @@ describe('Project Creation', () => {
     }
   });
 
-  describe('POST /api/projects/create', () => {
+  describe('POST /api/projects', () => {
     it('should return 401 when not authenticated', async () => {
       const response = await request(app)
-        .post('/api/projects/create')
+        .post('/api/projects/')
         .send({ name: 'Test Project' });
-
+        
       expect(response.status).toBe(401);
       expect(response.body.status).toBe('error');
       expect(response.body.message).toBe('No token provided');
@@ -29,7 +29,7 @@ describe('Project Creation', () => {
 
     it('should create a project successfully with all fields', async () => {
       const response = await request(app)
-        .post('/api/projects/create')
+        .post('/api/projects')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           name: 'Full Project',
@@ -43,7 +43,7 @@ describe('Project Creation', () => {
 
     it('should create a project without optional fields', async () => {
       const response = await request(app)
-        .post('/api/projects/create')
+        .post('/api/projects')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Minimal Project' });
 
@@ -53,7 +53,7 @@ describe('Project Creation', () => {
 
     it('should fail if name is missing', async () => {
       const response = await request(app)
-        .post('/api/projects/create')
+        .post('/api/projects')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ description: 'Missing name' });
 
@@ -64,7 +64,7 @@ describe('Project Creation', () => {
 
     it('should fail if deadline is invalid', async () => {
       const response = await request(app)
-        .post('/api/projects/create')
+        .post('/api/projects')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ name: 'Invalid Deadline', deadline: 'invalid-date' });
 
@@ -75,9 +75,9 @@ describe('Project Creation', () => {
   });
 
   //Testing for GET Project
-  describe('GET /api/projects/projects', () => {
+  describe('GET /api/projects', () => {
     it('should return 401 when not authenticated', async () => {
-      const response = await request(app).get('/api/projects/projects');
+      const response = await request(app).get('/api/projects/');
 
       expect(response.status).toBe(401);
       expect(response.body.status).toBe('error');
@@ -86,7 +86,7 @@ describe('Project Creation', () => {
 
     it('should return all projects successfully for authenticated user', async () => {
       const response = await request(app)
-        .get('/api/projects/projects')
+        .get('/api/projects/')
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
