@@ -35,7 +35,7 @@ describe('Project Creation', () => {
           name: 'Full Project',
           description: 'Testing all fields',
           deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          collaborators: []
+          collaborators: [staffUser._id]
         });
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
@@ -92,7 +92,6 @@ describe('Project Creation', () => {
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(Array.isArray(response.body.data)).toBe(true);
-      console.log(response.body)
     });
   });
 });

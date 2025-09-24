@@ -18,7 +18,7 @@ describe('Project Management', () => {
     staffUser = await User.findOne({ email: 'staff@example.com' });
     managerUser = await User.findOne({ email: 'manager@example.com' });
     hrUser = await User.findOne({ email: 'hr@example.com' });
-    project = await Project.findOne({ name: 'Manager Update'});
+    project = await Project.findOne({ name: 'Revamp Website'});
 
     if (!staffUser || !managerUser) {
       throw new Error('Required users not found in DB');
@@ -28,15 +28,15 @@ describe('Project Management', () => {
     collaborator = managerUser._id;
   });
 
-    afterAll(async () => {
-        if (project) {
-            await Project.findByIdAndUpdate(project._id, {
-                collaborators: [project.ownerId],
-                isArchived: false,
-            });
-        }
-    });
-
+  afterAll(async () => {
+      if (project) {
+          await Project.findByIdAndUpdate(project._id, {
+              name: "Revamp Website",
+              collaborators: [project.ownerId],
+              isArchived: false,
+          });
+      }
+  });
 
   // --- Project Update Tests ---
   describe('PUT /api/projects/:projectId', () => {

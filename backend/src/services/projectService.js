@@ -4,8 +4,9 @@ const UserRepository = require('../repositories/UserRepository');
 const User = require('../domain/User');
 
 class ProjectService {
-  constructor(projectRepository) {
+  constructor(projectRepository, userRepository) {
     this.projectRepository = projectRepository;
+    this.userRepository = userRepository;
   }
 
   /**
@@ -13,75 +14,24 @@ class ProjectService {
    * @param {Object} projectData - Project data
    * @param {string} userId - ID of user creating the project
    */
-
   //Code Reviewed
   async createProject(projectData, userId) {
-    try {
-      const project = new Project({ ...projectData, ownerId: userId });
-
-      // If department is specified, validate collaborators
-      await this.validateCollaborators(project.collaborators, project.departmentId);
-
-      await this.projectRepository.create(project);
-
-      return project;
-    } catch (error) {
-      throw new Error(`Error creating project: ${error.message}`);
-    }
-  }
-
-  //Code Reviewed
-  async validateCollaborators(collaborators, departmentId) {
-    try {
-      const userRepository = new UserRepository();
-      for (const collaboratorId of collaborators) {
-        const collaboratorDoc = await userRepository.findById(collaboratorId);
-        if (!collaboratorDoc) {
-          throw new Error(`Collaborator ${collaboratorId} not found`);
-        }
-
-        const collaborator = new User(collaboratorDoc);
-        if (collaborator.departmentId && departmentId) {
-          if (!collaborator.departmentId.equals(departmentId)) {
-            throw new Error("All collaborators must be from the same department");
-          }
-        }
-      }
-    } catch (error) {
-      throw new Error(`Error validating collaborators: ${error.message}`);
-    }
+    const project = new Project({ ...projectData, ownerId: userId });
+    await this.validateCollaborators(project.collaborators, project.departmentId);
+    await this.projectRepository.create(project);
+    return project;
   }
 
   //Code Reviewed
   async getAllProjects(){
-    try{
-      const projectDocs = await this.project.findAllProjects();
-      return projectDocs.map(doc => new Project(doc));
-    } catch (error){
-      throw new Error(`Error fetching project: ${error.message}`);
-    }
+    const projectDocs = await this.projectRepository.findAllProjects();
+    return projectDocs.map(doc => new Project(doc));
   }
 
   //Code Reviewed
-  async getProjects() {
-    try {
-      const projectDocs = await this.projectRepository.findActiveProjects();
-      return projectDocs.map(doc => new Project(doc));
-    } catch (error) {
-      throw new Error(`Error fetching project: ${error.message}`);
-    }
-  }
-
-  //Code Reviewed
-  async getProjectById(projectId) {
-    try {
-      const projectDoc = await this.projectRepository.findById(projectId);
-      if (!projectDoc) throw new Error('Project not found');
-      
-      return new Project(projectDoc);
-    } catch (error) {
-      throw new Error(`Error fetching project: ${error.message}`);
-    }
+  async getActiveProjects() {
+    const projectDocs = await this.projectRepository.findActiveProjects();
+    return projectDocs.map(doc => new Project(doc));
   }
 
   /**
@@ -92,32 +42,29 @@ class ProjectService {
    */
   //Code Reviewed
   async updateProject(projectId, updateData, userId) {
-    try {
-      const projectDoc = await this.projectRepository.findById(projectId);
-      if (!projectDoc) throw new Error('Project not found');
+    const project = await this.getProjectById(projectId);
 
-      await this.validateUser(projectDoc, userId);
+    await this.validateUser(project, userId);
 
-      const newCollaborators = updateData.collaborators || []
-      
-      const departmentId = updateData.departmentId || projectDoc.departmentId;
+    const newCollaborators = updateData.collaborators || [];
+    const departmentId = updateData.departmentId || project.departmentId;
 
-      if (newCollaborators.length || updateData.departmentId) {
-        await this.validateCollaborators([...projectDoc.collaborators, ...newCollaborators], departmentId);
-      }
-
-      const { collaborators, ...otherFields } = updateData;
-      await this.projectRepository.updateById(projectId, otherFields);
-
-      if (newCollaborators.length) {
-        await this.projectRepository.addCollaborators(projectId, newCollaborators);
-      }
-
-      const updatedProjectDoc = await this.projectRepository.findById(projectId);
-      return new Project(updatedProjectDoc);
-    } catch (error) {
-      throw new Error(`Error updating project: ${error.message}`);
+    if (newCollaborators.length || updateData.departmentId) {
+      await this.validateCollaborators(
+        [...project.collaborators, ...newCollaborators],
+        departmentId
+      );
     }
+
+    const { collaborators, ...otherFields } = updateData;
+    await this.projectRepository.updateById(projectId, otherFields);
+
+    if (newCollaborators.length) {
+      await this.projectRepository.addCollaborators(projectId, newCollaborators);
+    }
+
+    const updatedProjectDoc = await this.getProjectById(projectId);
+    return new Project(updatedProjectDoc);
   }
 
   /**
@@ -127,44 +74,45 @@ class ProjectService {
    */
   //Code Reviewed
   async addCollaborator(projectId, collaboratorId, userId) {
-    try {
-      const projectDoc = await this.projectRepository.findById(projectId);
-      if (!projectDoc) throw new Error('Project not found');
+    const project = await this.getProjectById(projectId);
 
-      await this.validateUser(projectDoc, userId);
+    await this.validateUser(project, userId);
 
-      const userRepository = new UserRepository();
-      const collaboratorDoc = await userRepository.findById(collaboratorId);
-      if (!collaboratorDoc) throw new Error('Collaborator not found');
+    const collaboratorDoc = await this.userRepository.findById(collaboratorId);
+    if (!collaboratorDoc) throw new Error('Collaborator not found');
 
-      // Validate department membership if project has department
-      if (projectDoc.departmentId && collaboratorDoc.departmentId) {
-        if (!projectDoc.departmentId.equals(collaboratorDoc.departmentId)) {
-          throw new Error('Collaborator must be from the same department');
-        }
-      }
+    this.validateDepartmentMembership(collaboratorDoc.departmentId, project.departmentId);
 
-      // Let Mongo handle merging and deduplication
-      await this.projectRepository.addCollaborators(projectId, [collaboratorId]);
+    await this.projectRepository.addCollaborators(projectId, [collaboratorId]);
 
-      // Return fresh project instance
-      const updatedProjectDoc = await this.projectRepository.findById(projectId);
-      return new Project(updatedProjectDoc);
+    const updatedProjectDoc = await this.getProjectById(projectId);
+    return new Project(updatedProjectDoc);
+  }
 
-    } catch (error) {
-      throw new Error(`Error adding collaborator: ${error.message}`);
+  async validateUser(project, userId){
+    const userDoc = await this.userRepository.findById(userId);
+    const user = new User(userDoc);
+
+    if (!project.canBeModifiedBy(user)) {
+      throw new Error("Not Authorized");
     }
   }
 
-  async validateUser(projectData, userId){
-    const project = new Project(projectData);
-    
-    const userRepository = new UserRepository();
-    const userDoc = await userRepository.findById(userId);
-    const user = new User(userDoc);
+  //Code Reviewed
+  async validateCollaborators(collaborators, departmentId) {
+    for (const collaboratorId of collaborators) {
+      const collaboratorDoc = await this.userRepository.findById(collaboratorId);
+      if (!collaboratorDoc) throw new Error(`Collaborator ${collaboratorId} not found`);
 
-    if (!project.isOwner(userId) && !user.isManager()) {
-      throw new Error('Not authorized');
+      const collaborator = new User(collaboratorDoc);
+      this.validateDepartmentMembership(collaborator.departmentId, departmentId);
+    }
+  }
+
+  //Code Reviewed
+  validateDepartmentMembership(userDeptId, projectDeptId) {
+    if (userDeptId && projectDeptId && !userDeptId.equals(projectDeptId)) {
+      throw new Error("All collaborators must be from the same department");
     }
   }
 
@@ -175,12 +123,8 @@ class ProjectService {
    */
   async isVisibleToUser(projectId, userId) {
     try {
-      const projectDoc = await this.projectRepository.findById(projectId);
-      if (!projectDoc) return false;
-
-      const project = new Project(projectDoc);
-      const userRepository = new UserRepository();
-      const userDoc = await userRepository.findById(userId);
+      const project = this.getProjectById(projectId);
+      const userDoc = await this.userRepository.findById(userId);
       const user = new User(userDoc);
 
       return project.canBeAccessedBy(user);
@@ -206,10 +150,21 @@ class ProjectService {
       throw new Error('Error fetching projects by department');
     }
   }
+
+  async getProjectById(projectId) {
+    try { 
+      const projectDoc = await this.projectRepository.findById(projectId); 
+      if (!projectDoc) throw new Error('Project not found'); 
+      return new Project(projectDoc); 
+    } catch (error) { 
+      throw new Error('Error fetching project by id');
+    }
+  }
 }
 
 // Create singleton instance
 const projectRepository = new ProjectRepository();
-const projectService = new ProjectService(projectRepository);
+const userRepository = new UserRepository();
+const projectService = new ProjectService(projectRepository, userRepository);
 
 module.exports = projectService;

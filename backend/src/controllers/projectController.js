@@ -80,7 +80,7 @@ const addCollaborators = async (req, res) => {
 
 const getProjects = async (req, res) => {
   try{
-    const projects = await ProjectService.getProjects();
+    const projects = await ProjectService.getActiveProjects();
 
     res.json({
       status: "success",
