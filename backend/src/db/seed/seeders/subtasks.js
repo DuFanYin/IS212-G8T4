@@ -1,0 +1,32 @@
+const Subtask = require('../../models/Subtask');
+
+module.exports = async function seedSubtasks(_count, { tasks }) {
+  await Subtask.deleteMany({});
+  const homepage = tasks.find(t => t.title === 'Implement homepage') || tasks[0];
+  const apiLatency = tasks.find(t => t.title === 'Improve API latency') || tasks[1] || tasks[0];
+
+  const docs = [
+    {
+      parentTaskId: homepage._id,
+      title: 'Build hero section',
+      description: 'Responsive hero with CTA',
+      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+      status: 'ongoing',
+      assigneeId: homepage.assigneeId,
+      collaborators: [],
+    },
+    {
+      parentTaskId: apiLatency._id,
+      title: 'Add Redis cache',
+      description: 'Cache common GET responses',
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      status: 'unassigned',
+      assigneeId: undefined,
+      collaborators: [],
+    },
+  ];
+  const inserted = await Subtask.insertMany(docs, { ordered: true });
+  return inserted.map((s) => s.toObject());
+};
+
+

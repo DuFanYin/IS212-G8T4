@@ -29,13 +29,15 @@ src/
 ├── controllers/              # HTTP request handling
 │   ├── authController.js
 │   ├── userController.js
-│   └── projectController.js
+│   ├── projectController.js
+│   └── taskController.js
 ├── middleware/               # Request processing middleware
 │   └── authMiddleware.js
 ├── routes/                   # API route definitions
 │   ├── authRoutes.js
-│   ├── userRoutes.js
-│   └── projectRoutes.js
+│   ├── userRoutes.js         # User management routes
+│   ├── projectRoutes.js
+│   └── taskRoutes.js
 ├── scripts/                  # Utility scripts
 │   └── generateSecret.js
 ├── app.js                    # Express application setup
@@ -93,6 +95,66 @@ src/
 - Time utilities: `isRecent()`, `isToday()`, `isThisWeek()`
 - DTOs: `toDTO()`, `toSafeDTO()`
 
+## Current API Routes
+
+### **User Routes** (`src/routes/userRoutes.js`)
+**Endpoints:**
+- `GET /api/users/profile` - Get current user profile
+- `GET /api/users/team-members` - Get team members (role-based visibility)
+- `GET /api/users/department-members/:departmentId?` - Get department members (Director+ only)
+
+### **Auth Routes** (`src/routes/authRoutes.js`)
+**Endpoints:**
+- `POST /api/auth/login` - User login
+- `POST /api/auth/request-reset` - Request password reset
+- `POST /api/auth/reset-password` - Reset password
+
+### **Project Routes** (`src/routes/projectRoutes.js`)
+**Endpoints:**
+- `POST /api/projects/create` - Create new project
+- `GET /api/projects/projects` - Get projects (role-based visibility)
+
+### **Task Routes** (`src/routes/taskRoutes.js`)
+**Endpoints:**
+- `POST /api/tasks/` - Create new task
+- `GET /api/tasks/` - Get user's tasks (role-based visibility)
+- `GET /api/tasks/project/:projectId` - Get tasks by project
+- `GET /api/tasks/:id` - Get task by ID (with visibility check)
+- `PUT /api/tasks/:id` - Update task
+- `PUT /api/tasks/:id/assign` - Assign task to user
+- `PUT /api/tasks/:id/status` - Update task status
+- `DELETE /api/tasks/:id` - Archive (soft delete) task
+
+## Current Controller Layer (HTTP Request Handling)
+
+### **AuthController** (`src/controllers/authController.js`)
+**Methods:**
+- `login()` - Handle user authentication
+- `requestReset()` - Handle password reset requests
+- `resetPassword()` - Handle password reset
+
+### **UserController** (`src/controllers/userController.js`)
+**Methods:**
+- `getProfile()` - Get current user profile
+- `getTeamMembers()` - Get team members (role-based visibility)
+- `getDepartmentMembers()` - Get department members (Director+ only)
+
+### **ProjectController** (`src/controllers/projectController.js`)
+**Methods:**
+- `createProject()` - Create new project
+- `getProjects()` - Get projects (role-based visibility)
+
+### **TaskController** (`src/controllers/taskController.js`)
+**Methods:**
+- `createTask()` - Create new task
+- `getUserTasks()` - Get user's tasks (role-based visibility)
+- `getProjectTasks()` - Get tasks by project
+- `getTaskById()` - Get task by ID with visibility check
+- `updateTask()` - Update task
+- `assignTask()` - Assign task to user
+- `updateTaskStatus()` - Update task status
+- `archiveTask()` - Archive (soft delete) task
+
 ## Current Repository Layer (Data Access)
 
 ### **UserRepository** (`src/repositories/UserRepository.js`)
@@ -100,12 +162,13 @@ src/
 - Basic CRUD: `findById()`, `findPublicById()`, `findByEmail()`, `create()`, `updateById()`
 - Auth operations: `updatePasswordHash()`, `setResetToken()`, `clearResetToken()`, `findByResetToken()`
 - Department/Team queries: `findUsersByDepartment()`, `findUsersByTeam()`
+- Global queries: `findAll()`
 
 ### **TaskRepository** (`src/repositories/TaskRepository.js`)
 **Methods:**
 - Basic CRUD: `findById()`, `findActiveTasks()`, `create()`, `updateById()`
 - Assignment operations: `assignTask()`, `updateStatus()`, `addCollaborator()`
-- Query methods: `findTasksByAssignee()`, `findTasksByCreator()`, `findTasksByProject()`, `findTasksByCollaborator()`
+- Query methods: `findTasksByAssignee()`, `findTasksByCreator()`, `findTasksByProject()`, `findTasksByCollaborator()`, `findTasksByTeam()`, `findTasksByDepartment()`
 - Soft delete: `softDelete()`
 
 ### **ProjectRepository** (`src/repositories/ProjectRepository.js`)
@@ -134,6 +197,7 @@ src/
 - Basic operations: `getUserById()`, `getUserByEmail()`, `createUser()`, `updateUser()`
 - Auth operations: `updatePassword()`, `setResetToken()`, `clearResetToken()`, `getUserByResetToken()`
 - Department/Team queries: `getUsersByDepartment()`, `getUsersByTeam()`
+- Global queries: `getAllUsers()`
 
 ### **ProjectService** (`src/services/projectService.js`)
 **Methods:**
@@ -146,7 +210,7 @@ src/
 **Methods:**
 - Core operations: `createTask()`, `updateTask()`, `assignTask()`, `updateTaskStatus()`, `softDeleteTask()`
 - Visibility: `isVisibleToUser()`
-- Queries: `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByCollaborator()`
+- Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByCollaborator()`
 
 ### **SubtaskService** (`src/services/subtaskService.js`)
 **Methods:**

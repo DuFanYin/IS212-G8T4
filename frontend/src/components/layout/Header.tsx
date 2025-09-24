@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/contexts/UserContext';
-import type { User } from '@/types/user';
+import type { User } from '@/lib/types/user';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
