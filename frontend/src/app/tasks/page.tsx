@@ -193,35 +193,30 @@ export default function TasksPage() {
             </div>
           </div>
 
-          {/* Task List */}
-          <div className="bg-white rounded-lg shadow">
-            {loading ? (
-              <div className="p-8 text-center text-gray-500">
-                Loading tasks...
-              </div>
-            ) : filteredTasks.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                {selectedFilter === 'all' 
-                  ? 'No tasks found. Create your first task!' 
-                  : `No ${selectedFilter.replace('_', ' ')} tasks found.`
-                }
-              </div>
-            ) : (
-              <div className="divide-y">
-                {filteredTasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    onEdit={handleEditTask}
-                    onAssign={handleAssignTask}
-                    onStatusChange={handleStatusChange}
-                    onArchive={handleArchiveTask}
-                    canAssign={canAssignTasks}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Task Grid */}
+          {loading ? (
+            <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow">Loading tasks...</div>
+          ) : filteredTasks.length === 0 ? (
+            <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow">
+              {selectedFilter === 'all' 
+                ? 'No tasks found. Create your first task!'
+                : `No ${selectedFilter.replace('_', ' ')} tasks found.`}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTasks.map((task) => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  onEdit={handleEditTask}
+                  onAssign={handleAssignTask}
+                  onStatusChange={handleStatusChange}
+                  onArchive={handleArchiveTask}
+                  canAssign={canAssignTasks}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
@@ -248,10 +243,30 @@ export default function TasksPage() {
         onUpdate={async (data) => { await handleConfirmEdit(data); }}
       />
 
-      {/* Subtasks demo buttons */}
+      {/* Subtasks demo buttons - clearly disabled when no active task selected */}
       <div className="fixed bottom-4 right-4 space-x-2">
-        <button onClick={demoListSubtasks} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm">List Subtasks</button>
-        <button onClick={demoCreateSubtask} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm">Create Subtask</button>
+        <button
+          onClick={activeTask ? demoListSubtasks : undefined}
+          disabled={!activeTask}
+          aria-disabled={!activeTask}
+          className={`px-3 py-2 rounded text-sm ${
+            activeTask ? 'bg-gray-100 hover:bg-gray-200' : 'bg-gray-100 opacity-50 cursor-not-allowed'
+          }`}
+          title={!activeTask ? 'Select a task to enable' : undefined}
+        >
+          List Subtasks
+        </button>
+        <button
+          onClick={activeTask ? demoCreateSubtask : undefined}
+          disabled={!activeTask}
+          aria-disabled={!activeTask}
+          className={`px-3 py-2 rounded text-sm ${
+            activeTask ? 'bg-gray-100 hover:bg-gray-200' : 'bg-gray-100 opacity-50 cursor-not-allowed'
+          }`}
+          title={!activeTask ? 'Select a task to enable' : undefined}
+        >
+          Create Subtask
+        </button>
       </div>
     </div>
   );

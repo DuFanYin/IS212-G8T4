@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import type { User } from '@/lib/types/user';
 import { formatDate } from '@/lib/utils/formatDate';
+import { ProjectItem } from '@/components/features/projects/ProjectItem';
 import { projectService } from '@/lib/services/project';
+import { taskService } from '@/lib/services/task';
 import type { Project } from '@/lib/types/project';
 import { storage } from '@/lib/utils/storage';
 import { CreateProjectModal } from '@/components/forms/CreateProjectModal';
@@ -20,6 +22,7 @@ export default function ProjectsPage() {
   const [collabInputs, setCollabInputs] = useState<Record<string, string>>({});
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
+  const [taskCounts, setTaskCounts] = useState<Record<string, number>>({});
 
   const handleArchiveToggle = async (project: Project) => {
     if (!token || !project.id && !project._id) return;
@@ -56,7 +59,29 @@ export default function ProjectsPage() {
         const token = user?.token;
         if (!token) return;
         const json = await projectService.getProjects(token);
-        setProjects((json.data as Project[]) || []);
+        const fetchedProjects = (json.data as Project[]) || [];
+        setProjects(fetchedProjects);
+
+        // Fetch task counts per project
+        const entries = await Promise.all(
+          fetchedProjects.map(async (p) => {
+            const id = (p.id || p._id) as string;
+            if (!id) return [id, 0] as const;
+            try {
+              const tasksRes = await taskService.getTasksByProject(token, id);
+              const tasks = tasksRes.data || [];
+              const activeCount = tasks.filter(t => t.status !== 'completed').length;
+              return [id, activeCount] as const;
+            } catch {
+              return [id, 0] as const;
+            }
+          })
+        );
+        const counts: Record<string, number> = {};
+        for (const [id, count] of entries) {
+          if (id) counts[id] = count;
+        }
+        setTaskCounts(counts);
       } catch (err) {
         if(err instanceof Error){
           console.error('Failed to fetch projects:', err.message);
@@ -123,47 +148,22 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
               {/* Project Card */}
-              {projects.map((project) => (
-                <div key={project.id || project._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <h2 className="text-xl font-semibold text-gray-900">{project.name}</h2>
-                      <button onClick={() => handleArchiveToggle(project)} className="px-2 py-1 text-sm rounded bg-blue-100 text-blue-800">
-                        {!project.isArchived ? "Active" : "Archived"}
-                      </button>
-                    </div>
-                    <p className="text-gray-600 mb-4">{project.description}</p>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between text-sm text-gray-500 mb-1">
-                          <span>Progress</span>
-                          <span>60%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }}></div>
-                        </div>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Due: {project.deadline ? formatDate(project.deadline) : '-'}</span>
-                        <span className="text-gray-500">{project.hasContainedTasks ? "5" : "0"} active tasks</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex items-center space-x-2">
-                      <input
-                        placeholder="User ID"
-                        className="px-2 py-1 border rounded text-sm"
-                        value={collabInputs[(project.id || project._id) as string] || ''}
-                        onChange={(e) => {
-                          const key = (project.id || project._id) as string;
-                          setCollabInputs(prev => ({ ...prev, [key]: e.target.value }));
-                        }}
-                      />
-                      <button onClick={() => handleAddCollaborator(project, collabInputs[(project.id || project._id) as string] || '')} className="text-sm px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">Add Collaborator</button>
-                      <button onClick={() => handleRemoveCollaborator(project, collabInputs[(project.id || project._id) as string] || '')} className="text-sm px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">Remove Collaborator</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {projects.map((project) => {
+                const key = (project.id || project._id) as string;
+                const value = collabInputs[key] || '';
+                return (
+                  <ProjectItem
+                    key={key}
+                    project={project}
+                    onToggleArchive={handleArchiveToggle}
+                    collabValue={value}
+                    onChangeCollabValue={(v) => setCollabInputs(prev => ({ ...prev, [key]: v }))}
+                    onAddCollaborator={handleAddCollaborator}
+                    onRemoveCollaborator={handleRemoveCollaborator}
+                    activeTaskCount={taskCounts[key] ?? 0}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow">
@@ -177,13 +177,11 @@ export default function ProjectsPage() {
                           <h2 className="text-xl font-semibold text-gray-900 mr-3">{project.name}</h2>
                           <button onClick={() => handleArchiveToggle(project)} className="px-2 py-1 text-sm rounded bg-blue-100 text-blue-800">{!project.isArchived ? "Active" : "Archived"}</button>
                         </div>
-                        <p className="text-gray-600 mb-3">Complete overhaul of company website with modern design</p>
+                        <p className="text-gray-600 mb-3">{project.description || '-'}</p>
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
                           <span>{project.deadline ? formatDate(project.deadline) : '-'}</span>
                           <span>•</span>
-                          <span>{project.hasContainedTasks ? "5" : "0"} active tasks</span>
-                          <span>•</span>
-                          <span>60% complete</span>
+                          <span>{taskCounts[(project.id || project._id) as string] ?? 0} active tasks</span>
                         </div>
                       </div>
                       <div className="ml-6">
