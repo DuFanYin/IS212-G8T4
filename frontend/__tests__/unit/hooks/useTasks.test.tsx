@@ -2,6 +2,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useTasks } from '@/lib/hooks/useTasks';
 import { taskService } from '@/lib/services/api';
+import type { Task } from '@/lib/types/task';
 
 vi.mock('@/lib/services/api');
 vi.mock('@/contexts/UserContext', () => ({
@@ -16,7 +17,19 @@ describe('useTasks Hook', () => {
   });
 
   it('fetches tasks on mount', async () => {
-    const mockTasks = [{ id: '1', title: 'Test Task', status: 'ongoing' }];
+    const mockTasks: Task[] = [{
+      id: '1',
+      title: 'Test Task',
+      description: 'Desc',
+      status: 'ongoing',
+      dueDate: '2024-12-31',
+      createdBy: 'u1',
+      collaborators: [],
+      attachments: [],
+      isDeleted: false,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    }];
     mockTaskService.getUserTasks.mockResolvedValue({
       status: 'success',
       data: mockTasks
@@ -32,7 +45,19 @@ describe('useTasks Hook', () => {
   });
 
   it('creates task successfully', async () => {
-    const newTask = { id: '2', title: 'New Task', status: 'unassigned' };
+    const newTask: Task = {
+      id: '2',
+      title: 'New Task',
+      description: 'New task description',
+      status: 'unassigned',
+      dueDate: '2024-12-31',
+      createdBy: 'u1',
+      collaborators: [],
+      attachments: [],
+      isDeleted: false,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    };
     mockTaskService.getUserTasks.mockResolvedValue({ status: 'success', data: [] });
     mockTaskService.createTask.mockResolvedValue({
       status: 'success',
@@ -46,7 +71,7 @@ describe('useTasks Hook', () => {
     });
 
     await act(async () => {
-      await result.current.createTask({ title: 'New Task', dueDate: '2024-12-31' });
+      await result.current.createTask({ title: 'New Task', description: 'Test description', dueDate: '2024-12-31' });
     });
 
     await waitFor(() => {
@@ -55,10 +80,34 @@ describe('useTasks Hook', () => {
   });
 
   it('updates task status', async () => {
-    const updatedTask = { id: '1', title: 'Test Task', status: 'completed' };
+    const updatedTask: Task = {
+      id: '1',
+      title: 'Test Task',
+      description: 'Desc',
+      status: 'completed',
+      dueDate: '2024-12-31',
+      createdBy: 'u1',
+      collaborators: [],
+      attachments: [],
+      isDeleted: false,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z'
+    };
     mockTaskService.getUserTasks.mockResolvedValue({
       status: 'success',
-      data: [{ id: '1', title: 'Test Task', status: 'ongoing' }]
+      data: [{
+        id: '1',
+        title: 'Test Task',
+        description: 'Desc',
+        status: 'ongoing',
+        dueDate: '2024-12-31',
+        createdBy: 'u1',
+        collaborators: [],
+        attachments: [],
+        isDeleted: false,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z'
+      }]
     });
     mockTaskService.updateTaskStatus.mockResolvedValue({
       status: 'success',

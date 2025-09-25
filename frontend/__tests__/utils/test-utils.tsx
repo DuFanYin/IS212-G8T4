@@ -1,8 +1,8 @@
 // Test utilities for common test operations
 import { render, RenderOptions } from '@testing-library/react';
+import { vi } from 'vitest';
 import { ReactElement } from 'react';
 import { UserProvider } from '@/contexts/UserContext';
-import { mockUser } from './mocks';
 
 // Custom render function that includes providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
@@ -21,7 +21,6 @@ const customRender = (
 // Helper to render with specific user context
 export const renderWithUser = (
   ui: ReactElement,
-  user = mockUser,
   options?: Omit<RenderOptions, 'wrapper'>
 ) => {
   const UserWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -34,7 +33,7 @@ export const renderWithUser = (
 };
 
 // Helper to create mock functions with proper typing
-export const createMockFn = <T extends (...args: any[]) => any>(fn?: T) => {
+export const createMockFn = <T extends (...args: unknown[]) => unknown>(fn?: T) => {
   return fn ? vi.fn(fn) : vi.fn();
 };
 

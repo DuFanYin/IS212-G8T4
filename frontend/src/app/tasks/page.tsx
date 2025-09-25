@@ -9,6 +9,8 @@ import { AssignTaskModal } from '@/components/forms/AssignTaskModal';
 import { EditTaskModal } from '@/components/forms/EditTaskModal';
 import type { User } from '@/lib/types/user';
 import type { Task, CreateTaskRequest } from '@/lib/types/task';
+import { subtaskService } from '@/lib/services/subtask';
+import { storage } from '@/lib/utils/storage';
 
 export default function TasksPage() {
   const { user }: { user: User | null } = useUser();
@@ -28,6 +30,17 @@ export default function TasksPage() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const token = storage.getToken();
+
+  // Minimal subtasks demo calls
+  const demoCreateSubtask = async () => {
+    if (!activeTask || !token) return;
+    await subtaskService.create(token, activeTask.id, { title: 'Subtask', dueDate: new Date().toISOString() });
+  };
+  const demoListSubtasks = async () => {
+    if (!activeTask || !token) return;
+    await subtaskService.getByParentTask(token, activeTask.id);
+  };
 
   if (!user) {
     return (
@@ -234,6 +247,12 @@ export default function TasksPage() {
         onClose={() => { setIsEditModalOpen(false); setActiveTask(null); }}
         onUpdate={async (data) => { await handleConfirmEdit(data); }}
       />
+
+      {/* Subtasks demo buttons */}
+      <div className="fixed bottom-4 right-4 space-x-2">
+        <button onClick={demoListSubtasks} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm">List Subtasks</button>
+        <button onClick={demoCreateSubtask} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm">Create Subtask</button>
+      </div>
     </div>
   );
 }

@@ -15,3 +15,26 @@ export interface AuthResponse {
     user: User;
   };
 }
+
+export interface UserResponse {
+  status: string;
+  data: User;
+  message?: string;
+}
+
+export interface UsersResponse {
+  status: string;
+  data: User[];
+  message?: string;
+}
+
+export interface PasswordResetTokenResponse {
+  status: string;
+  data: { resetToken: string };
+  message?: string;
+}
+
+export interface BasicResponse {
+  status: string;
+  message?: string;
+}

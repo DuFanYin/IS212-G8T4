@@ -147,7 +147,7 @@ export default function LoginPage() {
 
 
         <div className="mt-4 text-center text-sm text-gray-500">
-          <div className="font-medium mb-1">Password: Password123!</div>
+          <div className="font-medium mb-1">Password: Password</div>
           <div>sm@example.com (Senior Management)</div>
           <div>hr@example.com (HR)</div>
           <div>director@example.com (Director)</div>

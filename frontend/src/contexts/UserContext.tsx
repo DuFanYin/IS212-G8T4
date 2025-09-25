@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/lib/types/user';
-import { authService } from '@/lib/services/api';
+import { authService } from '@/lib/services/auth';
 import { storage } from '@/lib/utils/storage';
 import { setupInactivityTracker } from '@/lib/utils/inactivityTracker';
 

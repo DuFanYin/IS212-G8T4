@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import TasksPage from '@/app/tasks/page';
 import { useTasks } from '@/lib/hooks/useTasks';
+import { mockTasks } from '../utils/mocks';
 
 vi.mock('@/lib/hooks/useTasks');
 vi.mock('@/contexts/UserContext', () => ({
@@ -14,10 +15,7 @@ describe('TasksPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseTasks.mockReturnValue({
-      tasks: [
-        { id: '1', title: 'Task 1', status: 'ongoing', dueDate: '2024-12-31' },
-        { id: '2', title: 'Task 2', status: 'unassigned', dueDate: '2024-12-31' }
-      ],
+      tasks: mockTasks,
       loading: false,
       error: null,
       createTask: vi.fn(),
@@ -33,8 +31,8 @@ describe('TasksPage', () => {
     render(<TasksPage />);
 
     expect(screen.getByText('Tasks')).toBeInTheDocument();
-    expect(screen.getByText('Task 1')).toBeInTheDocument();
-    expect(screen.getByText('Task 2')).toBeInTheDocument();
+    expect(screen.getByText(mockTasks[0].title)).toBeInTheDocument();
+    expect(screen.getByText(mockTasks[1].title)).toBeInTheDocument();
   });
 
   it('shows create task button', () => {
@@ -48,8 +46,8 @@ describe('TasksPage', () => {
 
     fireEvent.click(screen.getByText('Unassigned (1)'));
 
-    expect(screen.getByText('Task 2')).toBeInTheDocument();
-    expect(screen.queryByText('Task 1')).not.toBeInTheDocument();
+    expect(screen.getByText(mockTasks[1].title)).toBeInTheDocument();
+    expect(screen.queryByText(mockTasks[0].title)).not.toBeInTheDocument();
   });
 
   it('shows role-based task counts', () => {

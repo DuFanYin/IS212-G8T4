@@ -48,6 +48,7 @@ describe('useTeamMembers Hook', () => {
   it('should handle API error', async () => {
     mockUserService.getTeamMembers.mockResolvedValue({
       status: 'error',
+      data: [],
       message: 'Failed to fetch team members'
     });
 

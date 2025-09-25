@@ -1,16 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { authService } from '@/lib/services/api';
 import { useRouter } from 'next/navigation';
 
-// Mock valid emails from seed data
-const VALID_EMAILS = [
-  'sm@example.com',
-  'hr@example.com',
-  'director@example.com',
-  'manager@example.com',
-  'staff@example.com'
-];
+// No local mock; use real endpoints
 
 type Errors = {
   email?: string;
@@ -61,24 +55,26 @@ export default function ResetPasswordPage() {
   const [errors, setErrors] = useState<Errors>({});
   const [message, setMessage] = useState({ text: '', type: 'error' as 'error' | 'success' });
 
-  const handleEmailCheck = (e: React.FormEvent) => {
+  const handleEmailCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
     setMessage({ text: '', type: 'error' });
-    
-    if (!VALID_EMAILS.includes(email)) {
-      setErrors({ general: 'Email not found in our records' });
-      return;
-    }
 
-    setEmailVerified(true);
-    setMessage({ 
-      text: 'Email verified! Please set your new password.', 
-      type: 'success' 
-    });
+    try {
+      const res = await authService.requestPasswordReset(email);
+      if (res.status === 'success' && res.data?.resetToken) {
+        localStorage.setItem('resetToken', res.data.resetToken);
+        setEmailVerified(true);
+        setMessage({ text: 'Email verified! Please set your new password.', type: 'success' });
+      } else {
+        setErrors({ general: res.message || 'Unable to verify email' });
+      }
+    } catch {
+      setErrors({ general: 'Request failed. Please try again.' });
+    }
   };
 
-  const handlePasswordReset = (e: React.FormEvent) => {
+  const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
     setMessage({ text: '', type: 'error' });
@@ -88,14 +84,18 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    // In a real app, this would update the password in the database
-    localStorage.setItem(`password_${email}`, newPassword);
-    
-    setMessage({ 
-      text: 'Password updated successfully! Redirecting to login...', 
-      type: 'success' 
-    });
-    setTimeout(() => router.push('/login'), 2000);
+    const token = localStorage.getItem('resetToken') || '';
+    try {
+      const res = await authService.resetPassword(token, newPassword);
+      if (res.status === 'success') {
+        setMessage({ text: 'Password updated successfully! Redirecting to login...', type: 'success' });
+        setTimeout(() => router.push('/login'), 2000);
+      } else {
+        setErrors({ general: res.message || 'Failed to reset password' });
+      }
+    } catch {
+      setErrors({ general: 'Reset failed. Please try again.' });
+    }
   };
 
   return (

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 // Test utilities and shared mocks
 export const mockUser = {
   id: '1',
@@ -35,13 +37,15 @@ export const mockTasks = [
   }
 ];
 
+type SuccessResponse<T> = { status: 'success'; data: T };
+type ErrorResponse = { status: 'error'; message: string };
 export const mockApiResponse = {
-  success: (data: any) => ({ status: 'success', data }),
-  error: (message: string) => ({ status: 'error', message })
+  success: <T>(data: T): SuccessResponse<T> => ({ status: 'success', data }),
+  error: (message: string): ErrorResponse => ({ status: 'error', message })
 };
 
 // Mock fetch responses
-export const createMockFetch = (response: any) => {
+export const createMockFetch = <T extends { status: 'success' | 'error' }>(response: T) => {
   return vi.fn().mockResolvedValue({
     json: () => Promise.resolve(response),
     ok: response.status === 'success',
