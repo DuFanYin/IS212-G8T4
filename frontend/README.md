@@ -7,36 +7,61 @@ A modern Next.js frontend application for a comprehensive task management system
 ```
 src/
 ├── app/                          # Next.js App Router pages
-│   ├── home/                    # Dashboard/home page
-│   ├── login/                   # Authentication pages
-│   │   └── reset-password/      # Password reset functionality
-│   ├── projects/                # Project management page
-│   ├── tasks/                   # Task management page
-│   ├── users/                   # User management page
+│   ├── home/
+│   │   └── page.tsx             # Dashboard/home page
+│   ├── login/
+│   │   ├── page.tsx             # Login page
+│   │   └── reset-password/
+│   │       └── page.tsx         # Password reset
+│   ├── projects/
+│   │   └── page.tsx             # Project management
+│   ├── tasks/
+│   │   └── page.tsx             # Task management
+│   ├── users/
+│   │   └── page.tsx             # User management
 │   ├── layout.tsx               # Root layout with providers
-│   ├── page.tsx                 # Landing page
-│   └── utils/                   # App-level utilities
-│       └── auth.ts              # Authentication utilities
+│   └── page.tsx                 # Landing page
 ├── components/                   # Reusable UI components
-│   ├── CreateTaskModal.tsx      # Task creation modal
-│   ├── Header.tsx               # Navigation header
-│   ├── TaskItem.tsx             # Individual task display
-│   ├── UserList.tsx             # User listing component
-│   ├── UserProfile.tsx         # User profile display
-│   └── UserSelector.tsx        # User selection component
-├── contexts/                    # React Context providers
-│   └── UserContext.tsx          # Global user state management
-├── hooks/                       # Custom React hooks
-│   ├── useTasks.ts              # Task management hook
-│   └── useUsers.ts              # User management hook
-├── services/                    # API service layer
-│   └── api.ts                   # Backend API integration
-├── types/                       # TypeScript type definitions
-│   ├── task.ts                  # Task-related types
-│   └── user.ts                  # User-related types
-└── utils/                       # Utility functions
-    ├── inactivityTracker.ts     # Session timeout handling
-    └── storage.ts               # Local storage utilities
+│   ├── features/
+│   │   ├── tasks/
+│   │   │   └── TaskItem.tsx
+│   │   └── users/
+│   │       ├── UserList.tsx
+│   │       ├── UserProfile.tsx
+│   │       └── UserSelector.tsx
+│   ├── forms/
+│   │   ├── AssignTaskModal.tsx
+│   │   ├── CreateProjectModal.tsx
+│   │   ├── CreateTaskModal.tsx
+│   │   ├── EditProjectModal.tsx
+│   │   └── EditTaskModal.tsx
+│   └── layout/
+│       └── Header.tsx
+├── contexts/
+│   └── UserContext.tsx           # Global user state
+├── lib/
+│   ├── hooks/
+│   │   ├── useTasks.ts          # Task management hook
+│   │   └── useUsers.ts          # User management hook
+│   ├── services/                # API service layer (split by domain)
+│   │   ├── api.ts               # Barrel re-exports
+│   │   ├── auth.ts
+│   │   ├── config.ts
+│   │   ├── project.ts
+│   │   ├── subtask.ts
+│   │   ├── task.ts
+│   │   └── user.ts
+│   ├── types/                   # TypeScript type definitions
+│   │   ├── project.ts
+│   │   ├── subtask.ts
+│   │   ├── task.ts
+│   │   └── user.ts
+│   └── utils/
+│       ├── auth.ts
+│       ├── formatDate.ts
+│       ├── inactivityTracker.ts
+│       └── storage.ts
+└── app/globals.css              # Global styles
 ```
 
 ## 🚀 Features
@@ -70,12 +95,17 @@ src/
 
 ## 🛠️ Technology Stack
 
-- **Framework**: Next.js 14 with App Router
+- **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **State Management**: React Context + Custom Hooks
 - **API Integration**: Fetch API with typed responses
 - **Authentication**: JWT tokens with automatic refresh
+
+### Testing
+- **Runner**: Vitest + jsdom
+- **Utilities**: Testing Library + jest-dom
+- Global test setup: `__tests__/setup.ts` (mocks Next.js router and DOM observers)
 
 ## 🚀 Getting Started
 
