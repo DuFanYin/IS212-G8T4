@@ -1,8 +1,8 @@
 const request = require('supertest');
 const { describe, it, expect, beforeAll } = require('@jest/globals');
-const app = require('../src/app');
-const { User, Task, Subtask } = require('../src/db/models');
-const { generateToken } = require('../src/services/authService');
+const app = require('../../src/app');
+const { User, Task, Subtask } = require('../../src/db/models');
+const { generateToken } = require('../../src/services/authService');
 
 describe('Subtask Routes', () => {
     let authToken;
@@ -23,6 +23,7 @@ describe('Subtask Routes', () => {
 
         // Grab a subtask
         const subtask = await Subtask.findOne({ parentTaskId: parentTaskID });
+        console.log(subtask);
         subtaskID = subtask ? subtask._id.toString() : "68d0f55ef29fab09b83a9d3c";
     });
 
@@ -57,6 +58,7 @@ describe('Subtask Routes', () => {
             description: 'Test subtask creation',
             dueDate: new Date().toISOString(),
             status: 'unassigned',
+            assigneeId: staffUser._id,
             collaborators: [staffUser._id], // must be subset of parent task collaborators
         };
 
@@ -104,8 +106,6 @@ describe('Subtask Routes', () => {
             .delete(`/api/subtasks/${subtaskID}`)
             .set('Authorization', `Bearer ${authToken}`);
 
-
-        console.log(response.body);
         expect(response.status).toBe(200);
         expect(response.body.status).toBe('success');
         expect(response.body.data.isDeleted).toBe(true);
