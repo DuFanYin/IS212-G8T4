@@ -24,6 +24,16 @@ module.exports = async function seedSubtasks(_count, { tasks }) {
       assigneeId: undefined,
       collaborators: [],
     },
+    // Ensure at least one predictable subtask for tests
+    {
+      parentTaskId: homepage._id,
+      title: 'Seeded Subtask For Tests',
+      description: 'Auto-generated for subtask tests',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      status: 'unassigned',
+      assigneeId: homepage.assigneeId,
+      collaborators: homepage.assigneeId ? [homepage.assigneeId] : [],
+    },
   ];
   const inserted = await Subtask.insertMany(docs, { ordered: true });
   return inserted.map((s) => s.toObject());

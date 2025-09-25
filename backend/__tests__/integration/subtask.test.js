@@ -21,10 +21,10 @@ describe('Subtask Routes', () => {
         const task = await Task.findOne();
         parentTaskID = task._id.toString();
 
-        // Grab a subtask
-        const subtask = await Subtask.findOne({ parentTaskId: parentTaskID });
-        console.log(subtask);
-        subtaskID = subtask ? subtask._id.toString() : "68d0f55ef29fab09b83a9d3c";
+        // Use a seeded subtask (must exist via seeder)
+        const existing = await Subtask.findOne({ parentTaskId: parentTaskID });
+        if (!existing) throw new Error('Seeded subtask not found');
+        subtaskID = existing._id.toString();
     });
 
     it('should get subtasks by parent task', async () => {

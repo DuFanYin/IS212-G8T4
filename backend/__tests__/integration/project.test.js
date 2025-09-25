@@ -1,10 +1,103 @@
 const request = require('supertest');
-const { describe, it, expect, beforeAll, beforeEach, afterEach } = require('@jest/globals');
+const { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } = require('@jest/globals');
 const mongoose = require('mongoose');
 const app = require('../../src/app');
-const { Project, User } = require('../../src/db/models');
+const { User, Project } = require('../../src/db/models');
 const { generateToken } = require('../../src/services/authService');
 
+// --- From projectCreation.test.js ---
+describe('Project Creation', () => {
+  let authToken;
+  let staffUser;
+
+  beforeEach(async () => {
+    staffUser = await User.findOne({ email: 'staff@example.com' });
+    if (staffUser) {
+      authToken = generateToken(staffUser._id);
+    }
+  });
+
+  describe('POST /api/projects', () => {
+    it('should return 401 when not authenticated', async () => {
+      const response = await request(app)
+        .post('/api/projects/')
+        .send({ name: 'Test Project' });
+        
+      expect(response.status).toBe(401);
+      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBe('No token provided');
+    });
+
+    it('should create a project successfully with all fields', async () => {
+      const response = await request(app)
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          name: 'Full Project',
+          description: 'Testing all fields',
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          collaborators: [staffUser._id]
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('success');
+    });
+
+    it('should create a project without optional fields', async () => {
+      const response = await request(app)
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ name: 'Minimal Project' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('success');
+    });
+
+    it('should fail if name is missing', async () => {
+      const response = await request(app)
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ description: 'Missing name' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.status).toBe('error');
+      expect(response.body.message).toMatch(/name is required/i);
+    });
+
+    it('should fail if deadline is invalid', async () => {
+      const response = await request(app)
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ name: 'Invalid Deadline', deadline: 'invalid-date' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.status).toBe('error');
+      expect(response.body.message).toMatch(/invalid date/i);
+    });
+  });
+
+  //Testing for GET Project
+  describe('GET /api/projects', () => {
+    it('should return 401 when not authenticated', async () => {
+      const response = await request(app).get('/api/projects/');
+
+      expect(response.status).toBe(401);
+      expect(response.body.status).toBe('error');
+      expect(response.body.message).toBe('No token provided');
+    });
+
+    it('should return all projects successfully for authenticated user', async () => {
+      const response = await request(app)
+        .get('/api/projects/')
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('success');
+      expect(Array.isArray(response.body.data)).toBe(true);
+    });
+  });
+});
+
+// --- From projectManagement.test.js ---
 describe('Project Management', () => {
   let authToken;
   let staffUser;
@@ -12,13 +105,17 @@ describe('Project Management', () => {
   let hrUser;
   let collaborator;
   let project;
+  let originalProjectName;
 
-  // Ensure seed project exists
   beforeAll(async () => {
     staffUser = await User.findOne({ email: 'staff@example.com' });
     managerUser = await User.findOne({ email: 'manager@example.com' });
     hrUser = await User.findOne({ email: 'hr@example.com' });
-    project = await Project.findOne({ name: 'Revamp Website'});
+    // Prefer a staff-owned seeded project for authorization-dependent tests
+    project = await Project.findOne({ name: 'Staff Sandbox Project' });
+    if (!project) {
+      project = await Project.findOne({ name: 'Website Revamp' });
+    }
 
     if (!staffUser || !managerUser) {
       throw new Error('Required users not found in DB');
@@ -26,15 +123,16 @@ describe('Project Management', () => {
 
     authToken = generateToken(staffUser._id);
     collaborator = managerUser._id;
+    originalProjectName = project ? project.name : undefined;
   });
 
   afterAll(async () => {
       if (project) {
-          await Project.findByIdAndUpdate(project._id, {
-              name: "Revamp Website",
-              collaborators: [project.ownerId],
-              isArchived: false,
-          });
+        await Project.findByIdAndUpdate(project._id, {
+          name: originalProjectName,
+          collaborators: [project.ownerId],
+          isArchived: false,
+        });
       }
   });
 
@@ -215,3 +313,5 @@ describe('Project Management', () => {
     });
   });
 });
+
+

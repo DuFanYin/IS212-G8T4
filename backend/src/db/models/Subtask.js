@@ -32,7 +32,11 @@ const subtaskSchema = new mongoose.Schema({
   collaborators: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }]
+  }],
+  isDeleted: {
+    type: Boolean,
+    default: false
+  }
 }, {
   timestamps: true
 });
@@ -42,6 +46,7 @@ subtaskSchema.index({ parentTaskId: 1 });
 subtaskSchema.index({ assigneeId: 1 });
 subtaskSchema.index({ status: 1 });
 subtaskSchema.index({ dueDate: 1 });
+subtaskSchema.index({ isDeleted: 1 });
 
 const Subtask = mongoose.model('Subtask', subtaskSchema);
 

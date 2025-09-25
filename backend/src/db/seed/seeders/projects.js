@@ -3,6 +3,7 @@ const Project = require('../../models/Project');
 module.exports = async function seedProjects(_count, { users, teams, departments }) {
   await Project.deleteMany({});
   const manager = users.find(u => u.role === 'manager') || users[0];
+  const staff = users.find(u => u.role === 'staff') || users[1] || users[0];
   const engDept = departments.find(d => d.name === 'Engineering') || departments[0];
   const frontTeam = teams.find(t => t.name === 'Frontend Team') || teams[0];
   const platformTeam = teams.find(t => t.name === 'Platform Team') || teams[1] || teams[0];
@@ -22,6 +23,16 @@ module.exports = async function seedProjects(_count, { users, teams, departments
       departmentId: engDept._id,
       teamId: platformTeam._id,
       ownerId: manager._id,
+      isDeleted: false,
+    },
+    // Ensure there is at least one project owned by a staff user for tests that
+    // require owner-level permissions from a non-manager role
+    {
+      name: 'Staff Sandbox Project',
+      description: 'Seeded project owned by a staff user for tests',
+      departmentId: engDept._id,
+      teamId: frontTeam._id,
+      ownerId: staff._id,
       isDeleted: false,
     },
   ];
