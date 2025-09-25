@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import { useTasks } from '@/lib/hooks/useTasks';
 import { TaskItem } from '@/components/features/tasks/TaskItem';
@@ -14,13 +15,12 @@ import { storage } from '@/lib/utils/storage';
 
 export default function TasksPage() {
   const { user }: { user: User | null } = useUser();
+  const router = useRouter();
   const { 
     tasks, 
     loading, 
     error, 
     createTask, 
-    updateTaskStatus, 
-    archiveTask, 
     assignTask,
     updateTask
   } = useTasks();
@@ -56,41 +56,8 @@ export default function TasksPage() {
     return task.status === selectedFilter;
   });
 
-  // Check if user can assign tasks (managers and above)
-  const canAssignTasks = ['manager', 'director', 'hr', 'sm'].includes(user.role);
-
   const handleCreateTask = async (taskData: CreateTaskRequest) => {
     await createTask(taskData);
-  };
-
-  const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
-    try {
-      await updateTaskStatus(task.id, { status: newStatus });
-    } catch (err) {
-      console.error('Failed to update task status:', err);
-      alert('Failed to update task status');
-    }
-  };
-
-  const handleArchiveTask = async (task: Task) => {
-    if (confirm(`Are you sure you want to archive "${task.title}"?`)) {
-      try {
-        await archiveTask(task.id);
-      } catch (err) {
-        console.error('Failed to archive task:', err);
-        alert('Failed to archive task');
-      }
-    }
-  };
-
-  const handleEditTask = (task: Task) => {
-    setActiveTask(task);
-    setIsEditModalOpen(true);
-  };
-
-  const handleAssignTask = (task: Task) => {
-    setActiveTask(task);
-    setIsAssignModalOpen(true);
   };
   
   const handleConfirmAssign = async (assigneeId: string) => {
@@ -208,11 +175,7 @@ export default function TasksPage() {
                 <TaskItem
                   key={task.id}
                   task={task}
-                  onEdit={handleEditTask}
-                  onAssign={handleAssignTask}
-                  onStatusChange={handleStatusChange}
-                  onArchive={handleArchiveTask}
-                  canAssign={canAssignTasks}
+                  onClick={() => router.push(`/tasks/${task.id}`)}
                 />
               ))}
             </div>

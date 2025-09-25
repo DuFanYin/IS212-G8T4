@@ -51,17 +51,29 @@ backend/src/
 ├── server.js           # Server entry point
 ├── routes/             # API endpoints
 │   ├── authRoutes.js
-│   └── userRoutes.js
+│   ├── userRoutes.js
+│   ├── projectRoutes.js
+│   ├── taskRoutes.js
+│   └── subtaskRoutes.js
 ├── controllers/        # Request handlers
 │   ├── authController.js
-│   └── userController.js
-├── services/          # Business logic
-│   └── userService.js
-├── middleware/        # Custom middleware
+│   ├── userController.js
+│   ├── projectController.js
+│   ├── taskController.js
+│   └── subtaskController.js
+├── services/           # Business operations (error messages are minimal and meaningful)
+│   ├── authService.js
+│   ├── userService.js
+│   ├── projectService.js
+│   ├── taskService.js
+│   ├── subtaskService.js
+│   └── activityService.js
+├── middleware/         # Custom middleware
 │   └── authMiddleware.js
-└── db/               # Database
-    ├── connect.js    # MongoDB connection
-    └── models/       # Mongoose schemas
+└── db/                 # Database
+    ├── connect.js      # MongoDB connection
+    ├── seed/           # Seed scripts
+    └── models/         # Mongoose schemas
 ```
 
 ## Quick Start
@@ -109,5 +121,12 @@ SEED_COMMENTS=5 SEED_ACTIVITY_LOGS=5 \
 npm run seed
 ```
 
-cloc . --exclude-dir=node_modules,.next,coverage,.git --exclude-ext=json,lock,map,svg,ico --not-match-f="next.config|postcss.config|tailwind.config|jest.config|vitest.config"
+### Notable Backend Behaviors
+
+- Task DTOs include enriched fields: `projectName`, `assigneeName`, `createdByName`, `collaboratorNames`.
+- Task collaborators validation:
+  - On create: collaborators must be a subset of project collaborators; creator auto-added and added to project if missing.
+  - On update: collaborators revalidated against project (handles ObjectId/string normalization).
+- Subtask collaborators must be a subset of parent task collaborators; creator auto-added.
+- Services return concise error messages propagating underlying causes.
 

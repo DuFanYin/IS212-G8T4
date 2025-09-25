@@ -232,16 +232,19 @@ src/
 - Visibility: `isVisibleToUser()`
 - Queries: `getProjectsByOwner()`, `getProjectsByDepartment()`
 
+
 ### **TaskService** (`src/services/taskService.js`)
 **Methods:**
 - Core operations: `createTask()`, `updateTask()`, `assignTask()`, `updateTaskStatus()`, `softDeleteTask()`
 - Visibility: `isVisibleToUser()`
 - Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByCollaborator()`
 
+
 ### **SubtaskService** (`src/services/subtaskService.js`)
 **Methods:**
 - Core operations: `createSubtask()`, `updateSubtask()`, `updateSubtaskStatus()`, `softDeleteSubtask()`
 - Queries: `getSubtaskById()`, `getSubtasksByParentTask()`
+
 
 ### **ActivityService** (`src/services/activityService.js`)
 **Methods:**
@@ -251,6 +254,7 @@ src/
 ### **AuthService** (`src/services/authService.js`)
 **Methods:**
 - Token generation: `generateToken()`
+
 
 ## Current Capabilities & Architecture Overview
 

@@ -27,7 +27,7 @@ class ActivityLogService {
 
       return new ActivityLog(activityDoc);
     } catch (error) {
-      throw new Error('Error logging activity');
+      throw new Error(error?.message || 'Error logging activity');
     }
   }
 
@@ -41,7 +41,7 @@ class ActivityLogService {
       const activityDocs = await this.activityLogRepository.findByUser(userId, filters);
       return activityDocs.map(doc => new ActivityLog(doc));
     } catch (error) {
-      throw new Error('Error fetching user activity logs');
+      throw new Error(error?.message || 'Error fetching user activity logs');
     }
   }
 
@@ -55,7 +55,7 @@ class ActivityLogService {
       const activityDocs = await this.activityLogRepository.findByResource(resourceType, resourceId);
       return activityDocs.map(doc => new ActivityLog(doc));
     } catch (error) {
-      throw new Error('Error fetching resource activity logs');
+      throw new Error(error?.message || 'Error fetching resource activity logs');
     }
   }
 
@@ -68,7 +68,7 @@ class ActivityLogService {
       const activityDocs = await this.activityLogRepository.findAll(filters);
       return activityDocs.map(doc => new ActivityLog(doc));
     } catch (error) {
-      throw new Error('Error fetching activity logs');
+      throw new Error(error?.message || 'Error fetching activity logs');
     }
   }
 }

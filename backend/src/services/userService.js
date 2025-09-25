@@ -13,7 +13,7 @@ class UserService {
       
       return new User(userDoc);
     } catch (error) {
-      throw new Error('Error fetching user');
+      throw new Error(error?.message || 'Error fetching user');
     }
   }
 
@@ -24,7 +24,7 @@ class UserService {
       
       return new User(userDoc);
     } catch (error) {
-      throw new Error('Error fetching user by email');
+      throw new Error(error?.message || 'Error fetching user by email');
     }
   }
 
@@ -33,7 +33,7 @@ class UserService {
       const userDoc = await this.userRepository.create(userData);
       return new User(userDoc);
     } catch (error) {
-      throw new Error('Error creating user');
+      throw new Error(error?.message || 'Error creating user');
     }
   }
 
@@ -44,7 +44,7 @@ class UserService {
       
       return new User(userDoc);
     } catch (error) {
-      throw new Error('Error updating user');
+      throw new Error(error?.message || 'Error updating user');
     }
   }
 
@@ -53,7 +53,7 @@ class UserService {
       const userDocs = await this.userRepository.findUsersByDepartment(departmentId);
       return userDocs.map(doc => new User(doc));
     } catch (error) {
-      throw new Error('Error fetching users by department');
+      throw new Error(error?.message || 'Error fetching users by department');
     }
   }
 
@@ -62,7 +62,7 @@ class UserService {
       const userDocs = await this.userRepository.findUsersByTeam(teamId);
       return userDocs.map(doc => new User(doc));
     } catch (error) {
-      throw new Error('Error fetching users by team');
+      throw new Error(error?.message || 'Error fetching users by team');
     }
   }
 
@@ -73,7 +73,7 @@ class UserService {
       
       return new User(userDoc);
     } catch (error) {
-      throw new Error('Error updating password');
+      throw new Error(error?.message || 'Error updating password');
     }
   }
 
@@ -84,7 +84,7 @@ class UserService {
       
       return new User(userDoc);
     } catch (error) {
-      throw new Error('Error setting reset token');
+      throw new Error(error?.message || 'Error setting reset token');
     }
   }
 
@@ -95,7 +95,7 @@ class UserService {
       
       return new User(userDoc);
     } catch (error) {
-      throw new Error('Error clearing reset token');
+      throw new Error(error?.message || 'Error clearing reset token');
     }
   }
 
@@ -106,7 +106,7 @@ class UserService {
       
       return new User(userDoc);
     } catch (error) {
-      throw new Error('Error validating reset token');
+      throw new Error(error?.message || 'Error validating reset token');
     }
   }
 
@@ -115,7 +115,7 @@ class UserService {
       const userDocs = await this.userRepository.findAll();
       return userDocs.map(doc => new User(doc));
     } catch (error) {
-      throw new Error('Error fetching all users');
+      throw new Error(error?.message || 'Error fetching all users');
     }
   }
 }

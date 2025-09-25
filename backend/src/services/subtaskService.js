@@ -51,7 +51,7 @@ class SubtaskService {
 
       return new Subtask(subtaskDoc);
     } catch (error) {
-      throw new Error('Error creating subtask');
+      throw new Error(error?.message || 'Error creating subtask');
     }
   }
 
@@ -78,7 +78,7 @@ class SubtaskService {
 
       return new Subtask(subtaskDoc);
     } catch (error) {
-      throw new Error('Error updating subtask');
+      throw new Error(error?.message || 'Error updating subtask');
     }
   }
 
@@ -105,7 +105,7 @@ class SubtaskService {
 
       return new Subtask(subtaskDoc);
     } catch (error) {
-      throw new Error('Error updating subtask status');
+      throw new Error(error?.message || 'Error updating subtask status');
     }
   }
 
@@ -120,7 +120,7 @@ class SubtaskService {
       
       return new Subtask(subtaskDoc);
     } catch (error) {
-      throw new Error('Error fetching subtask');
+      throw new Error(error?.message || 'Error fetching subtask');
     }
   }
 
@@ -133,7 +133,7 @@ class SubtaskService {
       const subtaskDocs = await this.subtaskRepository.findByParentTask(parentTaskId);
       return subtaskDocs.map(doc => new Subtask(doc));
     } catch (error) {
-      throw new Error('Error fetching subtasks');
+      throw new Error(error?.message || 'Error fetching subtasks');
     }
   }
 
@@ -159,7 +159,7 @@ class SubtaskService {
 
       return new Subtask(subtaskDoc);
     } catch (error) {
-      throw new Error('Error deleting subtask');
+      throw new Error(error?.message || 'Error deleting subtask');
     }
   }
 }

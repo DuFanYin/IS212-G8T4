@@ -2,11 +2,47 @@ const ProjectRepository = require('../repositories/ProjectRepository');
 const Project = require('../domain/Project');
 const UserRepository = require('../repositories/UserRepository');
 const User = require('../domain/User');
+const ProjectModel = require('../db/models/Project');
 
 class ProjectService {
   constructor(projectRepository, userRepository) {
     this.projectRepository = projectRepository;
     this.userRepository = userRepository;
+  }
+
+  // Internal: fetch domain Project by id (for permission/logic checks)
+  async getProjectDomainById(projectId) {
+    const doc = await this.projectRepository.findById(projectId);
+    if (!doc) throw new Error('Project not found');
+    return new Project(doc);
+  }
+
+  // Build enriched DTO for projects including ownerName and collaboratorNames
+  async buildEnrichedProjectDTO(project) {
+    const dto = project.toDTO ? project.toDTO() : project;
+    let ownerName = undefined;
+    try {
+      if (dto.ownerId) {
+        const ownerDoc = await this.userRepository.findById(dto.ownerId);
+        ownerName = ownerDoc?.name;
+      }
+    } catch {}
+
+    let collaboratorNames = undefined;
+    try {
+      if (Array.isArray(dto.collaborators) && dto.collaborators.length > 0) {
+        const names = [];
+        for (const id of dto.collaborators) {
+          try {
+            const doc = await this.userRepository.findById(id);
+            if (doc?.name) names.push(doc.name);
+          } catch {}
+        }
+        collaboratorNames = names;
+      }
+    } catch {}
+
+    return { ...dto, ownerName, collaboratorNames };
   }
 
   /**
@@ -24,14 +60,56 @@ class ProjectService {
 
   //Code Reviewed
   async getAllProjects(){
-    const projectDocs = await this.projectRepository.findAllProjects();
-    return projectDocs.map(doc => new Project(doc));
+    const docs = await this.projectRepository.findAllProjects();
+    const populated = await ProjectModel.populate(docs, [
+      { path: 'ownerId', select: 'name' },
+      { path: 'collaborators', select: 'name' },
+      { path: 'departmentId', select: 'name' }
+    ]);
+    return populated.map((doc) => ({
+      id: doc._id,
+      name: doc.name,
+      description: doc.description,
+      ownerId: doc.ownerId?._id || doc.ownerId,
+      ownerName: doc.ownerId?.name,
+      deadline: doc.deadline,
+      departmentId: doc.departmentId?._id || doc.departmentId,
+      departmentName: doc.departmentId?.name,
+      collaborators: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c._id || c) : [],
+      collaboratorNames: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c.name).filter(Boolean) : [],
+      isArchived: doc.isArchived,
+      hasContainedTasks: doc.hasContainedTasks,
+      isOverdue: doc.deadline ? new Date(doc.deadline) < new Date() && !doc.isArchived : false,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    }));
   }
 
   //Code Reviewed
   async getActiveProjects() {
-    const projectDocs = await this.projectRepository.findActiveProjects();
-    return projectDocs.map(doc => new Project(doc));
+    const docs = await this.projectRepository.findActiveProjects();
+    const populated = await ProjectModel.populate(docs, [
+      { path: 'ownerId', select: 'name' },
+      { path: 'collaborators', select: 'name' },
+      { path: 'departmentId', select: 'name' }
+    ]);
+    return populated.map((doc) => ({
+      id: doc._id,
+      name: doc.name,
+      description: doc.description,
+      ownerId: doc.ownerId?._id || doc.ownerId,
+      ownerName: doc.ownerId?.name,
+      deadline: doc.deadline,
+      departmentId: doc.departmentId?._id || doc.departmentId,
+      departmentName: doc.departmentId?.name,
+      collaborators: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c._id || c) : [],
+      collaboratorNames: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c.name).filter(Boolean) : [],
+      isArchived: doc.isArchived,
+      hasContainedTasks: doc.hasContainedTasks,
+      isOverdue: doc.deadline ? new Date(doc.deadline) < new Date() && !doc.isArchived : false,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    }));
   }
 
   /**
@@ -42,7 +120,7 @@ class ProjectService {
    */
   //Code Reviewed
   async updateProject(projectId, updateData, userId) {
-    const project = await this.getProjectById(projectId);
+    const project = await this.getProjectDomainById(projectId);
 
     await this.validateUser(project, userId);
 
@@ -73,7 +151,7 @@ class ProjectService {
    */
   //Code Reviewed
   async addCollaborator(projectId, collaboratorId, userId) {
-    const project = await this.getProjectById(projectId);
+    const project = await this.getProjectDomainById(projectId);
 
     await this.validateUser(project, userId);
 
@@ -87,7 +165,7 @@ class ProjectService {
   }
 
   async removeCollaborator(projectId, collaboratorId, userId) {
-    const project = await this.getProjectById(projectId);
+    const project = await this.getProjectDomainById(projectId);
 
     await this.validateUser(project, userId);
     if(project.isOwner(collaboratorId)){
@@ -123,8 +201,12 @@ class ProjectService {
 
   //Code Reviewed
   validateDepartmentMembership(userDeptId, projectDeptId) {
-    if (userDeptId && projectDeptId && !userDeptId.equals(projectDeptId)) {
-      throw new Error("All collaborators must be from the same department");
+    if (userDeptId && projectDeptId) {
+      const a = typeof userDeptId?.toString === 'function' ? userDeptId.toString() : `${userDeptId}`;
+      const b = typeof projectDeptId?.toString === 'function' ? projectDeptId.toString() : `${projectDeptId}`;
+      if (a !== b) {
+        throw new Error("All collaborators must be from the same department");
+      }
     }
   }
 
@@ -135,7 +217,7 @@ class ProjectService {
    */
   async isVisibleToUser(projectId, userId) {
     try {
-      const project = this.getProjectById(projectId);
+      const project = await this.getProjectDomainById(projectId);
       const userDoc = await this.userRepository.findById(userId);
       const user = new User(userDoc);
 
@@ -150,7 +232,7 @@ class ProjectService {
       const projectDocs = await this.projectRepository.findProjectsByOwner(ownerId);
       return projectDocs.map(doc => new Project(doc));
     } catch (error) {
-      throw new Error('Error fetching projects by owner');
+      throw new Error(error?.message || 'Error fetching projects by owner');
     }
   }
 
@@ -159,17 +241,38 @@ class ProjectService {
       const projectDocs = await this.projectRepository.findProjectsByDepartment(departmentId);
       return projectDocs.map(doc => new Project(doc));
     } catch (error) {
-      throw new Error('Error fetching projects by department');
+      throw new Error(error?.message || 'Error fetching projects by department');
     }
   }
 
   async getProjectById(projectId) {
     try { 
-      const projectDoc = await this.projectRepository.findById(projectId); 
-      if (!projectDoc) throw new Error('Project not found'); 
-      return new Project(projectDoc); 
+      const doc = await this.projectRepository.findById(projectId); 
+      if (!doc) throw new Error('Project not found'); 
+      const populated = await ProjectModel.populate(doc, [
+        { path: 'ownerId', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'departmentId', select: 'name' }
+      ]);
+      return {
+        id: populated._id,
+        name: populated.name,
+        description: populated.description,
+        ownerId: populated.ownerId?._id || populated.ownerId,
+        ownerName: populated.ownerId?.name,
+        deadline: populated.deadline,
+        departmentId: populated.departmentId?._id || populated.departmentId,
+        departmentName: populated.departmentId?.name,
+        collaborators: Array.isArray(populated.collaborators) ? populated.collaborators.map((c) => c._id || c) : [],
+        collaboratorNames: Array.isArray(populated.collaborators) ? populated.collaborators.map((c) => c.name).filter(Boolean) : [],
+        isArchived: populated.isArchived,
+        hasContainedTasks: populated.hasContainedTasks,
+        isOverdue: populated.deadline ? new Date(populated.deadline) < new Date() && !populated.isArchived : false,
+        createdAt: populated.createdAt,
+        updatedAt: populated.updatedAt,
+      };
     } catch (error) { 
-      throw new Error('Error fetching project by id');
+      throw new Error(error?.message || 'Error fetching project by id');
     }
   }
 }

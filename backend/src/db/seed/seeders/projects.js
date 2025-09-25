@@ -15,6 +15,8 @@ module.exports = async function seedProjects(_count, { users, teams, departments
       departmentId: engDept._id,
       teamId: frontTeam._id,
       ownerId: manager._id,
+      // Add realistic deadline: ~30 days from now
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       isDeleted: false,
     },
     {
@@ -23,6 +25,8 @@ module.exports = async function seedProjects(_count, { users, teams, departments
       departmentId: engDept._id,
       teamId: platformTeam._id,
       ownerId: manager._id,
+      // ~60 days from now
+      deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
       isDeleted: false,
     },
     // Ensure there is at least one project owned by a staff user for tests that
@@ -33,6 +37,8 @@ module.exports = async function seedProjects(_count, { users, teams, departments
       departmentId: engDept._id,
       teamId: frontTeam._id,
       ownerId: staff._id,
+      // ~15 days from now
+      deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
       isDeleted: false,
     },
   ];

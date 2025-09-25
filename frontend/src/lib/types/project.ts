@@ -6,6 +6,17 @@ export interface Project {
   isArchived?: boolean;
   deadline?: string | null;
   hasContainedTasks?: boolean;
+  // Additional fields provided by backend
+  ownerId?: string;
+  departmentId?: string;
+  departmentName?: string;
+  collaborators?: string[];
+  isOverdue?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  // Enriched fields from backend
+  ownerName?: string;
+  collaboratorNames?: string[];
 }
 
 export interface ProjectResponse {

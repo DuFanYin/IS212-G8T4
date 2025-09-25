@@ -4,10 +4,92 @@ const UserRepository = require('../repositories/UserRepository');
 const ProjectRepository = require('../repositories/ProjectRepository');
 const projectService = require('./projectService');
 const User = require('../domain/User');
+const TaskModel = require('../db/models/Task');
 
 class TaskService {
   constructor(taskRepository) {
     this.taskRepository = taskRepository;
+  }
+
+  // Map a populated task document (with names) to the enriched DTO shape
+  mapPopulatedTaskDocToDTO(taskDoc) {
+    return {
+      id: taskDoc._id?.toString?.() || taskDoc.id,
+      title: taskDoc.title,
+      description: taskDoc.description,
+      dueDate: taskDoc.dueDate,
+      status: taskDoc.status,
+      createdBy: taskDoc.createdBy?._id || taskDoc.createdBy,
+      createdByName: taskDoc.createdBy?.name,
+      assigneeId: taskDoc.assigneeId?._id || taskDoc.assigneeId,
+      assigneeName: taskDoc.assigneeId?.name,
+      projectId: taskDoc.projectId?._id || taskDoc.projectId,
+      projectName: taskDoc.projectId?.name,
+      attachments: taskDoc.attachments || [],
+      collaborators: Array.isArray(taskDoc.collaborators) ? taskDoc.collaborators.map(c => c._id || c) : [],
+      collaboratorNames: Array.isArray(taskDoc.collaborators) ? taskDoc.collaborators.map(c => c.name).filter(Boolean) : [],
+      lastStatusUpdate: taskDoc.lastStatusUpdate,
+      isDeleted: taskDoc.isDeleted,
+      createdAt: taskDoc.createdAt,
+      updatedAt: taskDoc.updatedAt,
+    };
+  }
+
+  // Build enriched DTO with human-readable names when available
+  async buildEnrichedTaskDTO(task) {
+    try {
+      const dto = task.toDTO();
+
+      // Resolve project name
+      let projectName = undefined;
+      if (dto.projectId) {
+        try {
+          const project = await projectService.getProjectById(dto.projectId);
+          projectName = project?.name;
+        } catch {}
+      }
+
+      // Resolve assignee name
+      let assigneeName = undefined;
+      if (dto.assigneeId) {
+        try {
+          const userRepository = new UserRepository();
+          const assigneeDoc = await userRepository.findById(dto.assigneeId);
+          assigneeName = assigneeDoc?.name;
+        } catch {}
+      }
+
+      // Resolve creator name
+      let createdByName = undefined;
+      if (dto.createdBy) {
+        try {
+          const userRepository = new UserRepository();
+          const creatorDoc = await userRepository.findById(dto.createdBy);
+          createdByName = creatorDoc?.name;
+        } catch {}
+      }
+
+      // Resolve collaborator names
+      let collaboratorNames = undefined;
+      if (Array.isArray(dto.collaborators) && dto.collaborators.length > 0) {
+        try {
+          const userRepository = new UserRepository();
+          const names = [];
+          for (const id of dto.collaborators) {
+            try {
+              const doc = await userRepository.findById(id);
+              if (doc?.name) names.push(doc.name);
+            } catch {}
+          }
+          collaboratorNames = names;
+        } catch {}
+      }
+
+      return { ...dto, projectName, assigneeName, createdByName, collaboratorNames };
+    } catch {
+      // Fallback to plain DTO
+      return task.toDTO();
+    }
   }
 
   /**
@@ -55,7 +137,8 @@ class TaskService {
         createdBy: userId
       });
 
-      return new Task(taskDoc);
+      const task = new Task(taskDoc);
+      return await this.buildEnrichedTaskDTO(task);
     } catch (error) {
       console.error('TaskService.createTask error:', error.message);
       throw new Error(`Error creating task: ${error.message}`);
@@ -114,10 +197,28 @@ class TaskService {
         }
       }
 
+      // If collaborators are being updated on a task that belongs to a project,
+      // ensure all collaborators are part of the project's collaborators list
+      if (Array.isArray(updateData.collaborators) && updateData.collaborators.length > 0 && task.projectId) {
+        const projectRepository = new ProjectRepository();
+        const project = await projectRepository.findById(task.projectId);
+        if (!project) {
+          throw new Error('Parent project not found');
+        }
+        const projectCollaboratorIds = (project.collaborators || []).map((id) => id?.toString?.() || id);
+        const invalid = updateData.collaborators
+          .map((c) => c?.toString?.() || c)
+          .filter((c) => !projectCollaboratorIds.includes(c));
+        if (invalid.length > 0) {
+          throw new Error('Task collaborators must be a subset of project collaborators');
+        }
+      }
+
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
-      return new Task(updatedTaskDoc);
+      const updatedTask = new Task(updatedTaskDoc);
+      return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
-      throw new Error('Error updating task');
+      throw new Error(`Error updating task: ${error.message || 'unknown error'}`);
     }
   }
 
@@ -215,18 +316,20 @@ class TaskService {
 
   async getTasksByProject(projectId, userId) {
     try {
-      const taskDocs = await this.taskRepository.findTasksByProject(projectId);
-      const tasks = taskDocs.map(doc => new Task(doc));
-      
-      // Filter tasks based on user visibility
-      const visibleTasks = [];
-      for (const task of tasks) {
-        if (await this.isVisibleToUser(task, userId)) {
-          visibleTasks.push(task);
+      const docs = await this.taskRepository.findTasksByProject(projectId);
+      const populated = await TaskModel.populate(docs, [
+        { path: 'assigneeId', select: 'name' },
+        { path: 'createdBy', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'projectId', select: 'name' },
+      ]);
+      const visible = [];
+      for (const doc of populated) {
+        if (await this.isVisibleToUser(doc._id, userId)) {
+          visible.push(doc);
         }
       }
-      
-      return visibleTasks;
+      return visible.map((d) => this.mapPopulatedTaskDocToDTO(d));
     } catch (error) {
       throw new Error('Error fetching tasks by project');
     }
@@ -268,11 +371,16 @@ class TaskService {
       }
 
       // Remove duplicates and return as domain objects
-      const uniqueTasks = taskDocs.filter((task, index, self) => 
+      const unique = taskDocs.filter((task, index, self) => 
         index === self.findIndex(t => t._id.toString() === task._id.toString())
       );
-      
-      return uniqueTasks.map(doc => new Task(doc));
+      const populated = await TaskModel.populate(unique, [
+        { path: 'assigneeId', select: 'name' },
+        { path: 'createdBy', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'projectId', select: 'name' },
+      ]);
+      return populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
     } catch (error) {
       console.error('TaskService.getUserTasks error:', error.message);
       throw new Error(`Error fetching user tasks: ${error.message}`);
@@ -301,7 +409,8 @@ class TaskService {
       }
 
       const updatedTaskDoc = await this.taskRepository.assignTask(taskId, assigneeId);
-      return new Task(updatedTaskDoc);
+      const updatedTask = new Task(updatedTaskDoc);
+      return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
       throw new Error('Error assigning task');
     }
@@ -322,7 +431,8 @@ class TaskService {
       }
 
       const updatedTaskDoc = await this.taskRepository.updateStatus(taskId, status, userId);
-      return new Task(updatedTaskDoc);
+      const updatedTask = new Task(updatedTaskDoc);
+      return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
       throw new Error('Error updating task status');
     }
@@ -343,7 +453,8 @@ class TaskService {
       }
 
       const updatedTaskDoc = await this.taskRepository.softDelete(taskId);
-      return new Task(updatedTaskDoc);
+      const updatedTask = new Task(updatedTaskDoc);
+      return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
       throw new Error('Error deleting task');
     }
@@ -351,9 +462,15 @@ class TaskService {
 
   async getById(taskId) {
     try {
-      const taskDoc = await this.taskRepository.findById(taskId);
+      let taskDoc = await this.taskRepository.findById(taskId);
       if (!taskDoc) throw new Error('Task not found');
-      return new Task(taskDoc);
+      const populated = await TaskModel.populate(taskDoc, [
+        { path: 'assigneeId', select: 'name' },
+        { path: 'createdBy', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'projectId', select: 'name' },
+      ]);
+      return this.mapPopulatedTaskDocToDTO(populated);
     } catch (error) {
       throw new Error('Error fetching task');
     }
@@ -364,4 +481,5 @@ class TaskService {
 const taskRepository = new TaskRepository();
 const taskService = new TaskService(taskRepository);
 
+module.exports = taskService;
 module.exports = taskService;

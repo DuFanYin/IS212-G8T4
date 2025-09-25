@@ -5,10 +5,15 @@ export interface Task {
   status: 'unassigned' | 'ongoing' | 'under_review' | 'completed';
   dueDate: string;
   createdBy: string;
+  createdByName?: string;
   assigneeId?: string;
   projectId?: string;
   collaborators: string[];
   attachments: TaskAttachment[];
+  // Enriched fields from backend
+  projectName?: string;
+  assigneeName?: string;
+  collaboratorNames?: string[];
   lastStatusUpdate?: {
     status: string;
     updatedBy: string;
