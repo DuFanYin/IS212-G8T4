@@ -8,10 +8,10 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
 const { connectDB, disconnectDB } = require('../src/db/connect');
 let connection;
 
-// Connect to test database before all tests
+// Connect to test database before all tests (seeding handled in globalSetup)
 beforeAll(async () => {
   connection = await connectDB();
-}, 30000); // Increase timeout to 30s for Atlas connection
+}, 30000);
 
 // Clear mocks after each test
 afterEach(() => {

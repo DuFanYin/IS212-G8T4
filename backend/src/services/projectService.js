@@ -18,8 +18,8 @@ class ProjectService {
   async createProject(projectData, userId) {
     const project = new Project({ ...projectData, ownerId: userId });
     await this.validateCollaborators(project.collaborators, project.departmentId);
-    await this.projectRepository.create(project);
-    return project;
+    const createdDoc = await this.projectRepository.create(project);
+    return new Project(createdDoc);
   }
 
   //Code Reviewed
