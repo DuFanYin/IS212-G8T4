@@ -111,8 +111,12 @@ src/
 
 ### **Project Routes** (`src/routes/projectRoutes.js`)
 **Endpoints:**
-- `POST /api/projects/create` - Create new project
-- `GET /api/projects/projects` - Get projects (role-based visibility)
+- `POST /api/projects/` - Create new project
+- `GET /api/projects/` - Get active projects
+- `PATCH /api/projects/:projectId/archive` - Archive/unarchive project
+- `PUT /api/projects/:projectId` - Update project
+- `POST /api/projects/:projectId/collaborators` - Add collaborator
+- `DELETE /api/projects/:projectId/collaborators` - Remove collaborator
 
 ### **Task Routes** (`src/routes/taskRoutes.js`)
 **Endpoints:**
@@ -124,6 +128,15 @@ src/
 - `PUT /api/tasks/:id/assign` - Assign task to user
 - `PUT /api/tasks/:id/status` - Update task status
 - `DELETE /api/tasks/:id` - Archive (soft delete) task
+
+### **Subtask Routes** (`src/routes/subtaskRoutes.js`)
+**Endpoints:**
+- `GET /api/subtasks/:id` - Get subtask by ID
+- `GET /api/tasks/:parentTaskId/subtasks` - List subtasks for a parent task
+- `POST /api/tasks/:parentTaskId/subtasks` - Create subtask under a parent task
+- `PUT /api/subtasks/:id` - Update subtask
+- `PATCH /api/subtasks/:id/status` - Update subtask status
+- `DELETE /api/subtasks/:id` - Archive (soft delete) subtask
 
 ## Current Controller Layer (HTTP Request Handling)
 
@@ -142,7 +155,11 @@ src/
 ### **ProjectController** (`src/controllers/projectController.js`)
 **Methods:**
 - `createProject()` - Create new project
-- `getProjects()` - Get projects (role-based visibility)
+- `getProjects()` - Get active projects
+- `updateProject()` - Update project
+- `addCollaborators()` - Add collaborator to project
+- `removeCollaborators()` - Remove collaborator from project
+- `setStatusProject()` - Archive/unarchive project
 
 ### **TaskController** (`src/controllers/taskController.js`)
 **Methods:**
@@ -154,6 +171,15 @@ src/
 - `assignTask()` - Assign task to user
 - `updateTaskStatus()` - Update task status
 - `archiveTask()` - Archive (soft delete) task
+
+### **SubtaskController** (`src/controllers/subtaskController.js`)
+**Methods:**
+- `getSubtask()` - Get subtask by ID
+- `getSubtasksByParentTask()` - List subtasks under a parent task
+- `createSubtask()` - Create a new subtask
+- `updateSubtask()` - Update subtask
+- `updateSubtaskStatus()` - Update subtask status
+- `deleteSubtask()` - Archive (soft delete) subtask
 
 ## Current Repository Layer (Data Access)
 
@@ -173,8 +199,8 @@ src/
 
 ### **ProjectRepository** (`src/repositories/ProjectRepository.js`)
 **Methods:**
-- Basic CRUD: `findById()`, `findActiveProjects()`, `create()`, `updateById()`
-- Collaboration: `addCollaborator()`
+- Basic CRUD: `findById()`, `findActiveProjects()`, `findAllProjects()`, `create()`, `updateById()`
+- Collaboration: `addCollaborators()`, `removeCollaborators()`
 - Query methods: `findProjectsByOwner()`, `findProjectsByDepartment()`, `findProjectsByCollaborator()`
 - Task tracking: `setHasTasks()`
 
@@ -201,8 +227,8 @@ src/
 
 ### **ProjectService** (`src/services/projectService.js`)
 **Methods:**
-- Basic operations: `createProject()`, `getProjects()`, `getProjectById()`, `updateProject()`
-- Collaboration: `addCollaborator()`, `validateCollaborators()`
+- Basic operations: `createProject()`, `getActiveProjects()`, `getAllProjects()`, `getProjectById()`, `updateProject()`
+- Collaboration: `addCollaborator()`, `removeCollaborator()`, `validateCollaborators()`, `validateDepartmentMembership()`
 - Visibility: `isVisibleToUser()`
 - Queries: `getProjectsByOwner()`, `getProjectsByDepartment()`
 
