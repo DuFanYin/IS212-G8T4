@@ -6,12 +6,16 @@ const { generateToken } = require('../../../src/services/authService');
 
 describe('GET /api/tasks/:taskId/subtasks', () => {
   let authToken;
+  let otherUserToken;
   let parentTaskID;
 
   beforeAll(async () => {
     const managerUser = await User.findOne({ email: 'manager@example.com' });
     if (!managerUser) throw new Error('Seeded manager user not found');
     authToken = generateToken(managerUser._id);
+
+    const otherUser = await User.findOne({ email: 'staff@example.com' });
+    otherUserToken = generateToken(otherUser._id);
 
     // Create isolated parent task for this suite
     const createTaskRes = await request(app)
