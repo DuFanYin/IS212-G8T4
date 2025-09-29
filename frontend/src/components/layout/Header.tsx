@@ -46,7 +46,9 @@ export default function Header() {
           </div>
           {user && (
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">{user.name}</span>
+              <Link href="/users" className="text-sm text-gray-600 hover:text-gray-900 underline">
+                {user.name}
+              </Link>
               <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
                 {user.role}
               </span>

@@ -180,7 +180,9 @@ function ProjectCollaboratorPicker({ project, onUpdated }: { project: Project; o
           setAdding(true);
           try {
             const id = (project.id || project._id) as string;
-            const addRes = await projectService.addCollaborator(token, id, selectedUserId);
+            const trimmed = selectedUserId.trim();
+            if (!trimmed) return;
+            const addRes = await projectService.addCollaborator(token, id, trimmed);
             if (addRes?.status === 'success' && addRes.data) {
               onUpdated(addRes.data as unknown as Project);
             } else {

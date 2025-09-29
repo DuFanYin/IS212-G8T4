@@ -33,7 +33,16 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
 
     try {
       setLoading(true);
-      await onCreateTask(formData);
+      const payload = {
+        title: formData.title.trim(),
+        description: formData.description || '',
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : '',
+        // Only include optional IDs if they are non-empty strings
+        ...(formData.assigneeId && formData.assigneeId.trim() !== '' ? { assigneeId: formData.assigneeId.trim() } : {}),
+        ...(formData.projectId && formData.projectId.trim() !== '' ? { projectId: formData.projectId.trim() } : {}),
+        ...(Array.isArray(formData.collaborators) && formData.collaborators.length > 0 ? { collaborators: formData.collaborators } : {})
+      } as CreateTaskRequest;
+      await onCreateTask(payload);
       onClose();
       setFormData({
         title: '',

@@ -11,6 +11,8 @@ module.exports = async function seedTasks(_count, { users, projects }) {
 
   const websiteProject = projects.find(p => p.name === 'Website Revamp') || projects[0];
   const platformProject = projects.find(p => p.name === 'Platform Reliability') || projects[1] || projects[0];
+  const salesCRM = projects.find(p => p.name === 'Sales CRM Upgrade') || platformProject;
+  const onboarding = projects.find(p => p.name === 'Onboarding Revamp') || websiteProject;
 
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
@@ -104,6 +106,43 @@ module.exports = async function seedTasks(_count, { users, projects }) {
       assigneeId: manager._id,
       projectId: websiteProject._id,
       collaborators: [staff._id],
+      attachments: [],
+      isDeleted: false,
+    },
+    // Additional tasks reflecting project.md requirements
+    {
+      title: 'Migrate CRM fields',
+      description: 'Normalize and migrate CRM field data',
+      status: 'unassigned',
+      dueDate: new Date(now + 18 * day),
+      createdBy: manager._id,
+      assigneeId: undefined,
+      projectId: salesCRM._id,
+      collaborators: [manager._id],
+      attachments: [],
+      isDeleted: false,
+    },
+    {
+      title: 'Onboarding checklist draft',
+      description: 'Draft new onboarding checklist and templates',
+      status: 'ongoing',
+      dueDate: new Date(now + 9 * day),
+      createdBy: staff._id,
+      assigneeId: staff._id,
+      projectId: onboarding._id,
+      collaborators: [manager._id],
+      attachments: [],
+      isDeleted: false,
+    },
+    {
+      title: 'Department metrics review',
+      description: 'Gather inputs from teams for quarterly review',
+      status: 'under_review',
+      dueDate: new Date(now + 25 * day),
+      createdBy: director._id,
+      assigneeId: staff._id,
+      projectId: platformProject._id,
+      collaborators: [manager._id, director._id],
       attachments: [],
       isDeleted: false,
     },

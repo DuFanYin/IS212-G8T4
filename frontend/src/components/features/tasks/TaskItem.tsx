@@ -30,7 +30,12 @@ export const TaskItem = ({ task, onClick }: TaskItemProps) => {
   };
 
   const isOverdue = (dueDate: string) => {
-    return new Date(dueDate) < new Date() && task.status !== 'completed';
+    // Compare by day; consider due date as end-of-day to avoid timezone false positives
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(23, 59, 59, 999);
+    return due < today && task.status !== 'completed';
   };
 
   return (

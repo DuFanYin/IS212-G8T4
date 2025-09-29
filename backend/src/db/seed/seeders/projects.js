@@ -41,6 +41,24 @@ module.exports = async function seedProjects(_count, { users, teams, departments
       deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
       isDeleted: false,
     },
+    {
+      name: 'Sales CRM Upgrade',
+      description: 'Improve CRM workflows and data hygiene',
+      departmentId: engDept._id,
+      teamId: frontTeam._id,
+      ownerId: manager._id,
+      deadline: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+      isDeleted: false,
+    },
+    {
+      name: 'Onboarding Revamp',
+      description: 'Revamp onboarding materials and processes',
+      departmentId: engDept._id,
+      teamId: platformTeam._id,
+      ownerId: staff._id,
+      deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
+      isDeleted: false,
+    },
   ];
   const inserted = await Project.insertMany(docs, { ordered: true });
   return inserted.map((p) => p.toObject());

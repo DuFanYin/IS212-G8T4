@@ -165,7 +165,9 @@ export default function TaskDetailPage() {
                       disabled={!selectedAssigneeId}
                       onClick={async () => {
                         if (!token || !selectedAssigneeId) return;
-                        const res = await taskService.assignTask(token, task.id, { assigneeId: selectedAssigneeId });
+                        const trimmed = selectedAssigneeId.trim();
+                        if (!trimmed) return;
+                        const res = await taskService.assignTask(token, task.id, { assigneeId: trimmed });
                         if (res?.data) setTask(res.data);
                         else {
                           const ref = await taskService.getTaskById(token, task.id);
@@ -202,8 +204,10 @@ export default function TaskDetailPage() {
                         if (!token || !selectedCollaboratorId || addingCollaborator) return;
                         setAddingCollaborator(true);
                         try {
+                          const trimmed = selectedCollaboratorId.trim();
+                          if (!trimmed) return;
                           const current = task.collaborators || [];
-                          const res = await taskService.updateTask(token, task.id, { collaborators: Array.from(new Set([...current, selectedCollaboratorId])) });
+                          const res = await taskService.updateTask(token, task.id, { collaborators: Array.from(new Set([...current, trimmed])) });
                           if (res?.status === 'success' && res?.data) {
                             setTask(res.data);
                           } else {

@@ -146,13 +146,56 @@ export default function LoginPage() {
         </button>
 
 
-        <div className="mt-4 text-center text-sm text-gray-500">
-          <div className="font-medium mb-1">Password: Password</div>
-          <div>sm@example.com (Senior Management)</div>
-          <div>hr@example.com (HR)</div>
-          <div>director@example.com (Director)</div>
-          <div>manager@example.com (Manager)</div>
-          <div>staff@example.com (Staff)</div>
+        <div className="mt-6 text-sm text-gray-600">
+          <div className="font-medium mb-2 text-gray-800">Seeded Credentials</div>
+          <div className="mb-2"><span className="font-medium">Password:</span> 123456</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+            <div>
+              <div className="font-medium text-gray-800 mb-1">Staff</div>
+              <ul className="space-y-0.5">
+                <li>staff@example.com</li>
+                <li>staff1@example.com</li>
+                <li>staff2@example.com</li>
+                <li>staff3@example.com</li>
+                <li>staff4@example.com</li>
+                <li>staff5@example.com</li>
+                <li>staff6@example.com</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800 mb-1">Managers</div>
+              <ul className="space-y-0.5">
+                <li>manager@example.com</li>
+                <li>manager1@example.com</li>
+                <li>manager2@example.com</li>
+                <li>manager3@example.com</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800 mb-1">Directors</div>
+              <ul className="space-y-0.5">
+                <li>director@example.com</li>
+                <li>director1@example.com</li>
+                <li>director2@example.com</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800 mb-1">HR</div>
+              <ul className="space-y-0.5">
+                <li>hr@example.com</li>
+                <li>hr1@example.com</li>
+                <li>hr2@example.com</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-medium text-gray-800 mb-1">Senior Management</div>
+              <ul className="space-y-0.5">
+                <li>sm@example.com</li>
+                <li>sm1@example.com</li>
+                <li>sm2@example.com</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>

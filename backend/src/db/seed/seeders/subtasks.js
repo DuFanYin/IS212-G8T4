@@ -4,6 +4,7 @@ module.exports = async function seedSubtasks(_count, { tasks }) {
   await Subtask.deleteMany({});
   const homepage = tasks.find(t => t.title === 'Implement homepage') || tasks[0];
   const apiLatency = tasks.find(t => t.title === 'Improve API latency') || tasks[1] || tasks[0];
+  const onboarding = tasks.find(t => t.title === 'Onboarding checklist draft') || homepage;
 
   const docs = [
     {
@@ -33,6 +34,15 @@ module.exports = async function seedSubtasks(_count, { tasks }) {
       status: 'unassigned',
       assigneeId: homepage.assigneeId,
       collaborators: homepage.assigneeId ? [homepage.assigneeId] : [],
+    },
+    {
+      parentTaskId: onboarding._id,
+      title: 'Collect sample materials',
+      description: 'Gather current onboarding docs',
+      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      status: 'unassigned',
+      assigneeId: onboarding.assigneeId,
+      collaborators: onboarding.assigneeId ? [onboarding.assigneeId] : [],
     },
   ];
   const inserted = await Subtask.insertMany(docs, { ordered: true });

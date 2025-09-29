@@ -40,7 +40,13 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
     setError(null);
     try {
       setLoading(true);
-      await onUpdate(formData);
+      const payload: UpdateTaskRequest = {
+        ...(formData.title && formData.title.trim() ? { title: formData.title.trim() } : {}),
+        ...(typeof formData.description === 'string' ? { description: formData.description } : {}),
+        ...(formData.dueDate ? { dueDate: new Date(formData.dueDate).toISOString() } : {}),
+        ...(Array.isArray(formData.collaborators) ? { collaborators: formData.collaborators } : {})
+      };
+      await onUpdate(payload);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update task');
