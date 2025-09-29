@@ -59,6 +59,28 @@ describe('POST /api/auth/login', () => {
     expect(response.body.status).toBe('error');
     expect(response.body.message).toBe('Please provide a valid email address');
   });
+
+  it('should reject when email is missing', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ password: 'password123' });
+    expect(res.status).toBe(400);
+  });
+
+  it('should reject when password is missing', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'user@example.com' });
+    expect(res.status).toBe(400);
+  });
+
+  it('should reject when payload is not JSON', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .set('Content-Type', 'text/plain')
+      .send('not-json');
+    expect([400, 415]).toContain(res.status);
+  });
 });
 
 

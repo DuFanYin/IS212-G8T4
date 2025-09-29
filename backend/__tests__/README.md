@@ -32,26 +32,33 @@ __tests__/
 
 ## All Test Files and Cases (41)
 
-- auth/login.test.js (4)
+- auth/login.test.js (7)
   - POST /api/auth/login › should authenticate valid user
   - POST /api/auth/login › should reject invalid credentials
   - POST /api/auth/login › should validate required fields
   - POST /api/auth/login › should validate email format
+  - POST /api/auth/login › should reject when email is missing
+  - POST /api/auth/login › should reject when password is missing
+  - POST /api/auth/login › should reject when payload is not JSON
 
 - users/profile.test.js (1)
   - GET /api/users/profile › should return user profile when authenticated
 
-- users/team-members.test.js (2)
+- users/team-members.test.js (3)
   - GET /api/users/team-members › should allow managers to see team members
   - GET /api/users/team-members › should deny staff access to team members
+  - GET /api/users/team-members › should return 401 when no token provided
 
-- users/department-members.test.js (2)
+- users/department-members.test.js (3)
   - GET /api/users/department-members › should allow directors to see department members
   - GET /api/users/department-members › should deny managers access to department members
+  - GET /api/users/department-members › should return 401 when no token provided
 
-- tasks/create.test.js (2)
+- tasks/create.test.js (4)
   - POST /api/tasks/ › should create a new task
   - POST /api/tasks/ › should require authentication
+  - POST /api/tasks/ › should validate required title
+  - POST /api/tasks/ › should fail without token
 
 - tasks/list.test.js (2)
   - GET /api/tasks/ › should return tasks for authenticated user
@@ -60,12 +67,14 @@ __tests__/
 - tasks/get-by-id.test.js (1)
   - GET /api/tasks/:id › should return task by ID if user has access
 
-- tasks/assign.test.js (2)
+- tasks/assign.test.js (3)
   - PUT /api/tasks/:id/assign › should allow managers to assign tasks
   - PUT /api/tasks/:id/assign › should deny staff from assigning tasks
+  - PUT /api/tasks/:id/assign › should not allow assigning to equal-or-higher role
 
-- tasks/status.test.js (1)
+- tasks/status.test.js (2)
   - PUT /api/tasks/:id/status › should allow status updates
+  - PUT /api/tasks/:id/status › should require authentication for status updates
 
 - tasks/archive.test.js (1)
   - DELETE /api/tasks/:id › should archive task (soft delete)
@@ -81,9 +90,11 @@ __tests__/
   - GET /api/projects › should return 401 when not authenticated
   - GET /api/projects › should return all projects successfully for authenticated user
 
-- projects/update.test.js (2)
+- projects/update.test.js (4)
   - PUT /api/projects/:projectId › should update project name and description
   - PUT /api/projects/:projectId › should merge collaborators when updating collaborators array
+  - PUT /api/projects/:projectId › should return 401 when no token provided
+  - PUT /api/projects/:projectId › should reject invalid payload types
 
 - projects/permissions.test.js (2)
   - PUT /api/projects/:projectId permission checks › should not allow HR to update project

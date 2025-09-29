@@ -4,6 +4,20 @@ const app = require('../../../src/app');
 const { User } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
+async function loginAs(role) {
+  const emailByRole = {
+    manager: 'manager@example.com',
+    staff: 'staff@example.com',
+    director: 'director@example.com',
+    hr: 'hr@example.com',
+    sm: 'sm@example.com'
+  };
+  const email = emailByRole[role] || emailByRole.staff;
+  const user = await User.findOne({ email });
+  if (!user) throw new Error(`Test helper could not find user for role ${role}`);
+  return generateToken(user._id);
+}
+
 describe('POST /api/tasks/', () => {
   let staffToken;
 
@@ -32,15 +46,19 @@ describe('POST /api/tasks/', () => {
   });
 
   it('should require authentication', async () => {
-    const response = await request(app)
+    const res = await request(app)
       .post('/api/tasks/')
-      .send({
-        title: 'Test Task',
-        description: 'Test task description',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      });
+      .send({ title: 'No Auth Task' });
+    expect(res.status).toBe(401);
+  });
 
-    expect(response.status).toBe(401);
+  it('should validate required title', async () => {
+    const token = await loginAs('manager');
+    const res = await request(app)
+      .post('/api/tasks/')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ });
+    expect([400, 422]).toContain(res.status);
   });
 });
 

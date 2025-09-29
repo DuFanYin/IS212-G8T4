@@ -4,6 +4,26 @@ const app = require('../../../src/app');
 const { User, Project } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
+async function createProjectAsManager() {
+  const managerUser = await User.findOne({ email: 'manager@example.com' });
+  const token = generateToken(managerUser._id);
+  const res = await request(app)
+    .post('/api/projects')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: `Mgr Project ${Date.now()}` });
+  return res.body.data;
+}
+
+async function createProjectAsManagerWithToken() {
+  const managerUser = await User.findOne({ email: 'manager@example.com' });
+  const token = generateToken(managerUser._id);
+  const res = await request(app)
+    .post('/api/projects')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: `Mgr Project ${Date.now()}` });
+  return { token, project: res.body.data };
+}
+
 describe('PUT /api/projects/:projectId', () => {
   let authToken;
   let project;
@@ -49,6 +69,23 @@ describe('PUT /api/projects/:projectId', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.collaborators).toContain(project.ownerId.toString());
     expect(res.body.data.collaborators).toContain(collaborator.toString());
+  });
+
+  it('should return 401 when no token provided', async () => {
+    const project = await createProjectAsManager();
+    const res = await request(app)
+      .put(`/api/projects/${project.id}`)
+      .send({ name: 'NoAuth' });
+    expect(res.status).toBe(401);
+  });
+
+  it('should reject invalid payload types', async () => {
+    const { token, project } = await createProjectAsManagerWithToken();
+    const res = await request(app)
+      .put(`/api/projects/${project.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ deadline: 'not-a-date' });
+    expect([400, 422]).toContain(res.status);
   });
 });
 

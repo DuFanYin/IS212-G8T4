@@ -31,6 +31,12 @@ describe('GET /api/users/team-members', () => {
 
     expect(response.status).toBe(403);
   });
+
+  it('should return 401 when no token provided', async () => {
+    const res = await request(app)
+      .get('/api/users/team-members');
+    expect(res.status).toBe(401);
+  });
 });
 
 
