@@ -8,12 +8,12 @@ describe('GET /api/tasks/:id', () => {
   let staffToken;
 
   beforeEach(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     if (staffUser) staffToken = generateToken(staffUser._id);
   });
 
   it('should return task by ID if user has access', async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     const createResponse = await request(app)
       .post('/api/tasks/')
       .set('Authorization', `Bearer ${staffToken}`)

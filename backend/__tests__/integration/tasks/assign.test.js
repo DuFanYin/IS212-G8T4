@@ -5,7 +5,7 @@ const { User, Task } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
 async function createTaskAsManager() {
-  const managerUser = await User.findOne({ email: 'manager@example.com' });
+  const managerUser = await User.findOne({ email: 'manager0@example.com' });
   const token = generateToken(managerUser._id);
   const createRes = await request(app)
     .post('/api/tasks/')
@@ -24,8 +24,8 @@ describe('PUT /api/tasks/:id/assign', () => {
   let testTaskId;
 
   beforeEach(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
-    const managerUser = await User.findOne({ email: 'manager@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
+    const managerUser = await User.findOne({ email: 'manager0@example.com' });
     if (staffUser) staffToken = generateToken(staffUser._id);
     if (managerUser) managerToken = generateToken(managerUser._id);
 
@@ -46,7 +46,7 @@ describe('PUT /api/tasks/:id/assign', () => {
     const response = await request(app)
       .put(`/api/tasks/${testTaskId}/assign`)
       .set('Authorization', `Bearer ${managerToken}`)
-      .send({ assigneeId: (await User.findOne({ email: 'staff@example.com' }))._id });
+      .send({ assigneeId: (await User.findOne({ email: 'staff0@example.com' }))._id });
 
     expect([200, 400]).toContain(response.status);
   });
@@ -56,7 +56,7 @@ describe('PUT /api/tasks/:id/assign', () => {
     const response = await request(app)
       .put(`/api/tasks/${testTaskId}/assign`)
       .set('Authorization', `Bearer ${staffToken}`)
-      .send({ assigneeId: (await User.findOne({ email: 'manager@example.com' }))._id });
+      .send({ assigneeId: (await User.findOne({ email: 'manager0@example.com' }))._id });
 
     expect(response.status).toBe(400);
   });

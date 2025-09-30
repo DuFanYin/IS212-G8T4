@@ -9,8 +9,8 @@ describe('GET /api/tasks/', () => {
   let managerToken;
 
   beforeEach(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
-    const managerUser = await User.findOne({ email: 'manager@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
+    const managerUser = await User.findOne({ email: 'manager0@example.com' });
     if (staffUser) staffToken = generateToken(staffUser._id);
     if (managerUser) managerToken = generateToken(managerUser._id);
   });

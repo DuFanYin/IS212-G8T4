@@ -6,11 +6,11 @@ const { generateToken } = require('../../../src/services/authService');
 
 async function loginAs(role) {
   const emailByRole = {
-    manager: 'manager@example.com',
-    staff: 'staff@example.com',
-    director: 'director@example.com',
-    hr: 'hr@example.com',
-    sm: 'sm@example.com'
+  manager: 'manager0@example.com',
+  staff: 'staff0@example.com',
+  director: 'director0@example.com',
+  hr: 'hr0@example.com',
+  sm: 'sm0@example.com'
   };
   const email = emailByRole[role] || emailByRole.staff;
   const user = await User.findOne({ email });
@@ -22,7 +22,7 @@ describe('POST /api/tasks/', () => {
   let staffToken;
 
   beforeEach(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     if (staffUser) staffToken = generateToken(staffUser._id);
   });
 

@@ -11,9 +11,9 @@ describe('Project permissions', () => {
   let staffToken;
 
   beforeAll(async () => {
-    hrUser = await User.findOne({ email: 'hr@example.com' });
-    managerUser = await User.findOne({ email: 'manager@example.com' });
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+  hrUser = await User.findOne({ email: 'hr0@example.com' });
+  managerUser = await User.findOne({ email: 'manager0@example.com' });
+  const staffUser = await User.findOne({ email: 'staff0@example.com' });
     staffToken = generateToken(staffUser._id);
     // Create isolated project owned by staff
     const createRes = await request(app)

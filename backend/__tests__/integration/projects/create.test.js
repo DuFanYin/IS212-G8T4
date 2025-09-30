@@ -9,7 +9,7 @@ describe('POST /api/projects', () => {
   let staffUser;
 
   beforeEach(async () => {
-    staffUser = await User.findOne({ email: 'staff@example.com' });
+  staffUser = await User.findOne({ email: 'staff0@example.com' });
     if (staffUser) {
       authToken = generateToken(staffUser._id);
     }

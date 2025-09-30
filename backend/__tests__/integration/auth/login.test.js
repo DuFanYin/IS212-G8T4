@@ -7,7 +7,7 @@ describe('POST /api/auth/login', () => {
     const response = await request(app)
       .post('/api/auth/login')
       .send({
-        email: 'staff@example.com',
+        email: 'staff0@example.com',
         password: '123456'
       });
 
@@ -16,8 +16,7 @@ describe('POST /api/auth/login', () => {
     expect(response.body.data).toHaveProperty('token');
     expect(response.body.data.user).toEqual(
       expect.objectContaining({
-        name: 'Staff Member',
-        email: 'staff@example.com',
+        email: 'staff0@example.com',
         role: 'staff'
       })
     );

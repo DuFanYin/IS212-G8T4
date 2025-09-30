@@ -5,7 +5,7 @@ const { User, Task } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
 async function createTaskAsManager() {
-  const managerUser = await User.findOne({ email: 'manager@example.com' });
+  const managerUser = await User.findOne({ email: 'manager0@example.com' });
   const token = generateToken(managerUser._id);
   const createRes = await request(app)
     .post('/api/tasks/')
@@ -23,7 +23,7 @@ describe('PUT /api/tasks/:id/status', () => {
   let testTaskId;
 
   beforeEach(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     if (staffUser) staffToken = generateToken(staffUser._id);
 
     // Create an isolated task for status update

@@ -8,7 +8,7 @@ describe('GET /api/users/profile', () => {
   let staffToken;
 
   beforeEach(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     if (staffUser) staffToken = generateToken(staffUser._id);
   });
 
@@ -21,8 +21,7 @@ describe('GET /api/users/profile', () => {
     expect(response.body.status).toBe('success');
     expect(response.body.data).toEqual(
       expect.objectContaining({
-        name: 'Staff Member',
-        email: 'staff@example.com',
+        email: 'staff0@example.com',
         role: 'staff'
       })
     );

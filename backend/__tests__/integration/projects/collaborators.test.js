@@ -11,8 +11,8 @@ describe('Project collaborators', () => {
   let project;
 
   beforeAll(async () => {
-    staffUser = await User.findOne({ email: 'staff@example.com' });
-    managerUser = await User.findOne({ email: 'manager@example.com' });
+    staffUser = await User.findOne({ email: 'staff0@example.com' });
+    managerUser = await User.findOne({ email: 'manager0@example.com' });
     authToken = generateToken(staffUser._id);
     // Create a fresh project owned by staff to ensure predictable permissions/state
     const createRes = await request(app)

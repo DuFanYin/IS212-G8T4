@@ -9,7 +9,7 @@ describe('PATCH /api/projects/:projectId/archive', () => {
   let project;
 
   beforeAll(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     if (!staffUser) throw new Error('Required users not found in DB');
     authToken = generateToken(staffUser._id);
     // Create a fresh project owned by staff to control permissions

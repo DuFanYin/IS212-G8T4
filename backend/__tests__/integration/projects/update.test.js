@@ -5,7 +5,7 @@ const { User, Project } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
 async function createProjectAsManager() {
-  const managerUser = await User.findOne({ email: 'manager@example.com' });
+  const managerUser = await User.findOne({ email: 'manager0@example.com' });
   const token = generateToken(managerUser._id);
   const res = await request(app)
     .post('/api/projects')
@@ -15,7 +15,7 @@ async function createProjectAsManager() {
 }
 
 async function createProjectAsManagerWithToken() {
-  const managerUser = await User.findOne({ email: 'manager@example.com' });
+  const managerUser = await User.findOne({ email: 'manager0@example.com' });
   const token = generateToken(managerUser._id);
   const res = await request(app)
     .post('/api/projects')
@@ -29,7 +29,7 @@ describe('PUT /api/projects/:projectId', () => {
   let project;
 
   beforeAll(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     if (!staffUser) throw new Error('Required users not found in DB');
     authToken = generateToken(staffUser._id);
     // Create a fresh project owned by staff to ensure permissions
@@ -58,7 +58,7 @@ describe('PUT /api/projects/:projectId', () => {
 
   it('should merge collaborators when updating collaborators array', async () => {
     const projectId = project.id || project._id;
-    const managerUser = await User.findOne({ email: 'manager@example.com' });
+    const managerUser = await User.findOne({ email: 'manager0@example.com' });
     const collaborator = managerUser._id;
 
     const res = await request(app)

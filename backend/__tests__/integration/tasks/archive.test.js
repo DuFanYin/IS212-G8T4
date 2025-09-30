@@ -9,7 +9,7 @@ describe('DELETE /api/tasks/:id', () => {
   let testTaskId;
 
   beforeEach(async () => {
-    const managerUser = await User.findOne({ email: 'manager@example.com' });
+    const managerUser = await User.findOne({ email: 'manager0@example.com' });
     if (managerUser) managerToken = generateToken(managerUser._id);
 
     // Create an isolated task for archive test

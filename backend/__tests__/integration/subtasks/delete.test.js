@@ -11,11 +11,11 @@ describe('DELETE /api/subtasks/:id', () => {
   let subtaskID;
 
   beforeAll(async () => {
-    const managerUser = await User.findOne({ email: 'manager@example.com' });
+    const managerUser = await User.findOne({ email: 'manager0@example.com' });
     if (!managerUser) throw new Error('Seeded manager user not found');
     authToken = generateToken(managerUser._id);
 
-    const otherUser = await User.findOne({ email: 'staff@example.com' });
+    const otherUser = await User.findOne({ email: 'staff0@example.com' });
     otherUserToken = generateToken(otherUser._id);
 
     // Create parent task

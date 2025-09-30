@@ -8,7 +8,7 @@ describe('GET /api/projects', () => {
   let authToken;
 
   beforeEach(async () => {
-    const staffUser = await User.findOne({ email: 'staff@example.com' });
+    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     if (staffUser) authToken = generateToken(staffUser._id);
   });
 
