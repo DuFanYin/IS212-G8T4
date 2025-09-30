@@ -391,6 +391,58 @@ class TaskService {
     }
   }
 
+  async getTasksByTeam(teamId, requesterId) {
+    try {
+      const userRepository = new UserRepository();
+      const requesterDoc = await userRepository.findById(requesterId);
+      const requester = new User(requesterDoc);
+      // Allow: managers (their own team), directors (dept visibility), HR/SM (all)
+      const canByTeam = requester.canSeeTeamTasks();
+      const canByDept = requester.canSeeDepartmentTasks();
+      const canAll = requester.canSeeAllTasks();
+      if (!(canByTeam || canByDept || canAll)) {
+        throw new Error('Not authorized to view team tasks');
+      }
+      // If pure manager (not director/SM/HR), restrict to own team
+      if (requester.role === 'manager') {
+        if (!requester.teamId || requester.teamId.toString() !== String(teamId)) {
+          throw new Error('Managers can only view their own team tasks');
+        }
+      }
+      const docs = await this.taskRepository.findTasksByTeam(teamId);
+      const populated = await TaskModel.populate(docs, [
+        { path: 'assigneeId', select: 'name' },
+        { path: 'createdBy', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'projectId', select: 'name' },
+      ]);
+      return populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
+    } catch (error) {
+      throw new Error('Error fetching tasks by team');
+    }
+  }
+
+  async getTasksByDepartment(departmentId, requesterId) {
+    try {
+      const userRepository = new UserRepository();
+      const requesterDoc = await userRepository.findById(requesterId);
+      const requester = new User(requesterDoc);
+      if (!(requester.canSeeDepartmentTasks() || requester.canSeeAllTasks())) {
+        throw new Error('Not authorized to view department tasks');
+      }
+      const docs = await this.taskRepository.findTasksByDepartment(departmentId);
+      const populated = await TaskModel.populate(docs, [
+        { path: 'assigneeId', select: 'name' },
+        { path: 'createdBy', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'projectId', select: 'name' },
+      ]);
+      return populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
+    } catch (error) {
+      throw new Error('Error fetching tasks by department');
+    }
+  }
+
   async getTasksByCollaborator(userId) {
     try {
       const taskDocs = await this.taskRepository.findTasksByCollaborator(userId);

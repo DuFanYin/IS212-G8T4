@@ -116,6 +116,24 @@ const getProjects = async (req, res) => {
   }
 }
 
+const getProjectsByDepartment = async (req, res) => {
+  try{
+    const { departmentId } = req.params;
+    const projects = await ProjectService.getProjectsByDepartment(departmentId);
+
+    res.json({
+      status: "success",
+      data: projects,
+      message: "Project data is successfully retrieved"
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "error",
+      message: err.message
+    });
+  }
+}
+
 const setStatusProject = async (req, res) => {
   const { projectId } = req.params;
   const updateData = req.body;
@@ -139,6 +157,7 @@ const setStatusProject = async (req, res) => {
 module.exports = {
   createProject,
   getProjects,
+  getProjectsByDepartment,
   updateProject,
   addCollaborators,
   removeCollaborators,

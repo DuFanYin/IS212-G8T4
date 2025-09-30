@@ -5,6 +5,8 @@ const {
   createTask, 
   getUserTasks, 
   getProjectTasks, 
+  getTeamTasks,
+  getDepartmentTasks,
   getTaskById, 
   updateTask, 
   assignTask, 
@@ -20,6 +22,12 @@ router.get('/', authMiddleware, getUserTasks);
 
 // Get tasks by project
 router.get('/project/:projectId', authMiddleware, getProjectTasks);
+
+// Get tasks by team
+router.get('/team/:teamId', authMiddleware, getTeamTasks);
+
+// Get tasks by department
+router.get('/department/:departmentId', authMiddleware, getDepartmentTasks);
 
 // Get task by ID
 router.get('/:id', authMiddleware, getTaskById);

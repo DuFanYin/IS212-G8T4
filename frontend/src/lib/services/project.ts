@@ -6,6 +6,10 @@ export const projectService = {
     const res = await fetch(`${API_URL}/projects/`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
+  getProjectsByDepartment: async (token: string, departmentId: string): Promise<ProjectsResponse> => {
+    const res = await fetch(`${API_URL}/projects/department/${departmentId}`, { headers: { Authorization: `Bearer ${token}` } });
+    return res.json();
+  },
   createProject: async (token: string, data: { name: string; description?: string; deadline?: string; collaborators?: string[] }): Promise<ProjectResponse> => {
     const res = await fetch(`${API_URL}/projects`, {
       method: 'POST',

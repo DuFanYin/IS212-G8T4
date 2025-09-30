@@ -52,6 +52,26 @@ exports.getProjectTasks = async (req, res) => {
   }
 };
 
+// Get tasks by team
+exports.getTeamTasks = async (req, res) => {
+  try {
+    const tasks = await TaskService.getTasksByTeam(req.params.teamId, req.user.userId);
+    res.json({ status: 'success', data: tasks });
+  } catch (err) {
+    res.status(400).json({ status: 'error', message: err.message });
+  }
+};
+
+// Get tasks by department
+exports.getDepartmentTasks = async (req, res) => {
+  try {
+    const tasks = await TaskService.getTasksByDepartment(req.params.departmentId, req.user.userId);
+    res.json({ status: 'success', data: tasks });
+  } catch (err) {
+    res.status(400).json({ status: 'error', message: err.message });
+  }
+};
+
 // Get task by ID
 exports.getTaskById = async (req, res) => {
   try {

@@ -10,6 +10,14 @@ export const taskService = {
     const res = await fetch(`${API_URL}/tasks/project/${projectId}`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
+  getTasksByTeam: async (token: string, teamId: string): Promise<TasksResponse> => {
+    const res = await fetch(`${API_URL}/tasks/team/${teamId}`, { headers: { Authorization: `Bearer ${token}` } });
+    return res.json();
+  },
+  getTasksByDepartment: async (token: string, departmentId: string): Promise<TasksResponse> => {
+    const res = await fetch(`${API_URL}/tasks/department/${departmentId}`, { headers: { Authorization: `Bearer ${token}` } });
+    return res.json();
+  },
   getTaskById: async (token: string, taskId: string): Promise<TaskResponse> => {
     const res = await fetch(`${API_URL}/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();

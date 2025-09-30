@@ -113,6 +113,7 @@ src/
 **Endpoints:**
 - `POST /api/projects/` - Create new project
 - `GET /api/projects/` - Get active projects
+- `GET /api/projects/department/:departmentId` - Get projects by department
 - `PATCH /api/projects/:projectId/archive` - Archive/unarchive project
 - `PUT /api/projects/:projectId` - Update project
 - `POST /api/projects/:projectId/collaborators` - Add collaborator
@@ -123,6 +124,8 @@ src/
 - `POST /api/tasks/` - Create new task
 - `GET /api/tasks/` - Get user's tasks (role-based visibility)
 - `GET /api/tasks/project/:projectId` - Get tasks by project
+- `GET /api/tasks/team/:teamId` - Get tasks by team (manager of team, director+, HR/SM)
+- `GET /api/tasks/department/:departmentId` - Get tasks by department (director+, HR/SM)
 - `GET /api/tasks/:id` - Get task by ID (with visibility check)
 - `PUT /api/tasks/:id` - Update task
 - `PUT /api/tasks/:id/assign` - Assign task to user
@@ -156,6 +159,7 @@ src/
 **Methods:**
 - `createProject()` - Create new project
 - `getProjects()` - Get active projects
+- `getProjectsByDepartment()` - Get projects filtered by department
 - `updateProject()` - Update project
 - `addCollaborators()` - Add collaborator to project
 - `removeCollaborators()` - Remove collaborator from project
@@ -166,6 +170,8 @@ src/
 - `createTask()` - Create new task
 - `getUserTasks()` - Get user's tasks (role-based visibility)
 - `getProjectTasks()` - Get tasks by project
+- `getTeamTasks()` - Get tasks by team
+- `getDepartmentTasks()` - Get tasks by department
 - `getTaskById()` - Get task by ID with visibility check
 - `updateTask()` - Update task
 - `assignTask()` - Assign task to user
@@ -230,14 +236,14 @@ src/
 - Basic operations: `createProject()`, `getActiveProjects()`, `getAllProjects()`, `getProjectById()`, `updateProject()`
 - Collaboration: `addCollaborator()`, `removeCollaborator()`, `validateCollaborators()`, `validateDepartmentMembership()`
 - Visibility: `isVisibleToUser()`
-- Queries: `getProjectsByOwner()`, `getProjectsByDepartment()`
+- Queries: `getProjectsByOwner()`, `getProjectsByDepartment()`, `getVisibleProjectsForUser()`
 
 
 ### **TaskService** (`src/services/taskService.js`)
 **Methods:**
 - Core operations: `createTask()`, `updateTask()`, `assignTask()`, `updateTaskStatus()`, `softDeleteTask()`
 - Visibility: `isVisibleToUser()`
-- Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByCollaborator()`
+- Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByTeam()`, `getTasksByDepartment()`, `getTasksByCollaborator()`, `getById()`
 
 
 ### **SubtaskService** (`src/services/subtaskService.js`)

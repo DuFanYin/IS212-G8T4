@@ -13,6 +13,20 @@ export default function Header() {
     return pathname === path ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900';
   };
 
+  // Basic role helpers aligned with project visibility rules
+  const normalizeRole = (role?: string) => (role || '').toLowerCase();
+  const roleRank: Record<string, number> = {
+    'staff': 1,
+    'manager': 2,
+    'director': 3,
+    'hr': 4,
+    'senior management': 5,
+    'sm': 5
+  };
+  const getRank = (role?: string) => roleRank[normalizeRole(role)] || 0;
+  const canViewTeam = getRank(user?.role) >= 2; // Manager+
+  const canViewDepartment = getRank(user?.role) >= 3; // Director+
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,6 +49,22 @@ export default function Header() {
                 >
                   Tasks
                 </Link>
+                {canViewTeam && (
+                  <Link
+                    href="/tasks/team"
+                    className={`${isActive('/tasks/team')} flex items-center px-1 py-2 text-sm font-medium`}
+                  >
+                    Team
+                  </Link>
+                )}
+                {canViewDepartment && (
+                  <Link
+                    href="/tasks/department"
+                    className={`${isActive('/tasks/department')} flex items-center px-1 py-2 text-sm font-medium`}
+                  >
+                    Department
+                  </Link>
+                )}
                 <Link
                   href="/projects"
                   className={`${isActive('/projects')} flex items-center px-1 py-2 text-sm font-medium`}
