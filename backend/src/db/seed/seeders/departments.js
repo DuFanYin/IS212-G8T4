@@ -11,6 +11,14 @@ module.exports = async function seedDepartments(_count) {
       name: 'Operations',
       description: 'Business operations and support',
     },
+    {
+      name: 'Sales',
+      description: 'Customer acquisition and CRM',
+    },
+    {
+      name: 'HR',
+      description: 'People operations and talent',
+    },
   ];
   const inserted = await Department.insertMany(docs, { ordered: true });
   return inserted.map((d) => d.toObject());

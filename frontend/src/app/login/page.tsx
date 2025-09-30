@@ -102,8 +102,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm p-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="w-full max-w-sm p-6 mx-auto pt-10">
         <h1 className="text-xl font-medium text-center mb-6">IS212-G8T4</h1>
 
         {errors.general && <Message text={errors.general} type="error" />}
@@ -144,58 +144,65 @@ export default function LoginPage() {
         >
           Forgot Password?
         </button>
+      </div>
 
-
-        <div className="mt-6 text-sm text-gray-600">
+      {/* Wider credentials section (no horizontal scroll) */}
+      <div className="w-full max-w-4xl mx-auto p-6">
+        <div className="text-sm text-gray-600">
           <div className="font-medium mb-2 text-gray-800">Seeded Credentials</div>
-          <div className="mb-2"><span className="font-medium">Password:</span> 123456</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-            <div>
-              <div className="font-medium text-gray-800 mb-1">Staff</div>
-              <ul className="space-y-0.5">
-                <li>staff@example.com</li>
-                <li>staff1@example.com</li>
-                <li>staff2@example.com</li>
-                <li>staff3@example.com</li>
-                <li>staff4@example.com</li>
-                <li>staff5@example.com</li>
-                <li>staff6@example.com</li>
-              </ul>
-            </div>
-            <div>
-              <div className="font-medium text-gray-800 mb-1">Managers</div>
-              <ul className="space-y-0.5">
-                <li>manager@example.com</li>
-                <li>manager1@example.com</li>
-                <li>manager2@example.com</li>
-                <li>manager3@example.com</li>
-              </ul>
-            </div>
-            <div>
-              <div className="font-medium text-gray-800 mb-1">Directors</div>
-              <ul className="space-y-0.5">
-                <li>director@example.com</li>
-                <li>director1@example.com</li>
-                <li>director2@example.com</li>
-              </ul>
-            </div>
-            <div>
-              <div className="font-medium text-gray-800 mb-1">HR</div>
-              <ul className="space-y-0.5">
-                <li>hr@example.com</li>
-                <li>hr1@example.com</li>
-                <li>hr2@example.com</li>
-              </ul>
-            </div>
-            <div>
-              <div className="font-medium text-gray-800 mb-1">Senior Management</div>
-              <ul className="space-y-0.5">
-                <li>sm@example.com</li>
-                <li>sm1@example.com</li>
-                <li>sm2@example.com</li>
-              </ul>
-            </div>
+          <div className="mb-2">
+            <span className="font-medium">Password:</span> Password123!
           </div>
+          <table className="w-full border border-gray-200 rounded text-left">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-3 py-2 font-medium text-gray-800 border-b">Staff</th>
+                <th className="px-3 py-2 font-medium text-gray-800 border-b">Managers</th>
+                <th className="px-3 py-2 font-medium text-gray-800 border-b">Directors</th>
+                <th className="px-3 py-2 font-medium text-gray-800 border-b">HR</th>
+                <th className="px-3 py-2 font-medium text-gray-800 border-b">Senior Management</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="px-3 py-2 align-top">
+                  <ul className="space-y-0.5">
+                    <li>staff0@example.com</li>
+                    <li>staff1@example.com</li>
+                    <li>staff2@example.com</li>
+                    <li>staff3@example.com</li>
+                    <li>staff4@example.com</li>
+                    <li>staff5@example.com</li>
+                  </ul>
+                </td>
+                <td className="px-3 py-2 align-top">
+                  <ul className="space-y-0.5">
+                    <li>manager0@example.com</li>
+                    <li>manager1@example.com</li>
+                    <li>manager2@example.com</li>
+                  </ul>
+                </td>
+                <td className="px-3 py-2 align-top">
+                  <ul className="space-y-0.5">
+                    <li>director0@example.com</li>
+                    <li>director1@example.com</li>
+                  </ul>
+                </td>
+                <td className="px-3 py-2 align-top">
+                  <ul className="space-y-0.5">
+                    <li>hr0@example.com</li>
+                    <li>hr1@example.com</li>
+                  </ul>
+                </td>
+                <td className="px-3 py-2 align-top">
+                  <ul className="space-y-0.5">
+                    <li>sm0@example.com</li>
+                    <li>sm1@example.com</li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

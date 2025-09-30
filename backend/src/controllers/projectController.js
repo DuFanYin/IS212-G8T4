@@ -100,7 +100,8 @@ const removeCollaborators = async (req, res) => {
 
 const getProjects = async (req, res) => {
   try{
-    const projects = await ProjectService.getActiveProjects();
+    const userId = req.user.userId;
+    const projects = await ProjectService.getVisibleProjectsForUser(userId);
 
     res.json({
       status: "success",

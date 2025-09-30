@@ -27,26 +27,28 @@ const seedDatabase = async () => {
 
     // Create sample users with different roles
     const hashedPassword = await bcrypt.hash('123456', 10);
-    
-    // Create users without department/team
+
+    // Create department and director
+    const engineeringDept = await Department.create({
+      name: 'Engineering',
+      description: 'Software Development and Engineering'
+    });
+
+    // Create HR and SM with departmentId to ensure fields are populated
     const smUser = await User.create({
       name: 'Senior Manager',
       email: 'sm@example.com',
       passwordHash: hashedPassword,
-      role: 'sm'
+      role: 'sm',
+      departmentId: engineeringDept._id
     });
 
     const hrUser = await User.create({
       name: 'HR Personnel',
       email: 'hr@example.com',
       passwordHash: hashedPassword,
-      role: 'hr'
-    });
-
-    // Create department and director
-    const engineeringDept = await Department.create({
-      name: 'Engineering',
-      description: 'Software Development and Engineering'
+      role: 'hr',
+      departmentId: engineeringDept._id
     });
 
     const directorUser = await User.create({

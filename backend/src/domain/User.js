@@ -4,8 +4,11 @@ class User {
     this.name = data.name;
     this.email = data.email;
     this.role = data.role;
-    this.teamId = data.teamId;
-    this.departmentId = data.departmentId;
+    // Support populated docs: if populated, use id and expose names
+    this.teamId = data.teamId && (data.teamId._id || data.teamId);
+    this.departmentId = data.departmentId && (data.departmentId._id || data.departmentId);
+    this.teamName = data.teamId && data.teamId.name ? data.teamId.name : undefined;
+    this.departmentName = data.departmentId && data.departmentId.name ? data.departmentId.name : undefined;
     this.resetToken = data.resetToken;
     this.resetTokenExpiry = data.resetTokenExpiry;
     this.createdAt = data.createdAt;
@@ -67,7 +70,9 @@ class User {
       email: this.email,
       role: this.role,
       teamId: this.teamId,
-      departmentId: this.departmentId
+      teamName: this.teamName,
+      departmentId: this.departmentId,
+      departmentName: this.departmentName
     };
   }
 

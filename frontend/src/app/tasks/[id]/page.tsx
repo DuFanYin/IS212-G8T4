@@ -7,6 +7,7 @@ import type { User } from '@/lib/types/user';
 import type { Task } from '@/lib/types/task';
 import { taskService } from '@/lib/services/task';
 import { subtaskService } from '@/lib/services/subtask';
+import { SubtaskList } from '@/components/features/tasks/SubtaskList';
 import type { Subtask } from '@/lib/types/subtask';
 import { storage } from '@/lib/utils/storage';
 import { UserSelector } from '@/components/features/users/UserSelector';
@@ -14,7 +15,7 @@ import { UserSelector } from '@/components/features/users/UserSelector';
 export default function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user }: { user: User | null } = useUser();
+  const { user, canAssignTasks }: { user: User | null; canAssignTasks: () => boolean } = useUser();
   const [task, setTask] = useState<Task | null>(null);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,9 +146,9 @@ export default function TaskDetailPage() {
             )}
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {user && canAssignTasks() && (
               <div>
                 <div className="text-sm font-medium text-gray-700 mb-1">Assign</div>
-                {user && (
                   <div className="flex items-center gap-2">
                     <div className="flex-1">
                       <UserSelector
@@ -180,8 +181,8 @@ export default function TaskDetailPage() {
                       Assign
                     </button>
                   </div>
-                )}
               </div>
+              )}
               <div>
                 <div className="text-sm font-medium text-gray-700 mb-1">Add collaborator</div>
                 {user && (
@@ -235,22 +236,12 @@ export default function TaskDetailPage() {
 
             <div className="mt-6">
               <div className="font-medium text-gray-800 mb-2">Subtasks</div>
-              {subtasks.length === 0 ? (
-                <div className="text-sm text-gray-500">No subtasks.</div>
-              ) : (
-                <div className="divide-y">
-                  {subtasks.map((s) => (
-                    <div key={s.id} className="py-3 flex items-start justify-between">
-                      <div>
-                        <div className="font-medium text-gray-900">{s.title}</div>
-                        {s.description && <div className="text-sm text-gray-600">{s.description}</div>}
-                        <div className="text-xs text-gray-500 mt-1">Due: {new Date(s.dueDate).toLocaleString()}</div>
-                      </div>
-                      <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">{s.status.replace('_', ' ')}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <SubtaskList
+                token={token || ''}
+                parentTaskId={task.id}
+                subtasks={subtasks}
+                onSubtasksUpdated={setSubtasks}
+              />
             </div>
           </div>
         </div>

@@ -4,7 +4,9 @@ export interface User {
   email: string;
   role: string;
   teamId?: string;
+  teamName?: string;
   departmentId?: string;
+  departmentName?: string;
   token?: string; // Added for useTasks hook
 }
 

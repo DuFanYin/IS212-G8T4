@@ -11,8 +11,27 @@ module.exports = async function seedUsers(_count, { departments, teams }) {
   const anyDepartment = departments[0]?._id;
   const anyTeam = teams[0];
   const teamDeptId = anyTeam?.departmentId || anyDepartment;
+  // Sample picks across depts/teams
+  const engineering = departments.find(d => d.name === 'Engineering') || departments[0];
+  const operations = departments.find(d => d.name === 'Operations') || departments[1] || departments[0];
+  const sales = departments.find(d => d.name === 'Sales') || departments[2] || departments[0];
+  const hrDept = departments.find(d => d.name === 'HR') || departments[3] || departments[0];
+
+  const frontTeam = teams.find(t => t.name === 'Frontend Team') || teams[0];
+  const platformTeam = teams.find(t => t.name === 'Platform Team') || teams[1] || teams[0];
+  const supportTeam = teams.find(t => t.name === 'Support Team') || teams[2] || teams[0];
+  const revOps = teams.find(t => t.name === 'Revenue Ops') || teams[3] || teams[0];
+  const aEs = teams.find(t => t.name === 'Account Executives') || teams[4] || teams[0];
+  const peopleOps = teams.find(t => t.name === 'People Ops') || teams[5] || teams[0];
 
   const docs = [];
+
+  // Pick a team that belongs to a given department (falls back safely)
+  const teamForDepartment = (dept) => {
+    const deptId = dept?._id?.toString?.();
+    const byDept = [frontTeam, platformTeam, supportTeam, revOps, aEs, peopleOps].filter(t => t && t.departmentId?.toString?.() === deptId);
+    return byDept[0] || frontTeam || platformTeam || supportTeam || revOps || aEs || peopleOps || anyTeam;
+  };
 
   // Helper to push a user
   const pushUser = (role, index) => {
@@ -20,33 +39,43 @@ module.exports = async function seedUsers(_count, { departments, teams }) {
     const email = `${role}${index}@example.com`;
     const base = { name, email, passwordHash, role };
     if (role === 'staff') {
-      docs.push({ ...base, teamId: anyTeam?._id, departmentId: teamDeptId });
+      // Distribute staff across teams/departments
+      const pool = [frontTeam, platformTeam, supportTeam, revOps, aEs, peopleOps].filter(Boolean);
+      const teamPick = pool[pool.length ? (index % pool.length) : 0];
+      const deptId = teamPick?.departmentId || engineering._id;
+      docs.push({ ...base, teamId: teamPick?._id, departmentId: deptId });
     } else if (role === 'manager') {
-      docs.push({ ...base, teamId: anyTeam?._id, departmentId: teamDeptId });
+      const pool = [frontTeam, platformTeam, supportTeam, revOps, aEs, peopleOps].filter(Boolean);
+      const teamPick = pool[pool.length ? (index % pool.length) : 0];
+      const deptId = teamPick?.departmentId || engineering._id;
+      docs.push({ ...base, teamId: teamPick?._id, departmentId: deptId });
     } else if (role === 'director') {
-      docs.push({ ...base, teamId: undefined, departmentId: anyDepartment });
+      // Rotate directors across departments
+      const deptPool = [engineering, operations, sales, hrDept].filter(Boolean);
+      const deptPick = deptPool[deptPool.length ? (index % deptPool.length) : 0];
+      const teamPick = teamForDepartment(deptPick);
+      docs.push({ ...base, teamId: teamPick?._id, departmentId: deptPick?._id });
     } else if (role === 'hr') {
-      docs.push({ ...base, teamId: undefined, departmentId: undefined });
+      // Ensure HR has a valid department and team for visibility logic
+      const deptPick = hrDept || engineering;
+      const teamPick = teamForDepartment(deptPick);
+      docs.push({ ...base, teamId: teamPick?._id, departmentId: deptPick?._id });
     } else if (role === 'sm') {
-      docs.push({ ...base, teamId: undefined, departmentId: undefined });
+      // Ensure SM has a valid department and team association
+      const deptPick = operations || engineering;
+      const teamPick = teamForDepartment(deptPick);
+      docs.push({ ...base, teamId: teamPick?._id, departmentId: deptPick?._id });
     }
   };
 
   // Create multiple users per role
-  for (let i = 1; i <= 6; i++) pushUser('staff', i);
-  for (let i = 1; i <= 3; i++) pushUser('manager', i);
-  for (let i = 1; i <= 2; i++) pushUser('director', i);
-  for (let i = 1; i <= 2; i++) pushUser('hr', i);
-  for (let i = 1; i <= 2; i++) pushUser('sm', i);
+  for (let i = 0; i < 6; i++) pushUser('staff', i);
+  for (let i = 0; i < 3; i++) pushUser('manager', i);
+  for (let i = 0; i < 2; i++) pushUser('director', i);
+  for (let i = 0; i < 2; i++) pushUser('hr', i);
+  for (let i = 0; i < 2; i++) pushUser('sm', i);
 
-  // Backwards-compatible single known accounts (for tests/docs)
-  docs.push(
-    { name: 'Staff Member', email: 'staff@example.com', passwordHash, role: 'staff', teamId: anyTeam?._id, departmentId: teamDeptId },
-    { name: 'Manager User', email: 'manager@example.com', passwordHash, role: 'manager', teamId: anyTeam?._id, departmentId: teamDeptId },
-    { name: 'Director User', email: 'director@example.com', passwordHash, role: 'director', teamId: undefined, departmentId: anyDepartment },
-    { name: 'HR User', email: 'hr@example.com', passwordHash, role: 'hr', teamId: undefined, departmentId: undefined },
-    { name: 'Senior Management User', email: 'sm@example.com', passwordHash, role: 'sm', teamId: undefined, departmentId: undefined }
-  );
+  // Removed legacy non-indexed accounts to ensure all seeded users follow index-from-0 convention
 
   const inserted = await User.insertMany(docs, { ordered: true });
   return inserted.map((u) => u.toObject());

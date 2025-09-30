@@ -1,4 +1,6 @@
 const TaskModel = require('../db/models/Task');
+const { User, Project } = require('../db/models');
+
 
 class TaskRepository {
   async findById(id) {
@@ -30,9 +32,10 @@ class TaskRepository {
 
   async findTasksByTeam(teamId) {
     // Find tasks created by users in the team
+    if (!teamId) return [];
     const { User } = require('../db/models');
     const teamUsers = await User.find({ teamId }).select('_id');
-    const userIds = teamUsers.map(user => user._id);
+    const userIds = (teamUsers || []).map(user => user?._id).filter(Boolean);
     
     return TaskModel.find({ 
       $or: [
@@ -45,18 +48,25 @@ class TaskRepository {
   }
 
   async findTasksByDepartment(departmentId) {
-    // Find tasks created by users in the department
-    const { User } = require('../db/models');
-    const deptUsers = await User.find({ departmentId }).select('_id');
-    const userIds = deptUsers.map(user => user._id);
+    // Find tasks by: (1) involved users in department OR (2) project department matches
+    if (!departmentId) return [];
     
-    return TaskModel.find({ 
+    const [deptUsers, deptProjects] = await Promise.all([
+      User.find({ departmentId }).select('_id'),
+      Project.find({ departmentId }).select('_id')
+    ]);
+
+    const userIds = (deptUsers || []).map(user => user?._id).filter(Boolean);
+    const projectIds = (deptProjects || []).map(p => p?._id).filter(Boolean);
+
+    return TaskModel.find({
       $or: [
         { createdBy: { $in: userIds } },
         { assigneeId: { $in: userIds } },
-        { collaborators: { $in: userIds } }
+        { collaborators: { $in: userIds } },
+        { projectId: { $in: projectIds } }
       ],
-      isDeleted: false 
+      isDeleted: false
     });
   }
 

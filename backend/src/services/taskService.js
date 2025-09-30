@@ -5,6 +5,7 @@ const ProjectRepository = require('../repositories/ProjectRepository');
 const projectService = require('./projectService');
 const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
+const SubtaskRepository = require('../repositories/SubtaskRepository');
 
 class TaskService {
   constructor(taskRepository) {
@@ -122,7 +123,7 @@ class TaskService {
         // Add task creator to project collaborators if not already included
         if (!project.collaborators.includes(userId)) {
           const projectRepository = new ProjectRepository();
-          await projectRepository.addCollaborator(taskData.projectId, userId);
+          await projectRepository.addCollaborators(taskData.projectId, [userId]);
         }
       }
 
@@ -241,48 +242,103 @@ class TaskService {
       // HR/SM: see all tasks/projects
       if (user.canSeeAllTasks()) return true;
 
-      // Director: see department tasks
+      // Director: see department tasks (project dept OR any involved user dept)
       if (user.canSeeDepartmentTasks()) {
+        // Project department
         if (task.projectId) {
           const project = await projectService.getProjectById(task.projectId);
-          if (project && project.departmentId) {
-            return user.canAccessDepartment(project.departmentId);
+          if (project && project.departmentId && user.canAccessDepartment(project.departmentId)) {
+            return true;
           }
         }
+        // Assignee department
         if (task.assigneeId) {
-          const userRepository = new UserRepository();
           const assigneeDoc = await userRepository.findById(task.assigneeId);
-          const assignee = new User(assigneeDoc);
-          if (assignee && assignee.departmentId) {
-            return user.canAccessDepartment(assignee.departmentId);
+          const assignee = assigneeDoc ? new User(assigneeDoc) : null;
+          if (assignee?.departmentId && user.canAccessDepartment(assignee.departmentId)) {
+            return true;
+          }
+        }
+        // Creator department
+        if (task.createdBy) {
+          const creatorDoc = await userRepository.findById(task.createdBy);
+          const creator = creatorDoc ? new User(creatorDoc) : null;
+          if (creator?.departmentId && user.canAccessDepartment(creator.departmentId)) {
+            return true;
+          }
+        }
+        // Any collaborator department
+        if (Array.isArray(task.collaborators) && task.collaborators.length > 0) {
+          for (const collabId of task.collaborators) {
+            const collabDoc = await userRepository.findById(collabId);
+            const collab = collabDoc ? new User(collabDoc) : null;
+            if (collab?.departmentId && user.canAccessDepartment(collab.departmentId)) {
+              return true;
+            }
           }
         }
       }
 
-      // Manager: see team tasks
+      // Manager: see team tasks (any involved user team)
       if (user.canSeeTeamTasks()) {
+        // Assignee team
         if (task.assigneeId) {
-          const userRepository = new UserRepository();
           const assigneeDoc = await userRepository.findById(task.assigneeId);
-          const assignee = new User(assigneeDoc);
-          if (assignee && assignee.teamId) {
-            return user.teamId?.toString() === assignee.teamId?.toString();
+          const assignee = assigneeDoc ? new User(assigneeDoc) : null;
+          if (assignee?.teamId && user.teamId?.toString() === assignee.teamId?.toString()) {
+            return true;
+          }
+        }
+        // Creator team
+        if (task.createdBy) {
+          const creatorDoc = await userRepository.findById(task.createdBy);
+          const creator = creatorDoc ? new User(creatorDoc) : null;
+          if (creator?.teamId && user.teamId?.toString() === creator.teamId?.toString()) {
+            return true;
+          }
+        }
+        // Any collaborator team
+        if (Array.isArray(task.collaborators) && task.collaborators.length > 0) {
+          for (const collabId of task.collaborators) {
+            const collabDoc = await userRepository.findById(collabId);
+            const collab = collabDoc ? new User(collabDoc) : null;
+            if (collab?.teamId && user.teamId?.toString() === collab.teamId?.toString()) {
+              return true;
+            }
           }
         }
       }
 
-      // Staff: see own tasks, teammates' tasks, project tasks they're in
+      // Staff: see own tasks, teammates' tasks (createdBy/assignee/collab), and tasks they're collaborating on
       if (user.isStaff()) {
         // Own tasks
-        if (task.assigneeId?.toString() === user.id) return true;
+        if (task.assigneeId && task.assigneeId.toString?.() === user.id?.toString?.()) return true;
+        if (task.createdBy && task.createdBy.toString?.() === user.id?.toString?.()) return true;
         
-        // Team members' tasks
+        // Team members' tasks via assignee
         if (task.assigneeId) {
-          const userRepository = new UserRepository();
           const assigneeDoc = await userRepository.findById(task.assigneeId);
-          const assignee = new User(assigneeDoc);
-          if (assignee && assignee.teamId) {
-            return user.teamId?.toString() === assignee.teamId?.toString();
+          const assignee = assigneeDoc ? new User(assigneeDoc) : null;
+          if (assignee?.teamId && user.teamId?.toString() === assignee.teamId?.toString()) {
+            return true;
+          }
+        }
+        // Team members' tasks via creator
+        if (task.createdBy) {
+          const creatorDoc = await userRepository.findById(task.createdBy);
+          const creator = creatorDoc ? new User(creatorDoc) : null;
+          if (creator?.teamId && user.teamId?.toString() === creator.teamId?.toString()) {
+            return true;
+          }
+        }
+        // Team members' tasks via collaborators
+        if (Array.isArray(task.collaborators) && task.collaborators.length > 0) {
+          for (const collabId of task.collaborators) {
+            const collabDoc = await userRepository.findById(collabId);
+            const collab = collabDoc ? new User(collabDoc) : null;
+            if (collab?.teamId && user.teamId?.toString() === collab.teamId?.toString()) {
+              return true;
+            }
           }
         }
         
@@ -348,6 +404,9 @@ class TaskService {
     try {
       const userRepository = new UserRepository();
       const userDoc = await userRepository.findById(userId);
+      if (!userDoc) {
+        throw new Error('User not found');
+      }
       const user = new User(userDoc);
 
       let taskDocs = [];
@@ -370,10 +429,13 @@ class TaskService {
         taskDocs = await this.taskRepository.findActiveTasks();
       }
 
-      // Remove duplicates and return as domain objects
-      const unique = taskDocs.filter((task, index, self) => 
-        index === self.findIndex(t => t._id.toString() === task._id.toString())
-      );
+      // Normalize, remove nulls, and de-duplicate by id
+      const safeDocs = (taskDocs || []).filter(Boolean);
+      const unique = safeDocs.filter((task, index, self) => {
+        const id = task?._id?.toString?.();
+        if (!id) return false;
+        return index === self.findIndex(t => t?._id?.toString?.() === id);
+      });
       const populated = await TaskModel.populate(unique, [
         { path: 'assigneeId', select: 'name' },
         { path: 'createdBy', select: 'name' },
@@ -428,6 +490,16 @@ class TaskService {
 
       if (!task.canBeCompletedBy(user)) {
         throw new Error('Not authorized to update task status');
+      }
+
+      // Business rule: A task can only be marked completed when all its subtasks are completed
+      if (status === 'completed') {
+        const subtaskRepository = new SubtaskRepository();
+        const subtasks = await subtaskRepository.findByParentTask(taskId);
+        const hasIncomplete = (subtasks || []).some((st) => st && st.status !== 'completed' && st.isDeleted !== true);
+        if (hasIncomplete) {
+          throw new Error('All subtasks must be completed before completing this task');
+        }
       }
 
       const updatedTaskDoc = await this.taskRepository.updateStatus(taskId, status, userId);

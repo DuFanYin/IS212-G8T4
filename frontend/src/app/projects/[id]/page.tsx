@@ -15,7 +15,7 @@ import { UserSelector } from '@/components/features/users/UserSelector';
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user }: { user: User | null } = useUser();
+  const { user, canAssignTasks }: { user: User | null; canAssignTasks: () => boolean } = useUser();
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ export default function ProjectDetailPage() {
   if (error || !project) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-500">{error || 'Project not found'}</div>
+        <div className="text-gray-500">{error || 'You do not have access to this project or it does not exist.'}</div>
       </div>
     );
   }
@@ -114,7 +114,7 @@ export default function ProjectDetailPage() {
                 </div>
               )}
               <div className="flex items-center gap-3">
-                {user && (
+                {user && canAssignTasks() && (
                   <ProjectCollaboratorPicker project={project} onUpdated={setProject} />
                 )}
               </div>
@@ -169,6 +169,8 @@ function ProjectCollaboratorPicker({ project, onUpdated }: { project: Project; o
           placeholder="Select collaborator..."
           resetTrigger={resetTick}
           onUserSelect={(u) => setSelectedUserId(u.id)}
+          forceDepartmentScope={true}
+          departmentIdOverride={project.departmentId as unknown as string}
         />
       </div>
       <button

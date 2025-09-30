@@ -10,7 +10,8 @@ class UserService {
     try {
       const userDoc = await this.userRepository.findPublicById(userId);
       if (!userDoc) throw new Error('User not found');
-      
+      await userDoc.populate('teamId', 'name');
+      await userDoc.populate('departmentId', 'name');
       return new User(userDoc);
     } catch (error) {
       throw new Error(error?.message || 'Error fetching user');
@@ -51,7 +52,12 @@ class UserService {
   async getUsersByDepartment(departmentId) {
     try {
       const userDocs = await this.userRepository.findUsersByDepartment(departmentId);
-      return userDocs.map(doc => new User(doc));
+      const { User: UserModel } = require('../db/models');
+      const populated = await UserModel.populate(userDocs, [
+        { path: 'teamId', select: 'name' },
+        { path: 'departmentId', select: 'name' }
+      ]);
+      return populated.map(doc => new User(doc));
     } catch (error) {
       throw new Error(error?.message || 'Error fetching users by department');
     }
@@ -60,7 +66,12 @@ class UserService {
   async getUsersByTeam(teamId) {
     try {
       const userDocs = await this.userRepository.findUsersByTeam(teamId);
-      return userDocs.map(doc => new User(doc));
+      const { User: UserModel } = require('../db/models');
+      const populated = await UserModel.populate(userDocs, [
+        { path: 'teamId', select: 'name' },
+        { path: 'departmentId', select: 'name' }
+      ]);
+      return populated.map(doc => new User(doc));
     } catch (error) {
       throw new Error(error?.message || 'Error fetching users by team');
     }
@@ -113,7 +124,12 @@ class UserService {
   async getAllUsers() {
     try {
       const userDocs = await this.userRepository.findAll();
-      return userDocs.map(doc => new User(doc));
+      const { User: UserModel } = require('../db/models');
+      const populated = await UserModel.populate(userDocs, [
+        { path: 'teamId', select: 'name' },
+        { path: 'departmentId', select: 'name' }
+      ]);
+      return populated.map(doc => new User(doc));
     } catch (error) {
       throw new Error(error?.message || 'Error fetching all users');
     }

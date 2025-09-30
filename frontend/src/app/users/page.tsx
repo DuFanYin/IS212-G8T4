@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useUser } from '@/contexts/UserContext';
-import { UserList } from '@/components/features/users/UserList';
-import { UserSelector } from '@/components/features/users/UserSelector';
-import { User } from '@/lib/types/user';
-import { storage } from '@/lib/utils/storage';
+// Removed UserList and UserSelector usage from this page per requirements
+// Removed unused imports after removing user list & assignment UI
 
 export default function UsersPage() {
-  const { user, canAssignTasks, getVisibleUsersScope } = useUser();
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const token = storage.getToken();
+  const { user } = useUser();
+  // const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  // const token = storage.getToken();
 
   if (!user) {
     return (
@@ -22,13 +20,7 @@ export default function UsersPage() {
     );
   }
 
-  const scope = getVisibleUsersScope();
-  const scopeLabels = {
-    all: 'All Users (HR/SM)',
-    department: 'Department Users (Director)',
-    team: 'Team Members (Manager)',
-    none: 'No User Access (Staff)'
-  };
+  // Removed scope labels here; the detailed matrix below summarizes privileges clearly.
 
   return (
     <div className="pt-20 px-4">
@@ -38,9 +30,9 @@ export default function UsersPage() {
           <p className="text-gray-600 mt-1">Role-based visibility and actions based on your permissions.</p>
         </div>
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
+        {/* Profile card (top) */}
+        <section>
+          <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
               <h2 className="text-lg font-medium text-gray-900 mb-4">Your Profile</h2>
               <dl className="divide-y divide-gray-100">
                 <div className="py-3 grid grid-cols-3 gap-4">
@@ -52,120 +44,79 @@ export default function UsersPage() {
                   <dd className="text-sm text-gray-900 col-span-2">{user.email}</dd>
                 </div>
                 <div className="py-3 grid grid-cols-3 gap-4">
-                  <dt className="text-sm font-medium text-gray-500">Role</dt>
-                  <dd className="text-sm text-gray-900 col-span-2">{user.role}</dd>
-                </div>
-                <div className="py-3 grid grid-cols-3 gap-4">
-                  <dt className="text-sm font-medium text-gray-500">Visibility</dt>
-                  <dd className="text-sm text-gray-900 col-span-2">{scopeLabels[scope]}</dd>
-                </div>
-                <div className="py-3 grid grid-cols-3 gap-4">
-                  <dt className="text-sm font-medium text-gray-500">Can Assign</dt>
-                  <dd className="text-sm text-gray-900 col-span-2">{canAssignTasks() ? 'Yes' : 'No'}</dd>
-                </div>
-                <div className="py-3 grid grid-cols-3 gap-4">
                   <dt className="text-sm font-medium text-gray-500">Team</dt>
-                  <dd className="text-sm text-gray-900 col-span-2">{user.teamId || 'N/A'}</dd>
+                  <dd className="text-sm text-gray-900 col-span-2">{user.teamName || user.teamId || 'N/A'}</dd>
                 </div>
                 <div className="py-3 grid grid-cols-3 gap-4">
                   <dt className="text-sm font-medium text-gray-500">Department</dt>
-                  <dd className="text-sm text-gray-900 col-span-2">{user.departmentId || 'N/A'}</dd>
+                  <dd className="text-sm text-gray-900 col-span-2">{user.departmentName || user.departmentId || 'N/A'}</dd>
                 </div>
               </dl>
+              {/* Removed duplicate badges; details are shown in the matrix */}
             </div>
-          </div>
-
-          <div className="lg:col-span-2 space-y-6">
-            {scope !== 'none' && (
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-medium text-gray-900">{scopeLabels[scope]}</h2>
-                </div>
-                <UserList
-                  token={token || ''}
-                  userRole={user.role}
-                  userDepartmentId={user.departmentId}
-                  onUserClick={(selectedUser) => setSelectedUser(selectedUser)}
-                />
-              </div>
-            )}
-
-            {canAssignTasks() && (
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
-                <div className="mb-4">
-                  <h2 className="text-lg font-medium text-gray-900">Task Assignment</h2>
-                  <p className="text-sm text-gray-600">Select a user to assign a task to (based on your role permissions).</p>
-                </div>
-                <div className="space-y-4">
-                  <UserSelector
-                    token={token || ''}
-                    userRole={user.role}
-                    userDepartmentId={user.departmentId}
-                    onUserSelect={(user) => setSelectedUser(user)}
-                    placeholder="Select a user for task assignment..."
-                  />
-
-                  {selectedUser && (
-                    <div className="rounded border border-gray-200 bg-gray-50 p-4">
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">Selected User</h3>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div className="text-gray-500">Name</div>
-                        <div className="col-span-2 text-gray-900">{selectedUser.name}</div>
-                        <div className="text-gray-500">Email</div>
-                        <div className="col-span-2 text-gray-900">{selectedUser.email}</div>
-                        <div className="text-gray-500">Role</div>
-                        <div className="col-span-2 text-gray-900">{selectedUser.role}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
         </section>
 
+        {/* Role matrix (full width) */}
         <section>
           <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Role-Based Permissions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="rounded border border-gray-200 p-4">
-                <h3 className="font-medium text-gray-800 mb-2">Staff</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Can create tasks/projects</li>
-                  <li>• Can manage own tasks</li>
-                  <li>• Cannot assign tasks</li>
-                  <li>• See own tasks only</li>
-                </ul>
-              </div>
-              <div className="rounded border border-gray-200 p-4">
-                <h3 className="font-medium text-gray-800 mb-2">Manager</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Can assign tasks downward</li>
-                  <li>• Can see team tasks</li>
-                  <li>• Can create unassigned tasks</li>
-                  <li>• Can update task status</li>
-                </ul>
-              </div>
-              <div className="rounded border border-gray-200 p-4">
-                <h3 className="font-medium text-gray-800 mb-2">Director</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Can see department tasks</li>
-                  <li>• Can assign tasks downward</li>
-                  <li>• Department-wide visibility</li>
-                  <li>• Can manage department users</li>
-                </ul>
-              </div>
-              <div className="rounded border border-gray-200 p-4">
-                <h3 className="font-medium text-gray-800 mb-2">HR & SM</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Full company visibility</li>
-                  <li>• Can see all tasks/projects</li>
-                  <li>• Can see all users</li>
-                  <li>• Full reporting access</li>
-                </ul>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Role-Based Permissions</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-gray-600">
+                      <th className="px-3 py-2 text-left font-medium">Role</th>
+                      <th className="px-3 py-2 text-left font-medium">Visibility</th>
+                      <th className="px-3 py-2 text-left font-medium">Assign</th>
+                      <th className="px-3 py-2 text-left font-medium">Assign Scope</th>
+                      <th className="px-3 py-2 text-left font-medium">Add Collaborators</th>
+                      <th className="px-3 py-2 text-left font-medium">Project Collab Scope</th>
+                      <th className="px-3 py-2 text-left font-medium">Update Status</th>
+                      <th className="px-3 py-2 text-left font-medium">Edit Task</th>
+                      <th className="px-3 py-2 text-left font-medium">Create Task</th>
+                      <th className="px-3 py-2 text-left font-medium">Create Project</th>
+                      <th className="px-3 py-2 text-left font-medium">Subtasks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {[
+                    { key: 'staff', label: 'Staff', visibility: 'Own tasks; project collaborators', assign: false, assignScope: '-', addCollab: 'Limited', projectCollabScope: 'Within project only', updateStatus: 'If collaborator', editTask: 'Own/allowed', createTask: true, createProject: true, subtasks: 'Create/Edit if collaborator' },
+                    { key: 'manager', label: 'Manager', visibility: 'Team-wide tasks', assign: true, assignScope: 'To team/staff', addCollab: 'Yes', projectCollabScope: 'Within department', updateStatus: 'If collaborator', editTask: 'If collaborator', createTask: true, createProject: true, subtasks: 'Create/Edit if collaborator' },
+                    { key: 'director', label: 'Director', visibility: 'Department-wide tasks', assign: true, assignScope: 'Within department', addCollab: 'Yes', projectCollabScope: 'Within department', updateStatus: 'If collaborator', editTask: 'If collaborator', createTask: true, createProject: true, subtasks: 'Create/Edit if collaborator' },
+                    { key: 'hr', label: 'HR', visibility: 'Company-wide tasks/projects/users', assign: false, assignScope: '-', addCollab: 'No', projectCollabScope: '-', updateStatus: 'No', editTask: 'No', createTask: false, createProject: false, subtasks: 'No' },
+                    { key: 'sm', label: 'Senior Management', visibility: 'Company-wide tasks/projects/users', assign: true, assignScope: 'Org-wide (downward)', addCollab: 'Yes', projectCollabScope: 'Within department', updateStatus: 'If collaborator', editTask: 'If collaborator', createTask: false, createProject: false, subtasks: 'Create/Edit if collaborator' },
+                    ].map((r) => (
+                      <tr key={r.key} className={`${user.role === r.key ? 'bg-blue-50/50' : ''}`} title={user.role === r.key ? 'Your role' : undefined}>
+                        <td className="px-3 py-2 font-medium text-gray-800">{r.label}</td>
+                        <td className="px-3 py-2 text-gray-700">{r.visibility}</td>
+                        <td className="px-3 py-2">{r.assign ? <span className="px-2 py-0.5 rounded bg-green-100 text-green-800">Yes</span> : <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700">No</span>}</td>
+                        <td className="px-3 py-2 text-gray-700">{r.assignScope}</td>
+                        <td className="px-3 py-2">
+                          {r.addCollab === 'Yes' && <span className="px-2 py-0.5 rounded bg-green-100 text-green-800">Yes</span>}
+                          {r.addCollab === 'No' && <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700">No</span>}
+                          {r.addCollab === 'Limited' && <span className="px-2 py-0.5 rounded bg-yellow-100 text-yellow-800">Limited</span>}
+                        </td>
+                        <td className="px-3 py-2 text-gray-700">{r.projectCollabScope}</td>
+                        <td className="px-3 py-2">
+                          {r.updateStatus === 'If collaborator' && <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800">If collaborator</span>}
+                          {r.updateStatus === 'No' && <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700">No</span>}
+                        </td>
+                        <td className="px-3 py-2">
+                          {r.editTask === 'Own/allowed' && <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800">Own</span>}
+                          {r.editTask === 'If collaborator' && <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800">If collaborator</span>}
+                          {r.editTask === 'No' && <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700">No</span>}
+                        </td>
+                        <td className="px-3 py-2">{r.createTask ? <span className="px-2 py-0.5 rounded bg-green-100 text-green-800">Yes</span> : <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700">No</span>}</td>
+                        <td className="px-3 py-2">{r.createProject ? <span className="px-2 py-0.5 rounded bg-green-100 text-green-800">Yes</span> : <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700">No</span>}</td>
+                        <td className="px-3 py-2">
+                          {r.subtasks === 'No' && <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700">No</span>}
+                          {r.subtasks === 'Create/Edit if collaborator' && <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800">If collaborator</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
         </section>
       </div>
     </div>

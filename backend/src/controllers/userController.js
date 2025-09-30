@@ -13,14 +13,7 @@ const getProfile = async (req, res) => {
 
     res.json({
       status: 'success',
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        teamId: user.teamId,
-        departmentId: user.departmentId
-      }
+      data: user.toProfileDTO()
     });
   } catch (error) {
     res.status(500).json({

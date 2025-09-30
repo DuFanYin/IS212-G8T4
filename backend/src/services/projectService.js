@@ -113,6 +113,65 @@ class ProjectService {
   }
 
   /**
+   * Get projects visible to a given user based on role/visibility rules
+   * - HR/SM: all active projects
+   * - Director: active projects in their department
+   * - Others: projects where they are owner or collaborator
+   */
+  async getVisibleProjectsForUser(userId) {
+    const userDoc = await this.userRepository.findById(userId);
+    if (!userDoc) {
+      // Roll back to prior behavior: return active projects for safety
+      return await this.getActiveProjects();
+    }
+    const user = new User(userDoc);
+
+    let docs = [];
+    if (user.canSeeAllTasks()) {
+      docs = await this.projectRepository.findActiveProjects();
+    } else if (user.canSeeDepartmentTasks()) {
+      docs = await this.projectRepository.findProjectsByDepartment(user.departmentId);
+      docs = docs.filter((d) => d.isArchived === false);
+    } else {
+      const owned = await this.projectRepository.findProjectsByOwner(user.id);
+      const collab = await this.projectRepository.findProjectsByCollaborator(user.id);
+      const combined = [...owned, ...collab].filter((d) => d.isArchived === false);
+      // de-duplicate by _id
+      const seen = new Set();
+      docs = combined.filter((d) => {
+        const key = d._id?.toString?.() || d.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    const populated = await ProjectModel.populate(docs, [
+      { path: 'ownerId', select: 'name' },
+      { path: 'collaborators', select: 'name' },
+      { path: 'departmentId', select: 'name' }
+    ]);
+
+    return populated.map((doc) => ({
+      id: doc._id,
+      name: doc.name,
+      description: doc.description,
+      ownerId: doc.ownerId?._id || doc.ownerId,
+      ownerName: doc.ownerId?.name,
+      deadline: doc.deadline,
+      departmentId: doc.departmentId?._id || doc.departmentId,
+      departmentName: doc.departmentId?.name,
+      collaborators: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c._id || c) : [],
+      collaboratorNames: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c.name).filter(Boolean) : [],
+      isArchived: doc.isArchived,
+      hasContainedTasks: doc.hasContainedTasks,
+      isOverdue: doc.deadline ? new Date(doc.deadline) < new Date() && !doc.isArchived : false,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    }));
+  }
+
+  /**
    * Update a project
    * @param {string} projectId - Project ID
    * @param {Object} updateData - Data to update

@@ -45,7 +45,16 @@ export const ProjectItem = ({
           </div>
           <div className="flex items-center justify-between text-sm text-gray-500 min-h-[1.25rem]">
             <span>{typeof activeTaskCount === 'number' ? `${activeTaskCount} active tasks` : '0 active tasks'}</span>
-            <span>{project.collaborators && project.collaborators.length > 0 ? `${project.collaborators.length} collaborators` : ''}</span>
+            <span>
+              {(() => {
+                const count = (project.collaboratorNames && project.collaboratorNames.length > 0)
+                  ? project.collaboratorNames.length
+                  : (project.collaborators && project.collaborators.length > 0)
+                    ? project.collaborators.length
+                    : 0;
+                return count > 0 ? `${count} collaborator${count > 1 ? 's' : ''}` : '';
+              })()}
+            </span>
           </div>
           <div className="flex items-center justify-between text-xs text-gray-400">
             <span>Owner: {project.ownerName || '-'}</span>

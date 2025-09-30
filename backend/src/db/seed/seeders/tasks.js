@@ -11,8 +11,9 @@ module.exports = async function seedTasks(_count, { users, projects }) {
 
   const websiteProject = projects.find(p => p.name === 'Website Revamp') || projects[0];
   const platformProject = projects.find(p => p.name === 'Platform Reliability') || projects[1] || projects[0];
-  const salesCRM = projects.find(p => p.name === 'Sales CRM Upgrade') || platformProject;
-  const onboarding = projects.find(p => p.name === 'Onboarding Revamp') || websiteProject;
+  const supportProject = projects.find(p => p.name === 'Support Triage Improvements') || projects[2] || projects[0];
+  const salesCRM = projects.find(p => p.name === 'Sales CRM Upgrade') || projects[3] || projects[0];
+  const onboarding = projects.find(p => p.name === 'Onboarding Revamp') || projects[4] || projects[0];
 
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
@@ -25,7 +26,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
       status: 'unassigned',
       dueDate: new Date(now + 7 * day),
       createdBy: manager._id,
-      assigneeId: undefined,
+      assigneeId: manager._id, // default to creator to avoid null
       projectId: websiteProject._id,
       collaborators: [manager._id],
       attachments: [],
@@ -116,7 +117,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
       status: 'unassigned',
       dueDate: new Date(now + 18 * day),
       createdBy: manager._id,
-      assigneeId: undefined,
+      assigneeId: manager._id, // default to creator to avoid null
       projectId: salesCRM._id,
       collaborators: [manager._id],
       attachments: [],
@@ -143,6 +144,18 @@ module.exports = async function seedTasks(_count, { users, projects }) {
       assigneeId: staff._id,
       projectId: platformProject._id,
       collaborators: [manager._id, director._id],
+      attachments: [],
+      isDeleted: false,
+    },
+    {
+      title: 'Reduce ticket backlog',
+      description: 'Target top categories and improve macros',
+      status: 'ongoing',
+      dueDate: new Date(now + 11 * day),
+      createdBy: manager._id,
+      assigneeId: staff._id,
+      projectId: supportProject._id,
+      collaborators: [manager._id],
       attachments: [],
       isDeleted: false,
     },
