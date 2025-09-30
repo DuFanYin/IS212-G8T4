@@ -48,6 +48,16 @@ describe('POST /api/tasks/:taskId/subtasks', () => {
       })
     );
   });
+
+  it('should NOT create subtask under a parent task if invalid data', async () => {
+    const response = await request(app)
+      .post(`/api/tasks/${parentTaskID}/subtasks`)
+      .send({}) // Missing fields
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.status).toBe('error');
+  });
 });
 
 

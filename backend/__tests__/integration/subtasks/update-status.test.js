@@ -6,6 +6,7 @@ const { generateToken } = require('../../../src/services/authService');
 
 describe('PATCH /api/subtasks/:id/status', () => {
   let authToken;
+  let otherUserToken;
   let parentTaskID;
   let subtaskID;
 
@@ -13,6 +14,9 @@ describe('PATCH /api/subtasks/:id/status', () => {
     const managerUser = await User.findOne({ email: 'manager@example.com' });
     if (!managerUser) throw new Error('Seeded manager user not found');
     authToken = generateToken(managerUser._id);
+
+    const otherUser = await User.findOne({ email: 'staff@example.com' });
+    otherUserToken = generateToken(otherUser._id);
 
     const createTaskRes = await request(app)
       .post('/api/tasks/')
@@ -47,6 +51,16 @@ describe('PATCH /api/subtasks/:id/status', () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('success');
     expect(response.body.data.status).toBe('ongoing');
+  });
+
+  it('should NOT update subtask status if user is not collaborator', async () => {
+    const response = await request(app)
+      .patch(`/api/subtasks/${subtaskID}/status`)
+      .set('Authorization', `Bearer ${otherUserToken}`)
+      .send({ status: 'complete' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.status).toBe('error');
   });
 });
 
