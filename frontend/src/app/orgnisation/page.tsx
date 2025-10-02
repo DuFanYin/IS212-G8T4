@@ -9,7 +9,6 @@ import { organizationService, type Department, type Team } from '@/lib/services/
 import { storage } from '@/lib/utils/storage';
 import { TaskItem } from '@/components/features/tasks/TaskItem';
 
-type ViewType = 'department' | 'team';
 type StatusFilter = 'all' | 'unassigned' | 'ongoing' | 'under_review' | 'completed';
 type SortBy = 'due_asc' | 'due_desc' | 'status' | 'assignee' | 'project';
 
@@ -18,7 +17,7 @@ export default function OrganizationPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<ViewType>('department');
+  // View is implicit: if a team is selected (and allowed), we fetch team tasks; otherwise department
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortBy>('due_asc');
   
@@ -43,9 +42,9 @@ export default function OrganizationPage() {
   const getRank = (role?: string) => roleRank[normalizeRole(role)] || 0;
   
   // Determine available views based on role
-  const canViewTeam = getRank(user?.role) >= 2; // Manager+
-  const canViewDepartment = getRank(user?.role) >= 3; // Director+
-  const canViewAll = getRank(user?.role) >= 4; // HR/SM+
+  const canViewTeam = getRank(user?.role) >= 2;  // Manager+
+  const canViewDepartment = getRank(user?.role) >= 3;  // Director+
+  const canViewAll = getRank(user?.role) >= 4;  // HR/SM+
   
   // Load organization data based on role
   useEffect(() => {
@@ -81,6 +80,11 @@ export default function OrganizationPage() {
           }
         } else if (canViewTeam) {
           // Manager: Only their team
+          setSelectedDepartment(user.departmentId || null);
+          setSelectedTeam(user.teamId || null);
+        } else {
+          // Staff or roles without org browsing: show their own department/team as fixed values
+          setSelectedDepartment(user.departmentId || null);
           setSelectedTeam(user.teamId || null);
         }
       } catch (error) {
@@ -91,7 +95,9 @@ export default function OrganizationPage() {
     loadOrganizationData();
   }, [user, token, canViewAll, canViewDepartment, canViewTeam]);
 
-  // Load tasks based on selected organization unit
+  // No explicit view selector; selection controls drive fetch logic
+
+  // Load tasks based on selected organization unit (selectors drive the view)
   useEffect(() => {
     const load = async () => {
       if (!user || !token) return;
@@ -100,12 +106,26 @@ export default function OrganizationPage() {
         setLoading(true);
         setError(null);
         
+        // Staff (no org visibility): do not fetch org tasks
+        if (!(canViewTeam || canViewDepartment || canViewAll)) {
+          setTasks([]);
+          setError('You need Manager+ role to view organization tasks.');
+          setLoading(false);
+          return;
+        }
+
         let res;
-        if (activeView === 'team' && selectedTeam) {
+        // Prefer team tasks; if team list isn't loaded (manager case), trust selectedTeam
+        const teamMatchesDept = !selectedDepartment 
+          || teams.length === 0 
+          || teams.find(t => t.id === selectedTeam)?.departmentId === selectedDepartment;
+        if (selectedTeam && teamMatchesDept && (canViewTeam || canViewDepartment || canViewAll)) {
           res = await taskService.getTasksByTeam(token, selectedTeam);
-        } else if (activeView === 'department' && selectedDepartment) {
+        } else if (selectedDepartment && (canViewDepartment || canViewAll)) {
+          // Department tasks for Director+ or HR/SM
           res = await taskService.getTasksByDepartment(token, selectedDepartment);
         } else {
+          // Nothing selected yet; keep waiting for selection
           setLoading(false);
           return;
         }
@@ -113,17 +133,19 @@ export default function OrganizationPage() {
         if (res.status === 'success') {
           setTasks(res.data);
         } else {
-          setError(res.message || `Failed to fetch ${activeView} tasks`);
+          const unit = selectedTeam ? 'team' : 'department';
+          setError(res.message || `Failed to fetch ${unit} tasks`);
         }
       } catch {
-        setError(`Failed to fetch ${activeView} tasks`);
+        const unit = selectedTeam ? 'team' : 'department';
+        setError(`Failed to fetch ${unit} tasks`);
       } finally {
         setLoading(false);
       }
     };
     
     load();
-  }, [user, token, activeView, selectedDepartment, selectedTeam]);
+  }, [user, token, selectedDepartment, selectedTeam, canViewTeam, canViewDepartment, canViewAll, teams]);
 
   const kpis = useMemo(() => {
     const now = new Date();
@@ -157,34 +179,21 @@ export default function OrganizationPage() {
     );
   }
 
-  // Check if user has any access
-  if (!canViewTeam && !canViewDepartment) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="p-6 bg-white rounded shadow text-center max-w-md">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Access restricted</h2>
-          <p className="text-gray-600 text-sm">You need Manager+ role to view organization tasks.</p>
-        </div>
-      </div>
-    );
-  }
+  // Always render page; non-authorized users will see their fixed department/team values
 
   // Get current selection info
   const currentDepartment = departments.find(d => d.id === selectedDepartment);
   const currentTeam = teams.find(t => t.id === selectedTeam);
   
   const getPageTitle = () => {
-    if (canViewAll) {
-      return activeView === 'department' 
-        ? `Department: ${currentDepartment?.name || 'Select Department'}`
-        : `Team: ${currentTeam?.name || 'Select Team'}`;
-    } else if (canViewDepartment) {
-      return activeView === 'department'
-        ? `Department: ${currentDepartment?.name || 'My Department'}`
-        : `Team: ${currentTeam?.name || 'Select Team'}`;
-    } else {
-      return `Team: ${currentTeam?.name || 'My Team'}`;
+    const showingTeam = !!selectedTeam && (canViewTeam || canViewDepartment || canViewAll);
+    if (showingTeam) {
+      return `Team: ${currentTeam?.name || 'Select Team'}`;
     }
+    if (canViewDepartment || canViewAll) {
+      return `Department: ${currentDepartment?.name || 'Select Department'}`;
+    }
+    return `Team: ${currentTeam?.name || 'My Team'}`;
   };
 
   return (
@@ -199,17 +208,18 @@ export default function OrganizationPage() {
           {/* Organization Selection Controls */}
           <div className="mb-6 bg-white rounded-lg shadow p-4">
             <div className="flex flex-col md:flex-row gap-4">
-              {/* Department Selection (SM/HR only) */}
-              {canViewAll && (
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Department
-                  </label>
+              {/* Department Selection (always visible; text-only if no permission) */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Department
+                </label>
+                {canViewAll ? (
                   <select
                     value={selectedDepartment || ''}
                     onChange={(e) => {
                       setSelectedDepartment(e.target.value);
                       setSelectedTeam(null); // Reset team selection
+                      setError(null);
                     }}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -220,55 +230,53 @@ export default function OrganizationPage() {
                       </option>
                     ))}
                   </select>
-                </div>
-              )}
+                ) : (
+                  <div
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-700"
+                    aria-label="Department"
+                  >
+                    {currentDepartment?.name || user?.departmentName || 'My Department'}
+                  </div>
+                )}
+              </div>
 
-              {/* Team Selection (Director+ or SM/HR with department selected) */}
-              {(canViewDepartment || (canViewAll && selectedDepartment)) && (
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Team
-                  </label>
+              {/* Team Selection (always visible; text-only if no permission) */}
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Team
+                </label>
+                {(canViewAll || canViewDepartment) ? (
                   <select
                     value={selectedTeam || ''}
-                    onChange={(e) => setSelectedTeam(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedTeam(e.target.value);
+                      setError(null);
+                    }}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={canViewAll && !selectedDepartment}
                   >
                     <option value="">Select Team</option>
                     {teams
-                      .filter(team => canViewAll ? team.departmentId === selectedDepartment : true)
+                      .filter(team => selectedDepartment ? team.departmentId === selectedDepartment : true)
                       .map((team) => (
                         <option key={team.id} value={team.id}>
                           {team.name} ({team.userCount} users)
                         </option>
                       ))}
                   </select>
-                </div>
-              )}
-
-              {/* View Type Selection */}
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  View Type
-                </label>
-                <select
-                  value={activeView}
-                  onChange={(e) => setActiveView(e.target.value as ViewType)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {canViewDepartment && (
-                    <option value="department">Department Tasks</option>
-                  )}
-                  {canViewTeam && (
-                    <option value="team">Team Tasks</option>
-                  )}
-                </select>
+                ) : (
+                  <div
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-700"
+                    aria-label="Team"
+                  >
+                    {currentTeam?.name || user?.teamName || 'My Team'}
+                  </div>
+                )}
               </div>
+
             </div>
           </div>
 
-          {/* KPIs */}
+          {/* Task Summary */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
             <div className="bg-white rounded shadow p-3">
               <div className="text-xs text-gray-500">Total</div>
@@ -304,7 +312,7 @@ export default function OrganizationPage() {
             <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow">Loading tasks...</div>
           ) : filteredSorted.length === 0 ? (
             <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow">
-              No {activeView} tasks found for the selected organization unit.
+              No tasks found for the selected organization unit.
             </div>
           ) : (
             <div>
@@ -335,7 +343,7 @@ export default function OrganizationPage() {
                     <option value="due_desc">Due date ↓</option>
                     <option value="status">Status</option>
                     <option value="assignee">Assignee</option>
-                    {activeView === 'department' && <option value="project">Project</option>}
+                    {(selectedDepartment && (canViewDepartment || canViewAll)) && <option value="project">Project</option>}
                   </select>
                 </div>
               </div>

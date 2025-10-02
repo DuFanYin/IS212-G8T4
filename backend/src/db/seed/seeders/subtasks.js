@@ -300,6 +300,30 @@ module.exports = async function seedSubtasks(_count, { tasks }) {
     collaborators: buildCollaborators(ecommerce),
   });
 
+  // Light rebalance: rotate assignees within parent task collaborators to avoid overloading one user
+  try {
+    const perTask = new Map();
+    docs.forEach(d => {
+      const key = d.parentTaskId?.toString?.();
+      if (!key) return;
+      const arr = perTask.get(key) || [];
+      arr.push(d);
+      perTask.set(key, arr);
+    });
+    perTask.forEach(list => {
+      let i = 0;
+      list.forEach(d => {
+        const pool = Array.isArray(d.collaborators) ? d.collaborators.filter(Boolean) : [];
+        if (pool.length > 0) {
+          d.assigneeId = pool[i % pool.length];
+          i += 1;
+        }
+      });
+    });
+  } catch (e) {
+    console.error('Non-fatal: subtask rebalancing skipped:', e?.message || e);
+  }
+
   const inserted = await Subtask.insertMany(docs, { ordered: true });
   return inserted.map((s) => s.toObject());
 };

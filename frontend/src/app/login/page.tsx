@@ -151,7 +151,7 @@ export default function LoginPage() {
         <div className="text-sm text-gray-600">
           <div className="font-medium mb-2 text-gray-800">Seeded Credentials</div>
           <div className="mb-2">
-            <span className="font-medium">Password:</span> Password123!
+            <span className="font-medium">Password:</span> 123456
           </div>
           <table className="w-full border border-gray-200 rounded text-left">
             <thead>
@@ -173,6 +173,10 @@ export default function LoginPage() {
                     <li>staff3@example.com</li>
                     <li>staff4@example.com</li>
                     <li>staff5@example.com</li>
+                    <li>staff6@example.com</li>
+                    <li>staff7@example.com</li>
+                    <li>staff8@example.com</li>
+                    <li>staff9@example.com</li>
                   </ul>
                 </td>
                 <td className="px-3 py-2 align-top">
@@ -180,12 +184,16 @@ export default function LoginPage() {
                     <li>manager0@example.com</li>
                     <li>manager1@example.com</li>
                     <li>manager2@example.com</li>
+                    <li>manager3@example.com</li>
+                    <li>manager4@example.com</li>
+                    <li>manager5@example.com</li>
                   </ul>
                 </td>
                 <td className="px-3 py-2 align-top">
                   <ul className="space-y-0.5">
                     <li>director0@example.com</li>
                     <li>director1@example.com</li>
+                    <li>director2@example.com</li>
                   </ul>
                 </td>
                 <td className="px-3 py-2 align-top">
@@ -197,7 +205,6 @@ export default function LoginPage() {
                 <td className="px-3 py-2 align-top">
                   <ul className="space-y-0.5">
                     <li>sm0@example.com</li>
-                    <li>sm1@example.com</li>
                   </ul>
                 </td>
               </tr>

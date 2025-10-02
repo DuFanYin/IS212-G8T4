@@ -13,7 +13,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
   const platformProject = projects.find(p => p.name === 'Platform Reliability') || projects[1] || projects[0];
   const supportProject = projects.find(p => p.name === 'Support Triage Improvements') || projects[2] || projects[0];
   const salesCRM = projects.find(p => p.name === 'Sales CRM Upgrade') || projects[3] || projects[0];
-  const onboarding = projects.find(p => p.name === 'Onboarding Revamp') || projects[4] || projects[0];
+  const onboarding = projects.find(p => p.name === 'Support Triage Improvements') || projects[2] || projects[0];
 
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
@@ -429,7 +429,230 @@ module.exports = async function seedTasks(_count, { users, projects }) {
       isDeleted: false,
     },
   ];
+
+  // Ensure per-team distribution: 2 teams → 1 task, 2 teams → 2 tasks, 2 teams → 3 tasks
+  try {
+    const byTeam = new Map();
+    (users || []).forEach(u => {
+      if (!u?.teamId) return;
+      const key = u.teamId.toString();
+      const arr = byTeam.get(key) || [];
+      arr.push(u);
+      byTeam.set(key, arr);
+    });
+
+    const future = (days) => new Date(Date.now() + days * day);
+
+    const teamIds = Array.from(byTeam.keys());
+    // Sort for determinism
+    teamIds.sort();
+    const distribution = new Map();
+    // Assign 1,1,2,2,3,3 repeating over available teams
+    const pattern = [1,1,2,2,3,3];
+    for (let i = 0; i < teamIds.length; i++) {
+      distribution.set(teamIds[i], pattern[i % pattern.length]);
+    }
+
+    teamIds.forEach((teamId) => {
+      const teamUsers = byTeam.get(teamId) || [];
+      // Prefer a manager as creator, else any user in team
+      const creator = teamUsers.find(u => u.role === 'manager') || teamUsers[0];
+      if (!creator) return;
+      // Prefer a staff as assignee, else creator
+      const assignee = teamUsers.find(u => u.role === 'staff') || creator;
+
+      // Try to find a project in the same department as the creator
+      const deptIdStr = creator.departmentId?.toString?.();
+      const projectSameDept = (projects || []).find(p => p.departmentId?.toString?.() === deptIdStr) || projects[0];
+
+      const count = distribution.get(teamId) || 1;
+      for (let i = 0; i < count; i++) {
+        const isStandalone = i % 2 === 0 || !projectSameDept?._id; // alternate, ensure at least one standalone
+        docs.push({
+          title: `Team ${teamId.slice(-4)} Task ${i+1}`,
+          description: isStandalone ? 'Standalone team task' : 'Project-linked team task',
+          status: i % 3 === 0 ? 'ongoing' : (i % 3 === 1 ? 'under_review' : 'unassigned'),
+          dueDate: future(10 + i * 3),
+          createdAt: new Date(now - (2 + i) * day),
+          createdBy: creator._id,
+          assigneeId: assignee?._id || null,
+          projectId: isStandalone ? null : projectSameDept?._id,
+          collaborators: [assignee?._id, creator._id].filter(Boolean),
+          attachments: [],
+          isDeleted: false,
+        });
+      }
+    });
+  } catch (e) {
+    // Best-effort seeding; do not fail if association logic errors out
+    console.error('Non-fatal: team-based task seeding skipped:', e?.message || e);
+  }
   
+  // Rebalance creators/assignees/collaborators to spread across departments/teams
+  try {
+    const deptIds = Array.from(new Set((projects || []).map(p => p.departmentId?.toString?.()).filter(Boolean)));
+    const projectDept = new Map();
+    (projects || []).forEach(p => {
+      if (p?._id && p?.departmentId) {
+        projectDept.set(p._id.toString(), p.departmentId.toString());
+      }
+    });
+
+    // Build user pools by department and role
+    const byDeptManagers = new Map();
+    const byDeptStaff = new Map();
+    (users || []).forEach(u => {
+      const d = u?.departmentId?.toString?.();
+      if (!d) return;
+      if (u.role === 'manager') {
+        const arr = byDeptManagers.get(d) || [];
+        arr.push(u);
+        byDeptManagers.set(d, arr);
+      } else if (u.role === 'staff') {
+        const arr = byDeptStaff.get(d) || [];
+        arr.push(u);
+        byDeptStaff.set(d, arr);
+      }
+    });
+
+    let standaloneDeptIndex = 0;
+    let counters = new Map(); // deptId -> { m: idx, s: idx }
+
+    function pickFromPool(map, deptId, kind) {
+      const list = map.get(deptId) || [];
+      if (list.length === 0) return null;
+      const key = `${deptId}:${kind}`;
+      const prev = counters.get(key) || 0;
+      const picked = list[prev % list.length];
+      counters.set(key, prev + 1);
+      return picked;
+    }
+
+    docs.forEach((doc, i) => {
+      let deptId;
+      if (doc.projectId && projectDept.has(doc.projectId?.toString?.())) {
+        deptId = projectDept.get(doc.projectId.toString());
+      } else if (deptIds.length > 0) {
+        deptId = deptIds[standaloneDeptIndex % deptIds.length];
+        standaloneDeptIndex += 1;
+      }
+      if (!deptId) return;
+
+      const mgr = pickFromPool(byDeptManagers, deptId, 'm') || doc.createdBy;
+      const stf = pickFromPool(byDeptStaff, deptId, 's') || doc.assigneeId || mgr;
+
+      doc.createdBy = mgr?._id || mgr || doc.createdBy;
+      doc.assigneeId = stf?._id || stf || null;
+
+      // Limit collaborators to within department, small set
+      const collSet = [];
+      if (doc.assigneeId) collSet.push(doc.assigneeId);
+      if (doc.createdBy) collSet.push(doc.createdBy);
+      // Add one more staff from same dept if available
+      const extra = pickFromPool(byDeptStaff, deptId, 's');
+      if (extra && extra._id && !collSet.find(id => id.toString() === extra._id.toString())) {
+        collSet.push(extra._id);
+      }
+      doc.collaborators = collSet.filter(Boolean);
+    });
+  } catch (e) {
+    console.error('Non-fatal: task rebalancing skipped:', e?.message || e);
+  }
+
+  // Enforce: 5 projects have 5 tasks each, plus 5 standalone tasks
+  try {
+    const dayMs = 24 * 60 * 60 * 1000;
+    const future = (days) => new Date(Date.now() + days * dayMs);
+
+    // Build project list (first 5) and count current tasks per project
+    const targetProjects = (projects || []).slice(0, 5);
+    const projectIdStrs = targetProjects.map(p => p?._id?.toString?.()).filter(Boolean);
+    const projectCounts = new Map();
+    docs.forEach(d => {
+      const pid = d.projectId?.toString?.();
+      if (pid && projectIdStrs.includes(pid)) {
+        projectCounts.set(pid, (projectCounts.get(pid) || 0) + 1);
+      }
+    });
+
+    // Build department → managers/staff pools
+    const byDeptManagers = new Map();
+    const byDeptStaff = new Map();
+    (users || []).forEach(u => {
+      const d = u?.departmentId?.toString?.();
+      if (!d) return;
+      if (u.role === 'manager') {
+        const arr = byDeptManagers.get(d) || [];
+        arr.push(u);
+        byDeptManagers.set(d, arr);
+      } else if (u.role === 'staff') {
+        const arr = byDeptStaff.get(d) || [];
+        arr.push(u);
+        byDeptStaff.set(d, arr);
+      }
+    });
+
+    const counters = new Map();
+    function pick(map, deptId, key) {
+      const list = map.get(deptId) || [];
+      if (list.length === 0) return null;
+      const k = `${deptId}:${key}`;
+      const i = counters.get(k) || 0;
+      counters.set(k, i + 1);
+      return list[i % list.length];
+    }
+
+    // Ensure 5 tasks per each of the first 5 projects
+    targetProjects.forEach((p, idx) => {
+      const pid = p?._id?.toString?.();
+      const deptId = p?.departmentId?.toString?.();
+      if (!pid || !deptId) return;
+      const have = projectCounts.get(pid) || 0;
+      for (let i = have; i < 5; i++) {
+        const creator = pick(byDeptManagers, deptId, 'm') || users.find(u => u.role === 'manager') || users[0];
+        const assignee = pick(byDeptStaff, deptId, 's') || users.find(u => u.role === 'staff') || creator;
+        docs.push({
+          title: `${p.name} Task ${i + 1}`,
+          description: 'Seeded to ensure project grouping coverage',
+          status: i % 2 === 0 ? 'ongoing' : 'under_review',
+          dueDate: future(20 + i),
+          createdAt: new Date(Date.now() - (3 + i) * dayMs),
+          createdBy: creator?._id || creator,
+          assigneeId: assignee?._id || assignee,
+          projectId: p._id,
+          collaborators: [creator?._id || creator, assignee?._id || assignee].filter(Boolean),
+          attachments: [],
+          isDeleted: false,
+        });
+      }
+    });
+
+    // Ensure at least 5 standalone tasks (projectId null)
+    const currentStandalone = docs.filter(d => !d.projectId).length;
+    const needStandalone = Math.max(0, 5 - currentStandalone);
+    const deptIds = Array.from(byDeptManagers.keys());
+    for (let s = 0; s < needStandalone; s++) {
+      const deptId = deptIds[s % (deptIds.length || 1)] || (projects[0]?.departmentId?.toString?.());
+      const creator = pick(byDeptManagers, deptId, 'm') || users.find(u => u.role === 'manager') || users[0];
+      const assignee = pick(byDeptStaff, deptId, 's') || users.find(u => u.role === 'staff') || creator;
+      docs.push({
+        title: `Standalone Task ${s + 1}`,
+        description: 'Seeded standalone task for distribution',
+        status: s % 3 === 0 ? 'unassigned' : (s % 3 === 1 ? 'ongoing' : 'under_review'),
+        dueDate: future(12 + s),
+        createdAt: new Date(Date.now() - (2 + s) * dayMs),
+        createdBy: creator?._id || creator,
+        assigneeId: assignee?._id || assignee,
+        projectId: null,
+        collaborators: [assignee?._id || assignee, creator?._id || creator].filter(Boolean),
+        attachments: [],
+        isDeleted: false,
+      });
+    }
+  } catch (e) {
+    console.error('Non-fatal: project/standalone enforcement skipped:', e?.message || e);
+  }
+
   const inserted = await Task.insertMany(docs, { ordered: true });
   return inserted.map((t) => t.toObject());
 };

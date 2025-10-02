@@ -15,22 +15,23 @@ module.exports = async function seedUsers(_count, { departments, teams }) {
   const engineering = departments.find(d => d.name === 'Engineering') || departments[0];
   const operations = departments.find(d => d.name === 'Operations') || departments[1] || departments[0];
   const sales = departments.find(d => d.name === 'Sales') || departments[2] || departments[0];
-  const hrDept = departments.find(d => d.name === 'HR') || departments[3] || departments[0];
+  // Only 3 departments now
+  const hrDept = departments[0];
 
   const frontTeam = teams.find(t => t.name === 'Frontend Team') || teams[0];
   const platformTeam = teams.find(t => t.name === 'Platform Team') || teams[1] || teams[0];
-  const supportTeam = teams.find(t => t.name === 'Support Team') || teams[2] || teams[0];
-  const revOps = teams.find(t => t.name === 'Revenue Ops') || teams[3] || teams[0];
-  const aEs = teams.find(t => t.name === 'Account Executives') || teams[4] || teams[0];
-  const peopleOps = teams.find(t => t.name === 'People Ops') || teams[5] || teams[0];
+  const supportTeamA = teams.find(t => t.name === 'Support Team') || teams[2] || teams[0];
+  const aEs = teams.find(t => t.name === 'Account Executives') || teams[5] || teams[0];
+  const qaTeam = teams.find(t => t.name === 'QA Team') || teams[2] || teams[0];
+  const itOps = teams.find(t => t.name === 'IT Ops') || teams[4] || teams[0];
 
   const docs = [];
 
   // Pick a team that belongs to a given department (falls back safely)
   const teamForDepartment = (dept) => {
     const deptId = dept?._id?.toString?.();
-    const byDept = [frontTeam, platformTeam, supportTeam, revOps, aEs, peopleOps].filter(t => t && t.departmentId?.toString?.() === deptId);
-    return byDept[0] || frontTeam || platformTeam || supportTeam || revOps || aEs || peopleOps || anyTeam;
+    const byDept = [frontTeam, platformTeam, qaTeam, supportTeamA, itOps, aEs].filter(t => t && t.departmentId?.toString?.() === deptId);
+    return byDept[0] || frontTeam || platformTeam || qaTeam || supportTeamA || itOps || aEs || anyTeam;
   };
 
   // Helper to push a user
@@ -40,18 +41,18 @@ module.exports = async function seedUsers(_count, { departments, teams }) {
     const base = { name, email, passwordHash, role };
     if (role === 'staff') {
       // Distribute staff across teams/departments
-      const pool = [frontTeam, platformTeam, supportTeam, revOps, aEs, peopleOps].filter(Boolean);
+      const pool = [frontTeam, platformTeam, qaTeam, supportTeamA, itOps, aEs].filter(Boolean);
       const teamPick = pool[pool.length ? (index % pool.length) : 0];
       const deptId = teamPick?.departmentId || engineering._id;
       docs.push({ ...base, teamId: teamPick?._id, departmentId: deptId });
     } else if (role === 'manager') {
-      const pool = [frontTeam, platformTeam, supportTeam, revOps, aEs, peopleOps].filter(Boolean);
+      const pool = [frontTeam, platformTeam, qaTeam, supportTeamA, itOps, aEs].filter(Boolean);
       const teamPick = pool[pool.length ? (index % pool.length) : 0];
       const deptId = teamPick?.departmentId || engineering._id;
       docs.push({ ...base, teamId: teamPick?._id, departmentId: deptId });
     } else if (role === 'director') {
       // Rotate directors across departments
-      const deptPool = [engineering, operations, sales, hrDept].filter(Boolean);
+      const deptPool = [engineering, operations, sales].filter(Boolean);
       const deptPick = deptPool[deptPool.length ? (index % deptPool.length) : 0];
       const teamPick = teamForDepartment(deptPick);
       docs.push({ ...base, teamId: teamPick?._id, departmentId: deptPick?._id });
@@ -69,11 +70,12 @@ module.exports = async function seedUsers(_count, { departments, teams }) {
   };
 
   // Create multiple users per role
-  for (let i = 0; i < 6; i++) pushUser('staff', i);
-  for (let i = 0; i < 3; i++) pushUser('manager', i);
-  for (let i = 0; i < 2; i++) pushUser('director', i);
+  for (let i = 0; i < 10; i++) pushUser('staff', i);
+  // One manager per team (6 teams total)
+  for (let i = 0; i < 6; i++) pushUser('manager', i);
+  for (let i = 0; i < 3; i++) pushUser('director', i);
   for (let i = 0; i < 2; i++) pushUser('hr', i);
-  for (let i = 0; i < 2; i++) pushUser('sm', i);
+  for (let i = 0; i < 1; i++) pushUser('sm', i);
 
   // Removed legacy non-indexed accounts to ensure all seeded users follow index-from-0 convention
 
