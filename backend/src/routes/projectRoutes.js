@@ -5,10 +5,10 @@ const { createProject, getProjects, getProjectsByDepartment, updateProject, addC
 
 router.post('/', authMiddleware, createProject);
 router.get('/', authMiddleware, getProjects);
-router.get('/department/:departmentId', authMiddleware, getProjectsByDepartment);
-router.patch('/:projectId/archive', authMiddleware, setStatusProject);
+router.get('/departments/:departmentId', authMiddleware, getProjectsByDepartment);
+router.put('/:projectId/archive', authMiddleware, setStatusProject);
 router.put('/:projectId', authMiddleware, updateProject);
-router.post('/:projectId/collaborators', authMiddleware, addCollaborators);
+router.put('/:projectId/collaborators', authMiddleware, addCollaborators);
 router.delete('/:projectId/collaborators', authMiddleware, removeCollaborators);
 
 module.exports = router;

@@ -7,7 +7,7 @@ export const subtaskService = {
     return res.json();
   },
   getById: async (token: string, subtaskId: string): Promise<SubtaskResponse> => {
-    const res = await fetch(`${API_URL}/subtasks/${subtaskId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(`${API_URL}/tasks/subtasks/${subtaskId}`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
   create: async (
@@ -25,19 +25,19 @@ export const subtaskService = {
     subtaskId: string,
     data: Partial<{ title: string; description: string; dueDate: string; status: SubtaskStatus; assigneeId: string; collaborators: string[] }>
   ): Promise<SubtaskResponse> => {
-    const res = await fetch(`${API_URL}/subtasks/${subtaskId}`, {
+    const res = await fetch(`${API_URL}/tasks/subtasks/${subtaskId}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(data)
     });
     return res.json();
   },
   updateStatus: async (token: string, subtaskId: string, status: SubtaskStatus): Promise<SubtaskResponse> => {
-    const res = await fetch(`${API_URL}/subtasks/${subtaskId}/status`, {
+    const res = await fetch(`${API_URL}/tasks/subtasks/${subtaskId}/status`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ status })
     });
     return res.json();
   },
   remove: async (token: string, subtaskId: string): Promise<SubtaskResponse> => {
-    const res = await fetch(`${API_URL}/subtasks/${subtaskId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(`${API_URL}/tasks/subtasks/${subtaskId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   }
 };

@@ -7,7 +7,7 @@ export const projectService = {
     return res.json();
   },
   getProjectsByDepartment: async (token: string, departmentId: string): Promise<ProjectsResponse> => {
-    const res = await fetch(`${API_URL}/projects/department/${departmentId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(`${API_URL}/projects/departments/${departmentId}`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
   createProject: async (token: string, data: { name: string; description?: string; deadline?: string; collaborators?: string[] }): Promise<ProjectResponse> => {
@@ -32,7 +32,7 @@ export const projectService = {
   },
   setArchived: async (token: string, projectId: string, isArchived: boolean): Promise<ProjectResponse> => {
     const res = await fetch(`${API_URL}/projects/${projectId}/archive`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ isArchived })
     });
@@ -40,7 +40,7 @@ export const projectService = {
   },
   addCollaborator: async (token: string, projectId: string, collaboratorId: string): Promise<ProjectResponse> => {
     const res = await fetch(`${API_URL}/projects/${projectId}/collaborators`, {
-      method: 'POST',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ collaboratorId })
     });

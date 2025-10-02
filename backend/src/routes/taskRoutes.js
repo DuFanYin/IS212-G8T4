@@ -36,10 +36,10 @@ router.get('/:id', authMiddleware, getTaskById);
 router.put('/:id', authMiddleware, updateTask);
 
 // Assign task to user
-router.put('/:id/assign', authMiddleware, assignTask);
+router.patch('/:id/assign', authMiddleware, assignTask);
 
 // Update task status
-router.put('/:id/status', authMiddleware, updateTaskStatus);
+router.patch('/:id/status', authMiddleware, updateTaskStatus);
 
 // Archive a task
 router.delete('/:id', authMiddleware, archiveTask);

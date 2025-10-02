@@ -10,14 +10,14 @@ const {
   deleteSubtask,
 } = require('../controllers/subtaskController');
 
-// Get subtask by ID
-router.get('/subtasks/:id', authMiddleware, getSubtask);
-
 // List subtasks for a parent task
-router.get('/tasks/:parentTaskId/subtasks', authMiddleware, getSubtasksByParentTask);
+router.get('/:parentTaskId/subtasks', authMiddleware, getSubtasksByParentTask);
 
 // Create subtask under a parent task
-router.post('/tasks/:parentTaskId/subtasks', authMiddleware, createSubtask);
+router.post('/:parentTaskId/subtasks', authMiddleware, createSubtask);
+
+// Get subtask by ID
+router.get('/subtasks/:id', authMiddleware, getSubtask);
 
 // Update subtask
 router.put('/subtasks/:id', authMiddleware, updateSubtask);

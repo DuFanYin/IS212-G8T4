@@ -18,26 +18,33 @@ src/
 │   ├── TaskRepository.js
 │   ├── ProjectRepository.js
 │   ├── SubtaskRepository.js
-│   └── ActivityLogRepository.js
+│   ├── ActivityLogRepository.js
+│   ├── DepartmentRepository.js
+│   └── TeamRepository.js
 ├── services/                 # Business operations layer
 │   ├── userService.js
 │   ├── projectService.js
 │   ├── taskService.js
 │   ├── subtaskService.js
 │   ├── activityService.js
-│   └── authService.js
+│   ├── authService.js
+│   └── organizationService.js
 ├── controllers/              # HTTP request handling
 │   ├── authController.js
 │   ├── userController.js
 │   ├── projectController.js
-│   └── taskController.js
+│   ├── taskController.js
+│   ├── subtaskController.js
+│   └── organizationController.js
 ├── middleware/               # Request processing middleware
 │   └── authMiddleware.js
 ├── routes/                   # API route definitions
 │   ├── authRoutes.js
 │   ├── userRoutes.js         # User management routes
 │   ├── projectRoutes.js
-│   └── taskRoutes.js
+│   ├── taskRoutes.js
+│   ├── subtaskRoutes.js
+│   └── organizationRoutes.js
 ├── scripts/                  # Utility scripts
 │   └── generateSecret.js
 ├── app.js                    # Express application setup
@@ -46,6 +53,11 @@ src/
     ├── connect.js            # Database connection
     ├── schema.md             # Database schema documentation
     ├── seedData.js           # Database seeding script
+    ├── seed/                 # Database seeding infrastructure
+    │   ├── config.js
+    │   ├── index.js
+    │   ├── seeders/          # Individual seeder files
+    │   └── utils/            # Seeding utilities
     └── models/               # Clean schema definitions only
         ├── User.js
         ├── Task.js
@@ -113,10 +125,10 @@ src/
 **Endpoints:**
 - `POST /api/projects/` - Create new project
 - `GET /api/projects/` - Get active projects
-- `GET /api/projects/department/:departmentId` - Get projects by department
-- `PATCH /api/projects/:projectId/archive` - Archive/unarchive project
+- `GET /api/projects/departments/:departmentId` - Get projects by department
+- `PUT /api/projects/:projectId/archive` - Archive/unarchive project
 - `PUT /api/projects/:projectId` - Update project
-- `POST /api/projects/:projectId/collaborators` - Add collaborator
+- `PUT /api/projects/:projectId/collaborators` - Add collaborator
 - `DELETE /api/projects/:projectId/collaborators` - Remove collaborator
 
 ### **Task Routes** (`src/routes/taskRoutes.js`)
@@ -128,64 +140,24 @@ src/
 - `GET /api/tasks/department/:departmentId` - Get tasks by department (director+, HR/SM)
 - `GET /api/tasks/:id` - Get task by ID (with visibility check)
 - `PUT /api/tasks/:id` - Update task
-- `PUT /api/tasks/:id/assign` - Assign task to user
-- `PUT /api/tasks/:id/status` - Update task status
+- `PATCH /api/tasks/:id/assign` - Assign task to user
+- `PATCH /api/tasks/:id/status` - Update task status
 - `DELETE /api/tasks/:id` - Archive (soft delete) task
 
 ### **Subtask Routes** (`src/routes/subtaskRoutes.js`)
 **Endpoints:**
-- `GET /api/subtasks/:id` - Get subtask by ID
 - `GET /api/tasks/:parentTaskId/subtasks` - List subtasks for a parent task
 - `POST /api/tasks/:parentTaskId/subtasks` - Create subtask under a parent task
-- `PUT /api/subtasks/:id` - Update subtask
-- `PATCH /api/subtasks/:id/status` - Update subtask status
-- `DELETE /api/subtasks/:id` - Archive (soft delete) subtask
+- `GET /api/tasks/subtasks/:id` - Get subtask by ID
+- `PUT /api/tasks/subtasks/:id` - Update subtask
+- `PATCH /api/tasks/subtasks/:id/status` - Update subtask status
+- `DELETE /api/tasks/subtasks/:id` - Archive (soft delete) subtask
 
-## Current Controller Layer (HTTP Request Handling)
-
-### **AuthController** (`src/controllers/authController.js`)
-**Methods:**
-- `login()` - Handle user authentication
-- `requestReset()` - Handle password reset requests
-- `resetPassword()` - Handle password reset
-
-### **UserController** (`src/controllers/userController.js`)
-**Methods:**
-- `getProfile()` - Get current user profile
-- `getTeamMembers()` - Get team members (role-based visibility)
-- `getDepartmentMembers()` - Get department members (Director+ only)
-
-### **ProjectController** (`src/controllers/projectController.js`)
-**Methods:**
-- `createProject()` - Create new project
-- `getProjects()` - Get active projects
-- `getProjectsByDepartment()` - Get projects filtered by department
-- `updateProject()` - Update project
-- `addCollaborators()` - Add collaborator to project
-- `removeCollaborators()` - Remove collaborator from project
-- `setStatusProject()` - Archive/unarchive project
-
-### **TaskController** (`src/controllers/taskController.js`)
-**Methods:**
-- `createTask()` - Create new task
-- `getUserTasks()` - Get user's tasks (role-based visibility)
-- `getProjectTasks()` - Get tasks by project
-- `getTeamTasks()` - Get tasks by team
-- `getDepartmentTasks()` - Get tasks by department
-- `getTaskById()` - Get task by ID with visibility check
-- `updateTask()` - Update task
-- `assignTask()` - Assign task to user
-- `updateTaskStatus()` - Update task status
-- `archiveTask()` - Archive (soft delete) task
-
-### **SubtaskController** (`src/controllers/subtaskController.js`)
-**Methods:**
-- `getSubtask()` - Get subtask by ID
-- `getSubtasksByParentTask()` - List subtasks under a parent task
-- `createSubtask()` - Create a new subtask
-- `updateSubtask()` - Update subtask
-- `updateSubtaskStatus()` - Update subtask status
-- `deleteSubtask()` - Archive (soft delete) subtask
+### **Organization Routes** (`src/routes/organizationRoutes.js`)
+**Endpoints:**
+- `GET /api/organization/departments` - Get all departments (SM only)
+- `GET /api/organization/departments/:departmentId/teams` - Get teams by department (Director+)
+- `GET /api/organization/teams` - Get all teams (SM only)
 
 ## Current Repository Layer (Data Access)
 
@@ -221,6 +193,16 @@ src/
 **Methods:**
 - Basic CRUD: `findById()`, `create()`, `updateById()`
 - Query methods: `findByUser()`, `findByResource()`, `findAll()`
+
+### **DepartmentRepository** (`src/repositories/DepartmentRepository.js`)
+**Methods:**
+- Basic CRUD: `findById()`, `findAll()`, `create()`, `updateById()`, `deleteById()`
+- Query methods: `findByDirector()`
+
+### **TeamRepository** (`src/repositories/TeamRepository.js`)
+**Methods:**
+- Basic CRUD: `findById()`, `findAll()`, `create()`, `updateById()`, `deleteById()`
+- Query methods: `findByDepartment()`, `findByManager()`
 
 ## Current Service Layer (Business Operations)
 
@@ -261,47 +243,12 @@ src/
 **Methods:**
 - Token generation: `generateToken()`
 
+### **OrganizationService** (`src/services/organizationService.js`)
+**Methods:**
+- Department operations: `getAllDepartments()`, `getDepartmentById()`
+- Team operations: `getAllTeams()`, `getTeamsByDepartment()`, `getTeamById()`
+- Statistics: Aggregates team and user counts for departments and teams
 
-## Current Capabilities & Architecture Overview
-
-- **User Authentication & Authorization**:  
-  - Role-based access (Staff, Manager, Director, HR, SM)
-  - Permission checks for task assignment and visibility
-  - Password reset functionality
-  - Session management
-
-- **Task Management**:  
-  - Create, assign, update status (Unassigned → Ongoing → Under Review → Completed)
-  - Role-based permissions (Staff can't assign, Managers can assign downward)
-  - Visibility rules (Staff → Team → Department → All)
-  - Soft delete (no permanent deletion)
-
-- **Project Organization**:  
-  - Create projects with collaborators
-  - Department-based collaboration validation
-  - Project-task relationship management
-  - Visibility based on role hierarchy
-
-- **Subtask Management**:  
-  - Create subtasks under parent tasks
-  - Status tracking (Unassigned → Ongoing → Under Review → Completed)
-  - Collaborator validation (must be subset of parent task collaborators)
-  - Soft delete functionality
-
-- **Activity Logging**:  
-  - Track user actions across the system
-  - Resource-specific activity logs
-  - Time-based filtering (recent, today, this week)
-  - Comprehensive audit trail
-
-- **Clean Architecture Benefits**:  
-  - **Separation of Concerns**: Domain, Repository, Service layers clearly separated
-  - **Testability**: Domain classes can be unit tested without database
-  - **Maintainability**: Business logic centralized in domain entities
-  - **Flexibility**: Easy to extend or modify without affecting other layers
-  - **Consistency**: All entities follow the same architectural patterns
-
----
 
 ### Summary
 

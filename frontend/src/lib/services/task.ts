@@ -40,7 +40,7 @@ export const taskService = {
   },
   assignTask: async (token: string, taskId: string, assignData: AssignTaskRequest): Promise<TaskResponse> => {
     const res = await fetch(`${API_URL}/tasks/${taskId}/assign`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(assignData),
     });
@@ -48,7 +48,7 @@ export const taskService = {
   },
   updateTaskStatus: async (token: string, taskId: string, statusData: UpdateTaskStatusRequest): Promise<TaskResponse> => {
     const res = await fetch(`${API_URL}/tasks/${taskId}/status`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(statusData),
     });
