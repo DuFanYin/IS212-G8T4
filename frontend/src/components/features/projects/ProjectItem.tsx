@@ -92,14 +92,12 @@ export const ProjectItem = ({
         </p>
 
         {/* Meta Information */}
-        <div className="space-y-1 mt-auto">
+        <div className="space-y-0.5 mt-auto">
           <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>Created: {project.createdAt ? formatDate(project.createdAt) : 'Unknown'}</span>
             <span>
               Due: {project.deadline ? formatDate(project.deadline) : 'No deadline'}
             </span>
-            {project.isOverdue && (
-              <span className="text-red-600 font-medium">Overdue</span>
-            )}
           </div>
           
           <div className="flex items-center justify-between text-xs text-gray-500">
@@ -119,15 +117,16 @@ export const ProjectItem = ({
           </div>
           
           <div className="flex items-center justify-between text-xs text-gray-400">
+            <span>Department: {project.departmentName || 'Unknown'}</span>
             <span>Owner: {project.ownerName || 'Unknown'}</span>
-            <span>Updated: {project.updatedAt ? formatDate(project.updatedAt) : 'Never'}</span>
           </div>
-
-          {project.departmentName && (
-            <div className="text-xs text-gray-400">
-              Department: {project.departmentName}
-            </div>
-          )}
+          
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <span>Updated: {project.updatedAt ? formatDate(project.updatedAt) : 'Never'}</span>
+            {project.isOverdue && (
+              <span className="text-red-600 font-medium">Overdue</span>
+            )}
+          </div>
         </div>
       </div>
       

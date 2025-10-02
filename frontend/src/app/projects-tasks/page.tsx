@@ -27,6 +27,7 @@ export default function ProjectsTasksPage() {
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const [projectTasksLoading, setProjectTasksLoading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState('active');
   
   // Modal states
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
@@ -108,6 +109,13 @@ export default function ProjectsTasksPage() {
     return task.status === selectedFilter;
   });
 
+  // Filter projects based on selected project filter
+  const filteredProjects = projects.filter(project => {
+    if (selectedProjectFilter === 'active') return !project.isArchived;
+    if (selectedProjectFilter === 'archived') return project.isArchived;
+    return true; // 'all' case
+  });
+
   const handleCreateTask = async (taskData: CreateTaskRequest) => {
     if (!selectedProject) return;
     
@@ -183,8 +191,35 @@ export default function ProjectsTasksPage() {
                     No projects found. Create your first project!
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-4">
-                    {projects.map((project) => {
+                  <>
+                    {/* Project Filters */}
+                    <div className="mb-6">
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => setSelectedProjectFilter('active')}
+                          className={`px-2 py-1 rounded text-xs flex-1 ${
+                            selectedProjectFilter === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'text-gray-600 hover:bg-green-50'
+                          }`}
+                        >
+                          Active ({projects.filter(p => !p.isArchived).length})
+                        </button>
+                        <button
+                          onClick={() => setSelectedProjectFilter('archived')}
+                          className={`px-2 py-1 rounded text-xs flex-1 ${
+                            selectedProjectFilter === 'archived'
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'text-gray-600 hover:bg-orange-50'
+                          }`}
+                        >
+                          Archived ({projects.filter(p => p.isArchived).length})
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      {filteredProjects.map((project) => {
                       const key = (project.id || project._id) as string;
                       const selectedKey = selectedProject ? (selectedProject.id || selectedProject._id) as string : null;
                       const isSelected = selectedKey === key;
@@ -206,7 +241,8 @@ export default function ProjectsTasksPage() {
                         </div>
                       );
                     })}
-                  </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -226,57 +262,32 @@ export default function ProjectsTasksPage() {
                   <>
                     {/* Task Filters */}
                     <div className="mb-6">
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => setSelectedFilter('all')}
-                          className={`px-2 py-1 rounded text-xs flex-1 ${
-                            selectedFilter === 'all'
-                              ? 'bg-gray-100 text-gray-800'
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
+                      <div className="flex items-center space-x-2">
+                        <label htmlFor="task-filter" className="text-xs text-gray-700 font-medium mr-2">
+                          Filter:
+                        </label>
+                        <select
+                          id="task-filter"
+                          value={selectedFilter}
+                          onChange={e => setSelectedFilter(e.target.value as 'all' | 'unassigned' | 'ongoing' | 'under_review' | 'completed')}
+                          className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         >
-                          All ({projectTasks.length})
-                        </button>
-                        <button
-                          onClick={() => setSelectedFilter('unassigned')}
-                          className={`px-2 py-1 rounded text-xs flex-1 ${
-                            selectedFilter === 'unassigned'
-                              ? 'bg-gray-100 text-gray-800'
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          Unassigned ({projectTasks.filter(t => t.status === 'unassigned').length})
-                        </button>
-                        <button
-                          onClick={() => setSelectedFilter('ongoing')}
-                          className={`px-2 py-1 rounded text-xs flex-1 ${
-                            selectedFilter === 'ongoing'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'text-gray-600 hover:bg-yellow-50'
-                          }`}
-                        >
-                          Ongoing ({projectTasks.filter(t => t.status === 'ongoing').length})
-                        </button>
-                        <button
-                          onClick={() => setSelectedFilter('under_review')}
-                          className={`px-2 py-1 rounded text-xs flex-1 ${
-                            selectedFilter === 'under_review'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'text-gray-600 hover:bg-purple-50'
-                          }`}
-                        >
-                          Review ({projectTasks.filter(t => t.status === 'under_review').length})
-                        </button>
-                        <button
-                          onClick={() => setSelectedFilter('completed')}
-                          className={`px-2 py-1 rounded text-xs flex-1 ${
-                            selectedFilter === 'completed'
-                              ? 'bg-green-100 text-green-800'
-                              : 'text-gray-600 hover:bg-green-50'
-                          }`}
-                        >
-                          Done ({projectTasks.filter(t => t.status === 'completed').length})
-                        </button>
+                          <option value="all">
+                            All ({projectTasks.length})
+                          </option>
+                          <option value="unassigned">
+                            Unassigned ({projectTasks.filter(t => t.status === 'unassigned').length})
+                          </option>
+                          <option value="ongoing">
+                            Ongoing ({projectTasks.filter(t => t.status === 'ongoing').length})
+                          </option>
+                          <option value="under_review">
+                            Review ({projectTasks.filter(t => t.status === 'under_review').length})
+                          </option>
+                          <option value="completed">
+                            Done ({projectTasks.filter(t => t.status === 'completed').length})
+                          </option>
+                        </select>
                       </div>
                     </div>
 

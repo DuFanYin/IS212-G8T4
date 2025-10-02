@@ -49,20 +49,12 @@ export default function Header() {
                 >
                   Projects & Tasks
                 </Link>
-                {canViewTeam && (
+                {(canViewTeam || canViewDepartment) && (
                   <Link
-                    href="/tasks/team"
-                    className={`${isActive('/tasks/team')} flex items-center px-1 py-2 text-sm font-medium`}
+                    href="/orgnisation"
+                    className={`${isActive('/orgnisation')} flex items-center px-1 py-2 text-sm font-medium`}
                   >
-                    Team
-                  </Link>
-                )}
-                {canViewDepartment && (
-                  <Link
-                    href="/tasks/department"
-                    className={`${isActive('/tasks/department')} flex items-center px-1 py-2 text-sm font-medium`}
-                  >
-                    Department
+                    Organization
                   </Link>
                 )}
               </nav>
