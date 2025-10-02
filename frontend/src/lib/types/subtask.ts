@@ -8,6 +8,8 @@ export interface Subtask {
   status: SubtaskStatus;
   assigneeId?: string;
   collaborators?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SubtaskResponse {

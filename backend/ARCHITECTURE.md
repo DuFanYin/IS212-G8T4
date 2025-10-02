@@ -70,43 +70,6 @@ src/
         └── index.js
 ```
 
-## Current Domain Classes (Pure Business Logic)
-
-### **User Domain** (`src/domain/User.js`)
-**Methods:**
-- Role checks: `isManager()`, `isStaff()`, `isHR()`, `isSeniorManagement()`, `isDirector()`
-- Permission checks: `canAssignTasks()`, `canSeeAllTasks()`, `canSeeDepartmentTasks()`, `canSeeTeamTasks()`
-- Department access: `canAccessDepartment()`
-- DTOs: `toProfileDTO()`, `toSafeDTO()`
-
-### **Task Domain** (`src/domain/Task.js`)
-**Methods:**
-- Status checks: `isOverdue()`, `isCompleted()`, `isUnassigned()`, `isOngoing()`, `isUnderReview()`
-- Permission checks: `canBeCompletedBy()`, `canBeAssignedBy()`, `canBeEditedBy()`
-- Collaboration: `isCollaborator()`
-- Business logic: `updateStatus()`, `assignTo()`, `addCollaborator()`
-- Utilities: `hasAttachments()`
-- DTOs: `toDTO()`
-
-### **Project Domain** (`src/domain/Project.js`)
-**Methods:**
-- Access checks: `isOwner()`, `isCollaborator()`, `canBeAccessedBy()`, `canBeModifiedBy()`
-- Business logic: `addCollaborator()`, `setHasTasks()`
-- Utilities: `isOverdue()`, `hasTasks()`
-- DTOs: `toDTO()` (includes `createdAt`, `updatedAt` timestamps)
-
-### **Subtask Domain** (`src/domain/Subtask.js`)
-**Methods:**
-- Status checks: `isCompleted()`, `isOngoing()`, `isUnderReview()`, `isUnassigned()`, `isOverdue()`
-- Permission checks: `canBeCompletedBy()`, `canBeEditedBy()`, `isCollaborator()`
-- Business logic: `updateStatus()`, `assignTo()`, `addCollaborator()`
-- DTOs: `toDTO()`
-
-### **ActivityLog Domain** (`src/domain/ActivityLog.js`)
-**Methods:**
-- Time utilities: `isRecent()`, `isToday()`, `isThisWeek()`
-- DTOs: `toDTO()`, `toSafeDTO()`
-
 ## Current API Routes
 
 ### **User Routes** (`src/routes/userRoutes.js`)
@@ -219,6 +182,7 @@ src/
 - Collaboration: `addCollaborator()`, `removeCollaborator()`, `validateCollaborators()`, `validateDepartmentMembership()`
 - Visibility: `isVisibleToUser()`
 - Queries: `getProjectsByOwner()`, `getProjectsByDepartment()`, `getVisibleProjectsForUser()`
+- Internal: `getProjectDomainById()` - Fetches domain Project instance for permission checks
 
 
 ### **TaskService** (`src/services/taskService.js`)
@@ -226,6 +190,7 @@ src/
 - Core operations: `createTask()`, `updateTask()`, `assignTask()`, `updateTaskStatus()`, `softDeleteTask()`
 - Visibility: `isVisibleToUser()`
 - Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByTeam()`, `getTasksByDepartment()`, `getTasksByCollaborator()`, `getById()`
+- Utilities: `mapPopulatedTaskDocToDTO()`, `buildEnrichedTaskDTO()` - Handle data transformation and name resolution
 
 
 ### **SubtaskService** (`src/services/subtaskService.js`)
@@ -241,7 +206,7 @@ src/
 
 ### **AuthService** (`src/services/authService.js`)
 **Methods:**
-- Token generation: `generateToken()`
+- Token generation: `generateToken()` - Generates JWT tokens for user authentication
 
 ### **OrganizationService** (`src/services/organizationService.js`)
 **Methods:**
@@ -250,12 +215,53 @@ src/
 - Statistics: Aggregates team and user counts for departments and teams
 
 
+
+## Current Domain Classes (Pure Business Logic)
+
+### **User Domain** (`src/domain/User.js`)
+**Methods:**
+- Role checks: `isManager()`, `isStaff()`, `isHR()`, `isSeniorManagement()`, `isDirector()`
+- Permission checks: `canAssignTasks()`, `canSeeAllTasks()`, `canSeeDepartmentTasks()`, `canSeeTeamTasks()`
+- Department access: `canAccessDepartment()`
+- DTOs: `toProfileDTO()`, `toSafeDTO()`
+
+### **Task Domain** (`src/domain/Task.js`)
+**Methods:**
+- Status checks: `isOverdue()`, `isCompleted()`, `isUnassigned()`, `isOngoing()`, `isUnderReview()`
+- Permission checks: `canBeCompletedBy()`, `canBeAssignedBy()`, `canBeEditedBy()`
+- Collaboration: `isCollaborator()`
+- Business logic: `updateStatus()`, `assignTo()`, `addCollaborator()`
+- Utilities: `hasAttachments()`
+- DTOs: `toDTO()`
+
+### **Project Domain** (`src/domain/Project.js`)
+**Methods:**
+- Access checks: `isOwner()`, `isCollaborator()`, `canBeAccessedBy()`, `canBeModifiedBy()`
+- Business logic: `addCollaborator()`, `setHasTasks()`, `addOwnerToCollaborators()`
+- Utilities: `isOverdue()`, `hasTasks()`
+- DTOs: `toDTO()` (includes `createdAt`, `updatedAt` timestamps)
+
+### **Subtask Domain** (`src/domain/Subtask.js`)
+**Methods:**
+- Status checks: `isCompleted()`, `isOngoing()`, `isUnderReview()`, `isUnassigned()`, `isOverdue()`
+- Permission checks: `canBeCompletedBy()`, `canBeEditedBy()`, `isCollaborator()`
+- Business logic: `updateStatus()`, `assignTo()`, `addCollaborator()`
+- DTOs: `toDTO()`
+
+### **ActivityLog Domain** (`src/domain/ActivityLog.js`)
+**Methods:**
+- Time utilities: `isRecent()`, `isToday()`, `isThisWeek()`
+- DTOs: `toDTO()`, `toSafeDTO()`
+
 ### Summary
 
 The architecture contains **only the essential methods** needed for the first release according to project requirements. The codebase is lean, focused, and ready for implementation with clean, domain-driven design principles.
 
 ---
 
+
+
+##
 ### Architecture Pattern
 
 1. **Separation of Concerns**
