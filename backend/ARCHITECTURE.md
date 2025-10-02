@@ -110,54 +110,54 @@ src/
 ## Current API Routes
 
 ### **User Routes** (`src/routes/userRoutes.js`)
-**Endpoints:**
-- `GET /api/users/profile` - Get current user profile
-- `GET /api/users/team-members` - Get team members (role-based visibility)
-- `GET /api/users/department-members/:departmentId?` - Get department members (Director+ only)
+
+- `GET    /api/users/profile`                       - Get current user profile
+- `GET    /api/users/team-members`                  - Get team members (role-based visibility)
+- `GET    /api/users/department-members/:departmentId?` - Get department members (Director+ only)
 
 ### **Auth Routes** (`src/routes/authRoutes.js`)
-**Endpoints:**
-- `POST /api/auth/login` - User login
-- `POST /api/auth/request-reset` - Request password reset
-- `POST /api/auth/reset-password` - Reset password
+
+- `POST   /api/auth/login`                          - User login
+- `POST   /api/auth/request-reset`                  - Request password reset
+- `POST   /api/auth/reset-password`                 - Reset password
 
 ### **Project Routes** (`src/routes/projectRoutes.js`)
-**Endpoints:**
-- `POST /api/projects/` - Create new project
-- `GET /api/projects/` - Get active projects
-- `GET /api/projects/departments/:departmentId` - Get projects by department
-- `PUT /api/projects/:projectId/archive` - Archive/unarchive project
-- `PUT /api/projects/:projectId` - Update project
-- `PUT /api/projects/:projectId/collaborators` - Add collaborator
-- `DELETE /api/projects/:projectId/collaborators` - Remove collaborator
+
+- `POST   /api/projects/`                           - Create new project
+- `GET    /api/projects/`                           - Get active projects
+- `GET    /api/projects/departments/:departmentId`  - Get projects by department
+- `PUT    /api/projects/:projectId/archive`         - Archive/unarchive project
+- `PUT    /api/projects/:projectId`                 - Update project
+- `PUT    /api/projects/:projectId/collaborators`   - Add collaborator
+- `DELETE /api/projects/:projectId/collaborators`   - Remove collaborator
 
 ### **Task Routes** (`src/routes/taskRoutes.js`)
-**Endpoints:**
-- `POST /api/tasks/` - Create new task
-- `GET /api/tasks/` - Get user's tasks (role-based visibility)
-- `GET /api/tasks/project/:projectId` - Get tasks by project
-- `GET /api/tasks/team/:teamId` - Get tasks by team (manager of team, director+, HR/SM)
-- `GET /api/tasks/department/:departmentId` - Get tasks by department (director+, HR/SM)
-- `GET /api/tasks/:id` - Get task by ID (with visibility check)
-- `PUT /api/tasks/:id` - Update task
-- `PATCH /api/tasks/:id/assign` - Assign task to user
-- `PATCH /api/tasks/:id/status` - Update task status
-- `DELETE /api/tasks/:id` - Archive (soft delete) task
+
+- `POST   /api/tasks/`                              - Create new task
+- `GET    /api/tasks/`                              - Get user's tasks (role-based visibility)
+- `GET    /api/tasks/project/:projectId`            - Get tasks by project
+- `GET    /api/tasks/team/:teamId`                  - Get tasks by team (manager of team, director+, HR/SM)
+- `GET    /api/tasks/department/:departmentId`      - Get tasks by department (director+, HR/SM)
+- `GET    /api/tasks/:id`                           - Get task by ID (with visibility check)
+- `PUT    /api/tasks/:id`                           - Update task
+- `PATCH  /api/tasks/:id/assign`                    - Assign task to user
+- `PATCH  /api/tasks/:id/status`                    - Update task status
+- `DELETE /api/tasks/:id`                           - Archive (soft delete) task
 
 ### **Subtask Routes** (`src/routes/subtaskRoutes.js`)
-**Endpoints:**
-- `GET /api/tasks/:parentTaskId/subtasks` - List subtasks for a parent task
-- `POST /api/tasks/:parentTaskId/subtasks` - Create subtask under a parent task
-- `GET /api/tasks/subtasks/:id` - Get subtask by ID
-- `PUT /api/tasks/subtasks/:id` - Update subtask
-- `PATCH /api/tasks/subtasks/:id/status` - Update subtask status
-- `DELETE /api/tasks/subtasks/:id` - Archive (soft delete) subtask
+
+- `GET    /api/tasks/:parentTaskId/subtasks`        - List subtasks for a parent task
+- `POST   /api/tasks/:parentTaskId/subtasks`        - Create subtask under a parent task
+- `GET    /api/tasks/subtasks/:id`                  - Get subtask by ID
+- `PUT    /api/tasks/subtasks/:id`                  - Update subtask
+- `PATCH  /api/tasks/subtasks/:id/status`           - Update subtask status
+- `DELETE /api/tasks/subtasks/:id`                  - Archive (soft delete) subtask
 
 ### **Organization Routes** (`src/routes/organizationRoutes.js`)
-**Endpoints:**
-- `GET /api/organization/departments` - Get all departments (SM only)
-- `GET /api/organization/departments/:departmentId/teams` - Get teams by department (Director+)
-- `GET /api/organization/teams` - Get all teams (SM only)
+
+- `GET    /api/organization/departments`            - Get all departments (SM only)
+- `GET    /api/organization/departments/:departmentId/teams` - Get teams by department (Director+)
+- `GET    /api/organization/teams`                  - Get all teams (SM only)
 
 ## Current Repository Layer (Data Access)
 

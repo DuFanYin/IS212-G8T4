@@ -4,7 +4,7 @@ const app = require('../../../src/app');
 const { User } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
-describe('GET /api/subtasks/:id', () => {
+describe('GET /api/tasks/subtasks/:id', () => {
   let authToken;
   let otherUserToken;
   let parentTaskID;
@@ -46,7 +46,7 @@ describe('GET /api/subtasks/:id', () => {
 
   it('should get a single subtask by id', async () => {
     const response = await request(app)
-      .get(`/api/subtasks/${subtaskID}`)
+      .get(`/api/tasks/subtasks/${subtaskID}`)
       .set('Authorization', `Bearer ${authToken}`);
 
     expect(response.status).toBe(200);
@@ -61,7 +61,7 @@ describe('GET /api/subtasks/:id', () => {
 
   it('should NOT get a single subtask by id if it does not exist', async () => {
     const response = await request(app)
-      .get(`/api/subtasks/{}`)
+      .get(`/api/tasks/subtasks/{}`)
       .set('Authorization', `Bearer ${otherUserToken}`);
 
     expect(response.status).toBe(404);

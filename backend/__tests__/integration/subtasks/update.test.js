@@ -4,7 +4,7 @@ const app = require('../../../src/app');
 const { User } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
-describe('PUT /api/subtasks/:id', () => {
+describe('PUT /api/tasks/subtasks/:id', () => {
   let authToken;
   let otherUserToken;
   let parentTaskID;
@@ -44,7 +44,7 @@ describe('PUT /api/subtasks/:id', () => {
 
   it('should update a subtask', async () => {
     const response = await request(app)
-      .put(`/api/subtasks/${subtaskID}`)
+      .put(`/api/tasks/subtasks/${subtaskID}`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({ title: 'Updated Title from Test' });
 
@@ -55,7 +55,7 @@ describe('PUT /api/subtasks/:id', () => {
 
   it('should NOT update subtask if user is not collaborator', async () => {
     const response = await request(app)
-      .put(`/api/subtasks/${subtaskID}`)
+      .put(`/api/tasks/subtasks/${subtaskID}`)
       .send({ title: 'Title' })
       .set('Authorization', `Bearer ${otherUserToken}`);
 

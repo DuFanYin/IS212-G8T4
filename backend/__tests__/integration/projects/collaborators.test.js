@@ -25,7 +25,7 @@ describe('Project collaborators', () => {
   it('should add a new collaborator', async () => {
     const projectId = project.id || project._id;
     const res = await request(app)
-      .post(`/api/projects/${projectId}/collaborators`)
+      .put(`/api/projects/${projectId}/collaborators`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({ collaboratorId: managerUser._id });
 
@@ -37,7 +37,7 @@ describe('Project collaborators', () => {
   it('should not duplicate collaborators', async () => {
     const projectId = project.id || project._id;
     const res = await request(app)
-      .post(`/api/projects/${projectId}/collaborators`)
+      .put(`/api/projects/${projectId}/collaborators`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({ collaboratorId: managerUser._id });
 

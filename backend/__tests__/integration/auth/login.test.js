@@ -1,6 +1,8 @@
 const request = require('supertest');
-const { describe, it, expect } = require('@jest/globals');
+const { describe, it, expect, beforeAll } = require('@jest/globals');
 const app = require('../../../src/app');
+const { User } = require('../../../src/db/models');
+const { generateToken } = require('../../../src/services/authService');
 
 describe('POST /api/auth/login', () => {
   it('should authenticate valid user', async () => {
@@ -81,5 +83,6 @@ describe('POST /api/auth/login', () => {
     expect([400, 415]).toContain(res.status);
   });
 });
+
 
 

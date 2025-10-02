@@ -18,7 +18,7 @@ async function createTaskAsManager() {
   return { token, taskId: createRes.body.data.id };
 }
 
-describe('PUT /api/tasks/:id/status', () => {
+describe('PATCH /api/tasks/:id/status', () => {
   let staffToken;
   let testTaskId;
 
@@ -41,7 +41,7 @@ describe('PUT /api/tasks/:id/status', () => {
   it('should allow status updates', async () => {
     if (!testTaskId) return;
     const response = await request(app)
-      .put(`/api/tasks/${testTaskId}/status`)
+      .patch(`/api/tasks/${testTaskId}/status`)
       .set('Authorization', `Bearer ${staffToken}`)
       .send({ status: 'under_review' });
 
@@ -51,7 +51,7 @@ describe('PUT /api/tasks/:id/status', () => {
   it('should require authentication for status updates', async () => {
     const { taskId } = await createTaskAsManager();
     const res = await request(app)
-      .put(`/api/tasks/${taskId}/status`)
+      .patch(`/api/tasks/${taskId}/status`)
       .send({ status: 'completed' });
     expect(res.status).toBe(401);
   });

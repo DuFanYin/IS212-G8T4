@@ -35,8 +35,8 @@ const getTeamMembers = async (req, res) => {
 
     const user = new User(currentUser);
     
-    // Only managers and above can see team members
-    if (!user.canAssignTasks()) {
+    // Only managers and above, or HR can see team members
+    if (!user.canAssignTasks() && !user.canSeeAllTasks()) {
       return res.status(403).json({
         status: 'error',
         message: 'Insufficient permissions to view team members'

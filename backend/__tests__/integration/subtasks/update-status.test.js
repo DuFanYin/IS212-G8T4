@@ -4,7 +4,7 @@ const app = require('../../../src/app');
 const { User } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
-describe('PATCH /api/subtasks/:id/status', () => {
+describe('PATCH /api/tasks/subtasks/:id/status', () => {
   let authToken;
   let otherUserToken;
   let parentTaskID;
@@ -44,7 +44,7 @@ describe('PATCH /api/subtasks/:id/status', () => {
 
   it('should update a subtask status', async () => {
     const response = await request(app)
-      .patch(`/api/subtasks/${subtaskID}/status`)
+      .patch(`/api/tasks/subtasks/${subtaskID}/status`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({ status: 'ongoing' });
 
@@ -55,7 +55,7 @@ describe('PATCH /api/subtasks/:id/status', () => {
 
   it('should NOT update subtask status if user is not collaborator', async () => {
     const response = await request(app)
-      .patch(`/api/subtasks/${subtaskID}/status`)
+      .patch(`/api/tasks/subtasks/${subtaskID}/status`)
       .set('Authorization', `Bearer ${otherUserToken}`)
       .send({ status: 'complete' });
 

@@ -18,7 +18,7 @@ async function createTaskAsManager() {
   return { token, taskId: createRes.body.data.id, managerUser };
 }
 
-describe('PUT /api/tasks/:id/assign', () => {
+describe('PATCH /api/tasks/:id/assign', () => {
   let staffToken;
   let managerToken;
   let testTaskId;
@@ -44,7 +44,7 @@ describe('PUT /api/tasks/:id/assign', () => {
   it('should allow managers to assign tasks', async () => {
     if (!testTaskId) return;
     const response = await request(app)
-      .put(`/api/tasks/${testTaskId}/assign`)
+      .patch(`/api/tasks/${testTaskId}/assign`)
       .set('Authorization', `Bearer ${managerToken}`)
       .send({ assigneeId: (await User.findOne({ email: 'staff0@example.com' }))._id });
 
@@ -54,7 +54,7 @@ describe('PUT /api/tasks/:id/assign', () => {
   it('should deny staff from assigning tasks', async () => {
     if (!testTaskId) return;
     const response = await request(app)
-      .put(`/api/tasks/${testTaskId}/assign`)
+      .patch(`/api/tasks/${testTaskId}/assign`)
       .set('Authorization', `Bearer ${staffToken}`)
       .send({ assigneeId: (await User.findOne({ email: 'manager0@example.com' }))._id });
 
@@ -65,7 +65,7 @@ describe('PUT /api/tasks/:id/assign', () => {
     const { token: managerToken, taskId, managerUser } = await createTaskAsManager();
     // manager tries to assign to another manager (equal role)
     const res = await request(app)
-      .put(`/api/tasks/${taskId}/assign`)
+      .patch(`/api/tasks/${taskId}/assign`)
       .set('Authorization', `Bearer ${managerToken}`)
       .send({ assigneeId: managerUser._id });
     expect(res.status).toBe(400);

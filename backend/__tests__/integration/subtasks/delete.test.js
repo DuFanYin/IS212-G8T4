@@ -4,7 +4,7 @@ const app = require('../../../src/app');
 const { User } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
-describe('DELETE /api/subtasks/:id', () => {
+describe('DELETE /api/tasks/subtasks/:id', () => {
   let authToken;
   let otherUserToken;
   let parentTaskID;
@@ -46,7 +46,7 @@ describe('DELETE /api/subtasks/:id', () => {
 
   it('should soft delete a subtask', async () => {
     const response = await request(app)
-      .delete(`/api/subtasks/${subtaskID}`)
+      .delete(`/api/tasks/subtasks/${subtaskID}`)
       .set('Authorization', `Bearer ${authToken}`);
 
     expect(response.status).toBe(200);
@@ -56,7 +56,7 @@ describe('DELETE /api/subtasks/:id', () => {
 
   it('should NOT delete subtask if user is not collaborator', async () => {
     const response = await request(app)
-      .delete(`/api/subtasks/${subtaskID}`)
+      .delete(`/api/tasks/subtasks/${subtaskID}`)
       .set('Authorization', `Bearer ${otherUserToken}`);
 
     expect(response.status).toBe(400);

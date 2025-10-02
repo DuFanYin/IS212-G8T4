@@ -4,7 +4,7 @@ const app = require('../../../src/app');
 const { User, Project } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
-describe('PATCH /api/projects/:projectId/archive', () => {
+describe('PUT /api/projects/:projectId/archive', () => {
   let authToken;
   let project;
 
@@ -27,7 +27,7 @@ describe('PATCH /api/projects/:projectId/archive', () => {
   it('should archive the project', async () => {
     const projectId = project.id || project._id;
     const res = await request(app)
-      .patch(`/api/projects/${projectId}/archive`)
+      .put(`/api/projects/${projectId}/archive`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({ isArchived: true });
 
@@ -38,7 +38,7 @@ describe('PATCH /api/projects/:projectId/archive', () => {
   it('should unarchive the project', async () => {
     const projectId = project.id || project._id;
     const res = await request(app)
-      .patch(`/api/projects/${projectId}/archive`)
+      .put(`/api/projects/${projectId}/archive`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({ isArchived: false });
 
