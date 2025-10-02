@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { taskService } from '@/lib/services/api';
+import { taskService, projectService } from '@/lib/services/api';
 import { subtaskService } from '@/lib/services/subtask';
 import { Task } from '@/lib/types/task';
 import type { Subtask } from '@/lib/types/subtask';
 import { useUser } from '@/contexts/UserContext';
+import type { Project } from '@/lib/types/project';
+import { getProjectDates } from '@/lib/utils/timeline';
 
 export interface TimelineItem {
   id: string;
@@ -23,6 +25,8 @@ export const useTimeline = () => {
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visibleProjects, setVisibleProjects] = useState<Project[]>([]);
+  const [projectSpans, setProjectSpans] = useState<Map<string, { start: Date; end: Date }>>(new Map());
 
   const fetchTimelineData = useCallback(async () => {
     if (!user?.token) return;
@@ -31,8 +35,24 @@ export const useTimeline = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch user tasks
-      const tasksResponse = await taskService.getUserTasks(user.token);
+      // Fetch projects and tasks in parallel
+      const [projectsResponse, tasksResponse] = await Promise.all([
+        projectService.getProjects(user.token),
+        taskService.getUserTasks(user.token),
+      ]);
+
+      if (projectsResponse.status === 'success' && Array.isArray(projectsResponse.data)) {
+        const projects = projectsResponse.data as Project[];
+        setVisibleProjects(projects);
+        const spanMap = new Map<string, { start: Date; end: Date }>();
+        projects.forEach(p => {
+          const name = p.name || 'No Project';
+          const { start, end } = getProjectDates(p);
+          spanMap.set(name, { start, end });
+        });
+        setProjectSpans(spanMap);
+      }
+
       if (tasksResponse.status !== 'success') {
         throw new Error('Failed to fetch tasks');
       }
@@ -40,11 +60,11 @@ export const useTimeline = () => {
       const tasks = tasksResponse.data as Task[];
       
       // Fetch subtasks for each task
-      const timelineItems: TimelineItem[] = [];
+      const items: TimelineItem[] = [];
       
       // Add tasks to timeline
       for (const task of tasks) {
-        timelineItems.push({
+        items.push({
           id: task.id,
           type: 'task',
           title: task.title,
@@ -61,7 +81,7 @@ export const useTimeline = () => {
           if (subtasksResponse.status === 'success' && subtasksResponse.data) {
             const subtasks = subtasksResponse.data as Subtask[];
             subtasks.forEach(subtask => {
-              timelineItems.push({
+              items.push({
                 id: subtask.id,
                 type: 'subtask',
                 title: subtask.title,
@@ -80,7 +100,7 @@ export const useTimeline = () => {
         }
       }
       
-      setTimelineItems(timelineItems);
+      setTimelineItems(items);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching timeline data');
     } finally {
@@ -96,6 +116,8 @@ export const useTimeline = () => {
     timelineItems,
     loading,
     error,
+    visibleProjects,
+    projectSpans,
     refetch: fetchTimelineData,
   };
 };

@@ -3,18 +3,16 @@
 import { useState, useMemo, type ReactNode } from 'react';
 import { useTimeline, type TimelineItem } from '@/lib/hooks/useTimeline';
 import { useRouter } from 'next/navigation';
+import { getItemDates } from '@/lib/utils/timeline';
 
 export function TimelineView() {
-  const { timelineItems, loading, error } = useTimeline();
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const { timelineItems, loading, error, visibleProjects, projectSpans } = useTimeline();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   type TimelineRow = { type: 'project' | 'task' | 'subtask'; item?: TimelineItem; projectName?: string };
   // Build rows grouped by project → task → (expanded) subtasks
   const rows = useMemo<TimelineRow[]>(() => {
-    const items = filterStatus !== 'all'
-      ? timelineItems.filter(i => i.status === filterStatus)
-      : timelineItems;
+    const items = timelineItems;
 
     const tasks = items.filter(i => i.type === 'task');
     const subtasks = items.filter(i => i.type === 'subtask');
@@ -27,8 +25,11 @@ export function TimelineView() {
       byProject.set(key, list);
     });
 
-    // Sort projects alphabetically, tasks by newest first
-    const projectNames = Array.from(byProject.keys()).sort((a, b) => a.localeCompare(b));
+    // Sort projects alphabetically using backend-visible list when available
+    const projectNames = (visibleProjects.length > 0
+      ? visibleProjects.map(p => p.name || 'No Project')
+      : Array.from(byProject.keys())
+    ).sort((a, b) => a.localeCompare(b));
 
     const result: TimelineRow[] = [];
     projectNames.forEach(project => {
@@ -62,10 +63,8 @@ export function TimelineView() {
     }
 
     return result;
-  }, [timelineItems, filterStatus, expandedTasks, expandedProjects]);
+  }, [timelineItems, expandedTasks, expandedProjects, visibleProjects]);
   const router = useRouter();
-
-  // Remove redundant filteredItems; grouping covers it
 
   const toggleTaskExpansion = (taskId: string) => {
     setExpandedTasks(prev => {
@@ -109,10 +108,19 @@ export function TimelineView() {
     return Math.max(0, Math.min(100, (todayMs / totalMs) * 100));
   }, [timelineBounds]);
 
-  // We compute bar geometry inline during render based on rows & bounds
-
-  // Fixed row height regardless of row count
-  const rowHeight = 40;
+  // Fixed heights per row type
+  const taskRowHeight = 40;
+  const subtaskRowHeight = 20;
+  const rowHeights = useMemo(() => rows.map(row => (row.type === 'subtask' ? subtaskRowHeight : taskRowHeight)), [rows]);
+  const rowOffsets = useMemo(() => {
+    let offset = 0;
+    return rowHeights.map(h => {
+      const y = offset;
+      offset += h;
+      return y;
+    });
+  }, [rowHeights]);
+  const totalHeight = useMemo(() => rowHeights.reduce((a, b) => a + b, 0), [rowHeights]);
 
   const itemsCount = useMemo(() => {
     return rows.reduce((acc, r) => acc + (r.type === 'task' || r.type === 'subtask' ? 1 : 0), 0);
@@ -126,6 +134,8 @@ export function TimelineView() {
     });
   };
 
+
+  // Project spans now come from useTimeline
 
   // Precompute date header labels and vertical grid lines
   const dateHeaderLabels = useMemo<ReactNode[]>(() => {
@@ -161,8 +171,6 @@ export function TimelineView() {
     return lines;
   }, [timelineBounds]);
 
-  // Removed old precomputed bars (now align bars to rows directly)
-
   const handleClick = (item: TimelineItem) => {
     if (item.type === 'task') {
       // Check if task has subtasks - if so, toggle expansion
@@ -181,8 +189,6 @@ export function TimelineView() {
       router.push(`/projects-tasks/task/${item.parentTaskId}`);
     }
   };
-
-  // Removed unused hasSubtasks helper
 
   if (loading) {
     return (
@@ -203,7 +209,6 @@ export function TimelineView() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
         <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden mb-8">
           <div className="bg-gray-100 px-6 py-4">
             <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
@@ -218,9 +223,8 @@ export function TimelineView() {
                 </h1>
                 <p className="text-sm text-gray-500">Visualize your tasks and subtasks with interactive timeline view</p>
               </div>
-
+              
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                {/* Legend moved into header */}
                 <div className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border border-slate-200">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -244,27 +248,12 @@ export function TimelineView() {
                   </div>
                 </div>
 
-                {/* Status filter */}
-                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-slate-200">
-                  <label className="text-sm font-medium text-gray-700">Filter:</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="bg-white border border-slate-200 rounded px-2 py-1 text-sm text-gray-700 focus:ring-2 focus:ring-blue-100"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="unassigned">Unassigned</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="under_review">Under Review</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </div>
+                {/* Removed status filter */}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Timeline Container */}
         {rows.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-12 text-center">
             <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -278,7 +267,6 @@ export function TimelineView() {
         ) : (
           <div>
             <div className="p-6 overflow-x-auto">
-              {/* Two-column swimlane layout */}
               <div className="flex w-full">
                 {/* Left rail: swimlane labels */}
                 <div className="w-72 flex-shrink-0">
@@ -287,14 +275,16 @@ export function TimelineView() {
                     Items ({itemsCount})
                   </div>
                   {/* Rows */}
-                  <div className="relative" style={{ height: `${rows.length * rowHeight}px` }}>
+                  <div className="relative" style={{ height: `${totalHeight}px` }}>
                     {rows.map((row, index) => {
                       if (row.type === 'project') {
-                        const rowTop = index * rowHeight;
+                        const rowTop = rowOffsets[index];
+                        const thisRowHeight = rowHeights[index];
                         const expanded = !expandedProjects.has(row.projectName || '');
+                        // Project date span (used in grid layer below)
                         return (
-                          <div key={`proj-${row.projectName}-${index}`} className="bg-gray-200 border-t border-slate-300" style={{ height: `${rowHeight}px` }}>
-                            <div className="absolute inset-x-0" style={{ top: `${rowTop}px`, height: `${rowHeight}px` }}>
+                          <div key={`proj-${row.projectName}-${index}`} className="bg-gray-200 border-t border-slate-300" style={{ height: `${thisRowHeight}px` }}>
+                            <div className="absolute inset-x-0" style={{ top: `${rowTop}px`, height: `${thisRowHeight}px` }}>
                               <div className="h-full flex items-center px-3 text-xs font-semibold text-gray-800 uppercase tracking-wide">
                                 <button
                                   onClick={() => {
@@ -314,21 +304,21 @@ export function TimelineView() {
                                 </button>
                                 {row.projectName}
                               </div>
-                            </div>
-                          </div>
-                        );
-                      }
+                        </div>
+                      </div>
+                    );
+                  }
                       const item = row.item!;
                       const isTask = row.type === 'task';
                       const expanded = isTask && expandedTasks.has(item.id);
                       const subtasksCount = isTask ? timelineItems.filter(s => s.type === 'subtask' && s.parentTaskId === item.id).length : 0;
-                      const rowTop = index * rowHeight;
+                      const rowTop = rowOffsets[index];
+                      const thisRowHeight = rowHeights[index];
                       const isSubtask = row.type === 'subtask';
-                      // indent subtasks under expanded parents
                       const parentExpanded = isSubtask ? expandedTasks.has(item.parentTaskId || '') : false;
                       return (
-                        <div key={`${item.id}-row`} className={`${index % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'} group`} style={{ height: `${rowHeight}px` }}>
-                          <div className="absolute inset-x-0" style={{ top: `${rowTop}px`, height: `${rowHeight}px` }}>
+                        <div key={`${item.id}-row`} className={`${index % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'} group`} style={{ height: `${thisRowHeight}px` }}>
+                          <div className="absolute inset-x-0" style={{ top: `${rowTop}px`, height: `${thisRowHeight}px` }}>
                             <div className="h-full flex items-center px-3 gap-2">
                               {/* Caret for tasks with subtasks */}
                               {isTask && subtasksCount > 0 ? (
@@ -344,11 +334,9 @@ export function TimelineView() {
                               ) : (
                                 <span className="w-6" />
                               )}
-                              {/* Removed emojis/icon */}
-                              {/* Title */}
                               <button
                                 onClick={() => handleClick(item)}
-                                className={`text-sm text-gray-800 font-medium truncate text-left flex-1 hover:underline ${isTask ? 'pl-1' : ''} ${isSubtask && parentExpanded ? 'pl-6' : ''}`}
+                                className={`${isSubtask ? 'text-[11px]' : 'text-sm'} text-gray-800 font-medium truncate text-left flex-1 hover:underline ${isTask ? 'pl-1' : ''} ${isSubtask && parentExpanded ? 'pl-6' : ''}`}
                                 title={item.title}
                               >
                                 {item.title}
@@ -362,12 +350,10 @@ export function TimelineView() {
                   </div>
                 </div>
 
-                {/* Right grid: timeline axis and bars */}
                 <div className="relative flex-1 overflow-hidden">
                   {/* Header for dates */}
                   <div className="h-9 bg-gray-50 relative">
                     {dateHeaderLabels}
-                    {/* Today line in header for consistent alignment */}
                     <div 
                       className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30"
                       style={{ left: `${todayLinePosition}%` }}
@@ -375,7 +361,7 @@ export function TimelineView() {
                   </div>
                   <div 
                     className="relative"
-                    style={{ height: `${rows.length * rowHeight}px` }}
+                    style={{ height: `${totalHeight}px` }}
                   >
                     {/* Vertical grid lines */}
                     {verticalGridLines}
@@ -384,25 +370,42 @@ export function TimelineView() {
                       <div
                         key={`bg-${index}`}
                         className={`${row.type === 'project' ? 'bg-gray-200' : index % 2 === 0 ? 'bg-gray-50/60' : 'bg-white/60'}`}
-                        style={{ position: 'absolute', left: 0, right: 0, top: `${index * rowHeight}px`, height: `${rowHeight}px` }}
+                        style={{ position: 'absolute', left: 0, right: 0, top: `${rowOffsets[index]}px`, height: `${rowHeights[index]}px` }}
                       />
                     ))}
-                    {/* Today line (no label) */}
+                    {rows.map((row, index) => {
+                      if (row.type !== 'project') return null;
+                      const span = projectSpans.get(row.projectName || '');
+                      if (!span) return null;
+                      const totalMs = timelineBounds.end.getTime() - timelineBounds.start.getTime();
+                      const startMs = span.start.getTime() - timelineBounds.start.getTime();
+                      const endMs = span.end.getTime() - timelineBounds.start.getTime();
+                      const left = Math.max(0, (startMs / totalMs) * 100);
+                      const width = Math.min(100 - left, Math.max(1, ((endMs - startMs) / totalMs) * 100));
+                      const top = rowOffsets[index] + (rowHeights[index] - 12) / 2;
+                      return (
+                        <div
+                          key={`proj-span-${index}`}
+                          className="absolute bg-gray-700/30 rounded-sm"
+                          style={{ left: `${left}%`, width: `${width}%`, top: `${top}px`, height: '12px' }}
+                        />
+                      );
+                    })}
                     <div 
                       className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30"
                       style={{ left: `${todayLinePosition}%` }}
                     />
-                    {/* Timeline bars - simple colored rectangles aligned to item rows */}
                     {rows.map((row, index) => {
                       if (!row.item || (row.type !== 'task' && row.type !== 'subtask')) return null;
                       const item = row.item;
                       const totalMs = timelineBounds.end.getTime() - timelineBounds.start.getTime();
-                      const startMs = new Date(item.createdAt).getTime() - timelineBounds.start.getTime();
-                      const endMs = new Date(item.dueDate).getTime() - timelineBounds.start.getTime();
+                      const { start, end } = getItemDates(item.createdAt, item.dueDate);
+                      const startMs = start.getTime() - timelineBounds.start.getTime();
+                      const endMs = end.getTime() - timelineBounds.start.getTime();
                       const leftPercent = Math.max(0, (startMs / totalMs) * 100);
                       const widthPercent = Math.min(100 - leftPercent, Math.max(5, ((endMs - startMs) / totalMs) * 100));
                       const barHeight = row.type === 'task' ? 16 : 8;
-                      const top = index * rowHeight + (rowHeight - barHeight) / 2;
+                      const top = rowOffsets[index] + (rowHeights[index] - barHeight) / 2;
                       const isOverdue = new Date(item.dueDate) < new Date();
                       const isCompleted = item.status === 'completed';
                       const colorClass = isCompleted
