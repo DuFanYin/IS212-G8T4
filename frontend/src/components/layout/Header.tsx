@@ -32,7 +32,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-8">
-            <Link href="/tasks" className="text-xl font-semibold">
+            <Link href="/projects-tasks" className="text-xl font-semibold">
               Task Management System
             </Link>
             {user && (
@@ -44,10 +44,10 @@ export default function Header() {
                   Dashboard
                 </Link>
                 <Link
-                  href="/tasks"
-                  className={`${isActive('/tasks')} flex items-center px-1 py-2 text-sm font-medium`}
+                  href="/projects-tasks"
+                  className={`${isActive('/projects-tasks')} flex items-center px-1 py-2 text-sm font-medium`}
                 >
-                  Tasks
+                  Projects & Tasks
                 </Link>
                 {canViewTeam && (
                   <Link
@@ -65,12 +65,6 @@ export default function Header() {
                     Department
                   </Link>
                 )}
-                <Link
-                  href="/projects"
-                  className={`${isActive('/projects')} flex items-center px-1 py-2 text-sm font-medium`}
-                >
-                  Projects
-                </Link>
               </nav>
             )}
           </div>

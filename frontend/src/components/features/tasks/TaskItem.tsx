@@ -1,3 +1,4 @@
+import { useRouter } from 'next/navigation';
 import { Task } from '@/lib/types/task';
 
 interface TaskItemProps {
@@ -6,6 +7,7 @@ interface TaskItemProps {
 }
 
 export const TaskItem = ({ task, onClick }: TaskItemProps) => {
+  const router = useRouter();
   const getStatusColor = (status: Task['status']) => {
     switch (status) {
       case 'unassigned':
@@ -38,50 +40,87 @@ export const TaskItem = ({ task, onClick }: TaskItemProps) => {
     return due < today && task.status !== 'completed';
   };
 
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/projects-tasks/task/${task.id}`);
+  };
+
   return (
     <div
-      className={`p-6 bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''} h-full flex flex-col`}
+      className={`bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''} h-40 flex flex-col`}
       onClick={onClick ? () => onClick(task) : undefined}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      <div className="flex-1 flex flex-col">
-        <div className="flex items-center flex-wrap gap-2 mb-2 min-h-[2.25rem]">
-          <h3 className="text-lg font-medium line-clamp-2">{task.title}</h3>
-          <span className={`px-2 py-1 rounded text-sm ${getStatusColor(task.status)}`}>
-            {task.status.replace('_', ' ').toUpperCase()}
-          </span>
-          {isOverdue(task.dueDate) && (
-            <span className="px-2 py-1 rounded bg-red-100 text-red-800 text-sm">
-              OVERDUE
+      <div className="p-4 flex-1 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2 mb-2 pr-12">
+          <h3 className="text-base font-medium line-clamp-1 flex-1">{task.title}</h3>
+          <div className="flex items-center gap-1 shrink-0">
+            <span className={`px-2 py-1 rounded text-xs ${getStatusColor(task.status)}`}>
+              {task.status.replace('_', ' ').toUpperCase()}
             </span>
-          )}
+            {isOverdue(task.dueDate) && (
+              <span className="px-2 py-1 rounded bg-red-100 text-red-800 text-xs">
+                OVERDUE
+              </span>
+            )}
+          </div>
         </div>
 
-        <p className="text-gray-600 mb-3 line-clamp-2 min-h-[3.25rem]">{task.description}</p>
+        {/* Description */}
+        <p className="text-gray-600 mb-3 line-clamp-2 text-sm flex-1">
+          {task.description || 'No description provided'}
+        </p>
 
-        <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 min-h-[1.25rem]">
-          <span className={isOverdue(task.dueDate) ? 'text-red-600 font-medium' : ''}>
-            Due: {formatDate(task.dueDate)}
-          </span>
-          <span className={task.projectName ? '' : 'invisible'}>•</span>
-          <span className={task.projectName ? '' : 'invisible'}>
-            Project: {task.projectName || ''}
-          </span>
-          <span className={task.collaboratorNames && task.collaboratorNames.length > 0 ? '' : 'invisible'}>•</span>
-          <span className={task.collaboratorNames && task.collaboratorNames.length > 0 ? '' : 'invisible'}>
-            {task.collaboratorNames ? `${task.collaboratorNames.length} collaborator${task.collaboratorNames.length > 1 ? 's' : ''}` : ''}
-          </span>
-          {task.attachments && task.attachments.length > 0 && (
-            <>
-              <span>•</span>
-              <span>{task.attachments.length} attachment{task.attachments.length > 1 ? 's' : ''}</span>
-            </>
-          )}
+        {/* Meta Information */}
+        <div className="space-y-1 mt-auto">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span className={isOverdue(task.dueDate) ? 'text-red-600 font-medium' : ''}>
+              Due: {formatDate(task.dueDate)}
+            </span>
+            <span>
+              Assignee: {task.assigneeName || 'Unassigned'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>
+              Project: {task.projectName || 'No project'}
+            </span>
+            <span>
+              {task.collaboratorNames && task.collaboratorNames.length > 0 
+                ? `${task.collaboratorNames.length} collaborator${task.collaboratorNames.length > 1 ? 's' : ''}`
+                : 'No collaborators'
+              }
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <span>Created: {formatDate(task.createdAt)}</span>
+            <span>
+              {task.attachments && task.attachments.length > 0 
+                ? `${task.attachments.length} attachment${task.attachments.length > 1 ? 's' : ''}`
+                : 'No attachments'
+              }
+            </span>
+          </div>
         </div>
       </div>
-
-      {/* No inline actions - operations moved to detail page */}
+      
+      {/* View Details Button */}
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={handleViewDetails}
+          className="p-1 bg-blue-500 hover:bg-blue-600 text-white rounded shadow-md hover:shadow-lg transition-all duration-200"
+          title="View Task Details"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 };

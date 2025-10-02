@@ -1,0 +1,326 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useUser } from '@/contexts/UserContext';
+import { useTasks } from '@/lib/hooks/useTasks';
+import { TaskItem } from '@/components/features/tasks/TaskItem';
+import { ProjectItem } from '@/components/features/projects/ProjectItem';
+import { CreateTaskModal } from '@/components/forms/CreateTaskModal';
+import { CreateProjectModal } from '@/components/forms/CreateProjectModal';
+import type { User } from '@/lib/types/user';
+import type { Task, CreateTaskRequest } from '@/lib/types/task';
+import type { Project } from '@/lib/types/project';
+import { projectService } from '@/lib/services/project';
+import { taskService } from '@/lib/services/task';
+import { storage } from '@/lib/utils/storage';
+
+export default function ProjectsTasksPage() {
+  const { user }: { user: User | null } = useUser();
+  const { 
+    createTask
+  } = useTasks();
+  
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  const [projectTasksLoading, setProjectTasksLoading] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  
+  // Modal states
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
+  
+  const token = storage.getToken();
+
+  // Fetch projects on component mount
+  useEffect(() => {
+    if (!user?.token) return;
+    
+    async function fetchProjects() {
+      try {
+        const token = user?.token;
+        if (!token) return;
+        const json = await projectService.getProjects(token);
+        const fetchedProjects = (json.data as Project[]) || [];
+        setProjects(fetchedProjects);
+        
+        // Auto-select the first project
+        if (fetchedProjects.length > 0 && !selectedProject) {
+          setSelectedProject(fetchedProjects[0]);
+        }
+      } catch (err) {
+        if (err instanceof Error) {
+          setProjectsError(err.message);
+        } else {
+          setProjectsError('Failed to fetch projects');
+        }
+      } finally {
+        setProjectsLoading(false);
+      }
+    }
+
+    fetchProjects();
+  }, [user?.token, selectedProject]);
+
+
+  // Fetch tasks for selected project
+  useEffect(() => {
+    if (!selectedProject || !token) {
+      setProjectTasks([]);
+      return;
+    }
+
+    async function fetchProjectTasks() {
+      if (!selectedProject) return;
+      
+      try {
+        setProjectTasksLoading(true);
+        const projectId = selectedProject.id || selectedProject._id;
+        if (!projectId) return;
+        
+        const response = await taskService.getTasksByProject(token!, projectId);
+        const fetchedTasks = response.data || [];
+        setProjectTasks(fetchedTasks);
+      } catch (err) {
+        console.error('Failed to fetch project tasks:', err);
+        setProjectTasks([]);
+      } finally {
+        setProjectTasksLoading(false);
+      }
+    }
+
+    fetchProjectTasks();
+  }, [selectedProject, token]);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  // Filter tasks based on selected filter
+  const filteredTasks = projectTasks.filter(task => {
+    if (selectedFilter === 'all') return true;
+    return task.status === selectedFilter;
+  });
+
+  const handleCreateTask = async (taskData: CreateTaskRequest) => {
+    if (!selectedProject) return;
+    
+    const projectId = selectedProject.id || selectedProject._id;
+    if (!projectId) return;
+    
+    const taskWithProject = { ...taskData, projectId };
+    await createTask(taskWithProject);
+    
+    // Refresh project tasks
+    if (token) {
+      try {
+        const response = await taskService.getTasksByProject(token, projectId);
+        setProjectTasks(response.data || []);
+      } catch (err) {
+        console.error('Failed to refresh project tasks:', err);
+      }
+    }
+  };
+  
+  const handleCreateProject = async (data: { name: string; description?: string; deadline?: string; collaborators?: string[] }) => {
+    if (!token) return;
+    const res = await projectService.createProject(token, data);
+    if (res.status === 'success' && res.data) {
+      setProjects((prev) => [res.data!, ...prev]);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <main>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Projects & Tasks</h1>
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={() => setIsCreateProjectModalOpen(true)}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  New Project
+                </button>
+                {selectedProject && (
+                  <button 
+                    onClick={() => setIsCreateTaskModalOpen(true)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Create Task
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Side - Projects */}
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Projects</h2>
+                
+                {projectsError && (
+                  <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {projectsError}
+                  </div>
+                )}
+
+                {projectsLoading ? (
+                  <div className="p-8 text-center text-gray-500">Loading projects...</div>
+                ) : projects.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    No projects found. Create your first project!
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {projects.map((project) => {
+                      const key = (project.id || project._id) as string;
+                      const selectedKey = selectedProject ? (selectedProject.id || selectedProject._id) as string : null;
+                      const isSelected = selectedKey === key;
+                      
+                      return (
+                        <div key={key} className="relative">
+                          <div
+                            className={`cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'ring-2 ring-blue-500 ring-opacity-50' 
+                                : 'hover:shadow-lg'
+                            }`}
+                            onClick={() => setSelectedProject(project)}
+                          >
+                            <ProjectItem
+                              project={project}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Side - Tasks */}
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  {selectedProject ? `Tasks - ${selectedProject.name}` : 'Tasks'}
+                </h2>
+
+                {!selectedProject ? (
+                  <div className="p-8 text-center text-gray-500">
+                    Select a project to view its tasks
+                  </div>
+                ) : (
+                  <>
+                    {/* Task Filters */}
+                    <div className="mb-6">
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => setSelectedFilter('all')}
+                          className={`px-2 py-1 rounded text-xs flex-1 ${
+                            selectedFilter === 'all'
+                              ? 'bg-gray-100 text-gray-800'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          All ({projectTasks.length})
+                        </button>
+                        <button
+                          onClick={() => setSelectedFilter('unassigned')}
+                          className={`px-2 py-1 rounded text-xs flex-1 ${
+                            selectedFilter === 'unassigned'
+                              ? 'bg-gray-100 text-gray-800'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          Unassigned ({projectTasks.filter(t => t.status === 'unassigned').length})
+                        </button>
+                        <button
+                          onClick={() => setSelectedFilter('ongoing')}
+                          className={`px-2 py-1 rounded text-xs flex-1 ${
+                            selectedFilter === 'ongoing'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'text-gray-600 hover:bg-yellow-50'
+                          }`}
+                        >
+                          Ongoing ({projectTasks.filter(t => t.status === 'ongoing').length})
+                        </button>
+                        <button
+                          onClick={() => setSelectedFilter('under_review')}
+                          className={`px-2 py-1 rounded text-xs flex-1 ${
+                            selectedFilter === 'under_review'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'text-gray-600 hover:bg-purple-50'
+                          }`}
+                        >
+                          Review ({projectTasks.filter(t => t.status === 'under_review').length})
+                        </button>
+                        <button
+                          onClick={() => setSelectedFilter('completed')}
+                          className={`px-2 py-1 rounded text-xs flex-1 ${
+                            selectedFilter === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : 'text-gray-600 hover:bg-green-50'
+                          }`}
+                        >
+                          Done ({projectTasks.filter(t => t.status === 'completed').length})
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Task List */}
+                    {projectTasksLoading ? (
+                      <div className="p-8 text-center text-gray-500">Loading tasks...</div>
+                    ) : filteredTasks.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        {selectedFilter === 'all' 
+                          ? 'No tasks found in this project. Create your first task!'
+                          : `No ${selectedFilter.replace('_', ' ')} tasks found.`}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {filteredTasks.map((task) => (
+                          <div key={task.id} className="relative">
+                            <TaskItem
+                              task={task}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Modals */}
+      <CreateTaskModal
+        isOpen={isCreateTaskModalOpen}
+        onClose={() => setIsCreateTaskModalOpen(false)}
+        onCreateTask={handleCreateTask}
+      />
+
+      <CreateProjectModal
+        isOpen={isCreateProjectModalOpen}
+        onClose={() => setIsCreateProjectModalOpen(false)}
+        onCreate={handleCreateProject}
+      />
+
+    </div>
+  );
+}

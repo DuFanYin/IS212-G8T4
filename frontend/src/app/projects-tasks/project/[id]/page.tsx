@@ -74,7 +74,7 @@ export default function ProjectDetailPage() {
     <div className="min-h-screen bg-gray-50">
       <main>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-          <button onClick={() => router.push('/projects')} className="text-sm text-gray-600 hover:text-gray-900">← Back to Projects</button>
+          <button onClick={() => router.push('/projects-tasks')} className="text-sm text-gray-600 hover:text-gray-900">← Back to Projects & Tasks</button>
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-start justify-between gap-3 mb-3">

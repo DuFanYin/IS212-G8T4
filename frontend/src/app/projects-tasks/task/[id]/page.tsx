@@ -87,7 +87,7 @@ export default function TaskDetailPage() {
     <div className="min-h-screen bg-gray-50">
       <main>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          <button onClick={() => router.push('/tasks')} className="text-sm text-gray-600 hover:text-gray-900">← Back to Tasks</button>
+          <button onClick={() => router.push('/projects-tasks')} className="text-sm text-gray-600 hover:text-gray-900">← Back to Projects & Tasks</button>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>

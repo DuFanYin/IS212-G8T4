@@ -81,7 +81,7 @@ src/
 - Access checks: `isOwner()`, `isCollaborator()`, `canBeAccessedBy()`, `canBeModifiedBy()`
 - Business logic: `addCollaborator()`, `setHasTasks()`
 - Utilities: `isOverdue()`, `hasTasks()`
-- DTOs: `toDTO()`
+- DTOs: `toDTO()` (includes `createdAt`, `updatedAt` timestamps)
 
 ### **Subtask Domain** (`src/domain/Subtask.js`)
 **Methods:**
