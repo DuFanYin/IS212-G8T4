@@ -113,6 +113,8 @@ class TaskService {
         const projectRepository = new ProjectRepository();
         const project = await projectRepository.findById(taskData.projectId);
 
+        this.validatePriority();
+
         // Validate collaborators are subset of project collaborators
         const invalidCollaborators = (taskData.collaborators || []).filter(
           c => !project.collaborators.includes(c)
@@ -217,13 +219,7 @@ class TaskService {
       }
 
       if(taskData.projectId){
-        if (updateData.priority === undefined) {
-          throw new Error('Task priority must be added');
-        }
-
-        if(updateData.priority < 1 || updateData.priority > 10) {
-          throw new Error('Task priority must be between 1-10 (inclusive)');
-        }
+        this.validatePriority();
 
         const projectRepository = new ProjectRepository();
         const project = await projectRepository.findById(task.projectId);
@@ -240,6 +236,15 @@ class TaskService {
       return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
       throw new Error(`Error updating task: ${error.message || 'unknown error'}`);
+    }
+  }
+
+  validatePriority(priority){
+    if (priority === undefined || priority === null) {
+      throw new Error('Task priority must be provided');
+    }
+    if (priority < 1 || priority > 10 || typeof priority !== 'number') {
+      throw new Error('Task priority must be a number between 1 and 10 (inclusive)');
     }
   }
 
