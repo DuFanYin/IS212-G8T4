@@ -113,7 +113,7 @@ class TaskService {
         const projectRepository = new ProjectRepository();
         const project = await projectRepository.findById(taskData.projectId);
 
-        this.validatePriority();
+        this.validatePriority(taskData.priority);
 
         // Validate collaborators are subset of project collaborators
         const invalidCollaborators = (taskData.collaborators || []).filter(
@@ -219,7 +219,7 @@ class TaskService {
       }
 
       if(taskData.projectId){
-        this.validatePriority();
+        this.validatePriority(taskData.priority);
 
         const projectRepository = new ProjectRepository();
         const project = await projectRepository.findById(task.projectId);
@@ -239,6 +239,7 @@ class TaskService {
     }
   }
 
+  //Check if priority is given and between 1-10
   validatePriority(priority){
     if (priority === undefined || priority === null) {
       throw new Error('Task priority must be provided');
