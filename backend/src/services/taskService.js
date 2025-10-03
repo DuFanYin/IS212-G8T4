@@ -5,6 +5,7 @@ const ProjectRepository = require('../repositories/ProjectRepository');
 const projectService = require('./projectService');
 const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
+const ProjectService = require('./projectService');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
 
 class TaskService {
@@ -212,6 +213,21 @@ class TaskService {
           .filter((c) => !projectCollaboratorIds.includes(c));
         if (invalid.length > 0) {
           throw new Error('Task collaborators must be a subset of project collaborators');
+        }
+      }
+
+      if(taskData.projectId){
+        if (updateData.priority === undefined) {
+          throw new Error('Task priority must be added');
+        }
+
+        const projectRepository = new ProjectRepository();
+        const project = await projectRepository.findById(task.projectId);
+        if (!project) throw new Error('Project not found');
+
+        //No need to validate membership / department because addCollaborator function already does
+        for (const collaboratorId of task.collaborators) {
+          await ProjectService.addCollaborator(updateData.projectId, collaboratorId, userId);
         }
       }
 
