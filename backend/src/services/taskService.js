@@ -221,6 +221,10 @@ class TaskService {
           throw new Error('Task priority must be added');
         }
 
+        if(updateData.priority < 1 || updateData.priority > 10) {
+          throw new Error('Task priority must be between 1-10 (inclusive)');
+        }
+
         const projectRepository = new ProjectRepository();
         const project = await projectRepository.findById(task.projectId);
         if (!project) throw new Error('Project not found');
