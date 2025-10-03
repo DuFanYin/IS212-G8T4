@@ -5,7 +5,6 @@ const ProjectRepository = require('../repositories/ProjectRepository');
 const projectService = require('./projectService');
 const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
-const ProjectService = require('./projectService');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
 
 class TaskService {
@@ -227,7 +226,7 @@ class TaskService {
 
         //No need to validate membership / department because addCollaborator function already does
         for (const collaboratorId of task.collaborators) {
-          await ProjectService.addCollaborator(updateData.projectId, collaboratorId, userId);
+          await projectService.addCollaborator(updateData.projectId, collaboratorId, userId);
         }
       }
 

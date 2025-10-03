@@ -20,7 +20,7 @@ class TaskRepository {
   }
 
   async findTasksByProject(projectId) {
-    return TaskModel.find({ projectId, isDeleted: false });
+    return TaskModel.find({ projectId, isDeleted: false }).sort({ priority: -1 });
   }
 
   async findTasksByCollaborator(userId) {
