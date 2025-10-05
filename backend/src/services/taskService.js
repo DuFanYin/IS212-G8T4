@@ -20,6 +20,7 @@ class TaskService {
       description: taskDoc.description,
       dueDate: taskDoc.dueDate,
       status: taskDoc.status,
+      priority: taskDoc.priority,
       createdBy: taskDoc.createdBy?._id || taskDoc.createdBy,
       createdByName: taskDoc.createdBy?.name,
       assigneeId: taskDoc.assigneeId?._id || taskDoc.assigneeId,
@@ -217,8 +218,8 @@ class TaskService {
         }
       }
 
-      if(taskData.projectId){
-        this.validatePriority(taskData.priority);
+      if(updateData.projectId){
+        this.validatePriority(updateData.priority);
 
         const projectRepository = new ProjectRepository();
         const project = await projectRepository.findById(task.projectId);

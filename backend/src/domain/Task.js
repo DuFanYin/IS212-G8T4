@@ -106,6 +106,7 @@ class Task {
       description: this.description,
       dueDate: this.dueDate,
       status: this.status,
+      priority: this.priority,
       createdBy: this.createdBy,
       assigneeId: this.assigneeId,
       projectId: this.projectId,
