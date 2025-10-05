@@ -1,62 +1,51 @@
 const Project = require('../../models/Project');
+const { pick } = require('../utils/random');
+const { faker } = require('../utils/faker');
 
 module.exports = async function seedProjects(_count, { users, teams, departments }) {
   await Project.deleteMany({});
-  const managers = users.filter(u => u.role === 'manager');
-  const staffers = users.filter(u => u.role === 'staff');
-  const pickManager = (i = 0) => managers[i % (managers.length || 1)] || users[0];
-  const pickStaff = (i = 0) => staffers[i % (staffers.length || 1)] || users[0];
-  const engDept = departments.find(d => d.name === 'Engineering') || departments[0];
-  const opsDept = departments.find(d => d.name === 'Operations') || departments[1] || departments[0];
-  const salesDept = departments.find(d => d.name === 'Sales') || departments[2] || departments[0];
 
-  const docs = [
-    {
-      name: 'Website Revamp',
-      description: 'Rebuild marketing website in Next.js',
-      departmentId: engDept._id,
-      ownerId: pickManager(0)._id,
-      // Add realistic deadline: ~30 days from now
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      collaborators: [pickManager(0)._id, pickStaff(0)._id],
-    },
-    {
-      name: 'Platform Reliability',
-      description: 'Stability and performance improvements',
-      departmentId: engDept._id,
-      ownerId: pickManager(1)._id,
-      // ~60 days from now
-      deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-      collaborators: [pickManager(1)._id, pickStaff(1)._id],
-    },
-    // Ensure there is at least one project owned by a staff user for tests that
-    // require owner-level permissions from a non-manager role
-    {
-      name: 'Staff Sandbox Project',
-      description: 'Seeded project owned by a staff user for tests',
-      departmentId: engDept._id,
-      ownerId: pickStaff(2)._id,
-      // ~15 days from now
-      deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-      collaborators: [pickStaff(2)._id, pickManager(2)._id],
-    },
-    {
-      name: 'Support Triage Improvements',
-      description: 'Improve response SLAs and ticket routing',
-      departmentId: opsDept._id,
-      ownerId: pickManager(3)._id,
-      deadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
-      collaborators: [pickManager(3)._id, pickStaff(3)._id],
-    },
-    {
-      name: 'Sales CRM Upgrade',
-      description: 'Improve CRM workflows and data hygiene',
-      departmentId: salesDept._id,
-      ownerId: pickManager(4)._id,
-      deadline: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
-      collaborators: [pickManager(4)._id, pickStaff(4)._id],
-    },
-  ];
+  const nonHrUsers = users.filter(u => u.role !== 'hr');
+  const managers = nonHrUsers.filter(u => u.role === 'manager');
+  const ownersPool = managers.length > 0 ? managers : nonHrUsers;
+
+  const deptPool = departments && departments.length ? departments : [];
+  const numProjects = 10; // hardcoded count with indexed names
+
+  const docs = [];
+  for (let i = 0; i < numProjects; i++) {
+    const idx = String(i + 1).padStart(2, '0');
+    const owner = ownersPool[faker.number.int({ min: 0, max: ownersPool.length - 1 })];
+    const dept = deptPool.length ? deptPool[faker.number.int({ min: 0, max: deptPool.length - 1 })] : undefined;
+    // 4-5 collaborators chosen randomly, exclude owner, ensure unique
+    const desired = pick([4, 5]);
+    const collPool = nonHrUsers.filter(u => u._id.toString() !== owner._id.toString());
+    const seen = new Set();
+    const collaborators = [];
+    for (let c = 0; c < desired && collPool.length > 0; c++) {
+      let candidate;
+      let guard = 0;
+      do {
+        candidate = collPool[faker.number.int({ min: 0, max: collPool.length - 1 })];
+        guard += 1;
+      } while (candidate && seen.has(candidate._id.toString()) && guard < 20);
+      if (candidate && !seen.has(candidate._id.toString())) {
+        seen.add(candidate._id.toString());
+        collaborators.push(candidate._id);
+      }
+    }
+
+    docs.push({
+      name: `Project-${idx}`,
+      description: `Seeded Project ${idx}`,
+      ownerId: owner._id,
+      departmentId: dept ? dept._id : undefined,
+      deadline: new Date(Date.now() + (15 + i * 3) * 24 * 60 * 60 * 1000),
+      collaborators: [owner._id, ...collaborators].filter(Boolean).slice(0, 5),
+      hasContainedTasks: true,
+    });
+  }
+
   const inserted = await Project.insertMany(docs, { ordered: true });
   return inserted.map((p) => p.toObject());
 };
