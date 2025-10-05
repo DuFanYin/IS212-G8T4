@@ -5,6 +5,7 @@ class Task {
     this.description = data.description;
     this.dueDate = data.dueDate;
     this.status = data.status;
+    this.priority = data.priority;
     this.createdBy = data.createdBy;
     this.assigneeId = data.assigneeId;
     this.projectId = data.projectId;
