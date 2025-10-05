@@ -19,6 +19,13 @@ module.exports = async function seedTasks(_count, { users, projects }) {
   const day = 24 * 60 * 60 * 1000;
   const week = 7 * day;
 
+  let priorityCounter = 1;
+  function nextPriority() {
+    const val = priorityCounter;
+    priorityCounter = priorityCounter % 10 + 1;
+    return val;
+  }
+
   const docs = [
     // COMPLETED TASKS (Historical) - Various ages and complexity
     {
@@ -45,6 +52,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 44 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -66,6 +74,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 42 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -87,6 +96,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 23 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -117,6 +127,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 50 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -139,6 +150,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 38 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -161,6 +173,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 31 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -183,6 +196,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 25 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -205,6 +219,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 33 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -235,6 +250,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 18 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
@@ -262,6 +278,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
           uploadedAt: new Date(now - 34 * day)
         }
       ],
+      priority: nextPriority(),
       isDeleted: false,
     },
 
