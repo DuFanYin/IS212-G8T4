@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import type { User } from '@/lib/types/user';
 import type { Task } from '@/lib/types/task';
-import { taskService } from '@/lib/services/task';
-import { organizationService, type Department, type Team } from '@/lib/services/organization';
+// taskService is not needed directly; tasks are fetched via fetchOrgTasks
+import { type Department, type Team } from '@/lib/services/organization';
 import { storage } from '@/lib/utils/storage';
+import { loadOrgSelectors, getVisibleTasks } from '@/lib/utils/orgAccess';
 import { TaskItem } from '@/components/features/tasks/TaskItem';
 
 type StatusFilter = 'all' | 'unassigned' | 'ongoing' | 'under_review' | 'completed';
@@ -29,75 +30,30 @@ export default function OrganizationPage() {
   
   const token = storage.getToken();
 
-  // Role-based access control
-  const normalizeRole = (role?: string) => (role || '').toLowerCase();
-  const roleRank: Record<string, number> = {
-    'staff': 1,
-    'manager': 2,
-    'director': 3,
-    'hr': 4,
-    'senior management': 5,
-    'sm': 5
-  };
-  const getRank = (role?: string) => roleRank[normalizeRole(role)] || 0;
+  // Rely on backend for authorization; avoid duplicating role checks on frontend
   
-  // Determine available views based on role
-  const canViewTeam = getRank(user?.role) >= 2;  // Manager+
-  const canViewDepartment = getRank(user?.role) >= 3;  // Director+
-  const canViewAll = getRank(user?.role) >= 4;  // HR/SM+
-  
-  // Load organization data based on role
+  // Load organization data using shared utility (progressive, backend-authorized)
   useEffect(() => {
     const loadOrganizationData = async () => {
       if (!user || !token) return;
       
       try {
-        if (canViewAll) {
-          // SM/HR: Load all departments and teams
-          const [deptRes, teamRes] = await Promise.all([
-            organizationService.getAllDepartments(token),
-            organizationService.getAllTeams(token)
-          ]);
-          
-          if (deptRes.status === 'success') setDepartments(deptRes.data);
-          if (teamRes.status === 'success') setTeams(teamRes.data);
-          
-          // Set default selections
-          if (deptRes.status === 'success' && deptRes.data.length > 0) {
-            setSelectedDepartment(deptRes.data[0].id);
-          }
-        } else if (canViewDepartment) {
-          // Director: Load teams for their department
-          if (user.departmentId) {
-            const teamRes = await organizationService.getTeamsByDepartment(token, user.departmentId);
-            if (teamRes.status === 'success') {
-              setTeams(teamRes.data);
-              setSelectedDepartment(user.departmentId);
-              if (teamRes.data.length > 0) {
-                setSelectedTeam(teamRes.data[0].id);
-              }
-            }
-          }
-        } else if (canViewTeam) {
-          // Manager: Only their team
-          setSelectedDepartment(user.departmentId || null);
-          setSelectedTeam(user.teamId || null);
-        } else {
-          // Staff or roles without org browsing: show their own department/team as fixed values
-          setSelectedDepartment(user.departmentId || null);
-          setSelectedTeam(user.teamId || null);
-        }
+        const res = await loadOrgSelectors({ token, user });
+        setDepartments(res.departments);
+        setTeams(res.teams);
+        setSelectedDepartment(res.selectedDepartment);
+        setSelectedTeam(res.selectedTeam);
       } catch (error) {
         console.error('Failed to load organization data:', error);
       }
     };
     
     loadOrganizationData();
-  }, [user, token, canViewAll, canViewDepartment, canViewTeam]);
+  }, [user, token]);
 
   // No explicit view selector; selection controls drive fetch logic
 
-  // Load tasks based on selected organization unit (selectors drive the view)
+  // Load tasks based on selected organization unit via shared utility
   useEffect(() => {
     const load = async () => {
       if (!user || !token) return;
@@ -105,39 +61,15 @@ export default function OrganizationPage() {
       try {
         setLoading(true);
         setError(null);
-        
-        // Staff (no org visibility): do not fetch org tasks
-        if (!(canViewTeam || canViewDepartment || canViewAll)) {
-          setTasks([]);
-          setError('You need Manager+ role to view organization tasks.');
-          setLoading(false);
-          return;
-        }
-
-        let res;
-        // Prefer team tasks; if team list isn't loaded (manager case), trust selectedTeam
-        const teamMatchesDept = !selectedDepartment 
-          || teams.length === 0 
-          || teams.find(t => t.id === selectedTeam)?.departmentId === selectedDepartment;
-        if (selectedTeam && teamMatchesDept && (canViewTeam || canViewDepartment || canViewAll)) {
-          res = await taskService.getTasksByTeam(token, selectedTeam);
-        } else if (selectedDepartment && (canViewDepartment || canViewAll)) {
-          // Department tasks for Director+ or HR/SM
-          res = await taskService.getTasksByDepartment(token, selectedDepartment);
-        } else {
-          // Nothing selected yet; keep waiting for selection
-          setLoading(false);
-          return;
-        }
-        
+        const res = await getVisibleTasks(token, selectedDepartment, selectedTeam, teams);
         if (res.status === 'success') {
           setTasks(res.data);
         } else {
-          const unit = selectedTeam ? 'team' : 'department';
-          setError(res.message || `Failed to fetch ${unit} tasks`);
+          setTasks([]);
+          setError(res.message || 'You are not authorized to view organization tasks.');
         }
       } catch {
-        const unit = selectedTeam ? 'team' : 'department';
+        const unit = selectedTeam ? 'team' : (selectedDepartment ? 'department' : 'organization');
         setError(`Failed to fetch ${unit} tasks`);
       } finally {
         setLoading(false);
@@ -145,7 +77,7 @@ export default function OrganizationPage() {
     };
     
     load();
-  }, [user, token, selectedDepartment, selectedTeam, canViewTeam, canViewDepartment, canViewAll, teams]);
+  }, [user, token, selectedDepartment, selectedTeam, teams]);
 
   const kpis = useMemo(() => {
     const now = new Date();
@@ -186,14 +118,11 @@ export default function OrganizationPage() {
   const currentTeam = teams.find(t => t.id === selectedTeam);
   
   const getPageTitle = () => {
-    const showingTeam = !!selectedTeam && (canViewTeam || canViewDepartment || canViewAll);
+    const showingTeam = !!selectedTeam;
     if (showingTeam) {
       return `Team: ${currentTeam?.name || 'Select Team'}`;
     }
-    if (canViewDepartment || canViewAll) {
-      return `Department: ${currentDepartment?.name || 'Select Department'}`;
-    }
-    return `Team: ${currentTeam?.name || 'My Team'}`;
+    return `Department: ${currentDepartment?.name || 'Select Department'}`;
   };
 
   return (
@@ -205,15 +134,15 @@ export default function OrganizationPage() {
             <p className="text-sm text-gray-500">{getPageTitle()}</p>
           </div>
 
-          {/* Organization Selection Controls */}
+          {/* Organization Selection Controls + Sort */}
           <div className="mb-6 bg-white rounded-lg shadow p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col md:flex-row md:items-end gap-4">
               {/* Department Selection (always visible; text-only if no permission) */}
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Department
                 </label>
-                {canViewAll ? (
+                {departments.length > 0 ? (
                   <select
                     value={selectedDepartment || ''}
                     onChange={(e) => {
@@ -245,7 +174,7 @@ export default function OrganizationPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Team
                 </label>
-                {(canViewAll || canViewDepartment) ? (
+                {teams.filter(team => selectedDepartment ? team.departmentId === selectedDepartment : true).length > 0 ? (
                   <select
                     value={selectedTeam || ''}
                     onChange={(e) => {
@@ -273,32 +202,47 @@ export default function OrganizationPage() {
                 )}
               </div>
 
+              {/* Sort by due date (placed in the same row as selectors) */}
+              <div className="w-full md:w-auto">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sort</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortBy)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-48"
+                >
+                  <option value="due_asc">Due date ↑</option>
+                  <option value="due_desc">Due date ↓</option>
+                  <option value="status">Status</option>
+                  <option value="assignee">Assignee</option>
+                  {selectedDepartment && <option value="project">Project</option>}
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* Task Summary */}
+          {/* Task Summary (clickable KPI filters) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            <div className="bg-white rounded shadow p-3">
-              <div className="text-xs text-gray-500">Total</div>
+            <button onClick={() => setStatusFilter('all')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='all'?'border-blue-400':'border-slate-200'}`}>
+              <div className="text-xs text-gray-500">All</div>
               <div className="text-xl font-semibold">{kpis.total}</div>
-            </div>
-            <div className="bg-white rounded shadow p-3">
+            </button>
+            <button onClick={() => setStatusFilter('unassigned')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='unassigned'?'border-blue-400':'border-slate-200'}`}>
               <div className="text-xs text-gray-500">Unassigned</div>
               <div className="text-xl font-semibold">{kpis.unassigned}</div>
-            </div>
-            <div className="bg-white rounded shadow p-3">
+            </button>
+            <button onClick={() => setStatusFilter('ongoing')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='ongoing'?'border-blue-400':'border-slate-200'}`}>
               <div className="text-xs text-gray-500">Ongoing</div>
               <div className="text-xl font-semibold">{kpis.ongoing}</div>
-            </div>
-            <div className="bg-white rounded shadow p-3">
+            </button>
+            <button onClick={() => setStatusFilter('under_review')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='under_review'?'border-blue-400':'border-slate-200'}`}>
               <div className="text-xs text-gray-500">Under Review</div>
               <div className="text-xl font-semibold">{kpis.under_review}</div>
-            </div>
-            <div className="bg-white rounded shadow p-3">
+            </button>
+            <button onClick={() => setStatusFilter('completed')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='completed'?'border-blue-400':'border-slate-200'}`}>
               <div className="text-xs text-gray-500">Completed</div>
               <div className="text-xl font-semibold">{kpis.completed}</div>
-            </div>
-            <div className="bg-white rounded shadow p-3">
+            </button>
+            <div className="bg-white rounded shadow p-3 text-left border border-slate-200">
               <div className="text-xs text-gray-500">Overdue</div>
               <div className="text-xl font-semibold">{kpis.overdue}</div>
             </div>
@@ -316,37 +260,7 @@ export default function OrganizationPage() {
             </div>
           ) : (
             <div>
-              {/* Controls */}
-              <div className="bg-white p-3 rounded shadow mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                  {(['all','unassigned','ongoing','under_review','completed'] as const).map(key => (
-                    <button 
-                      key={key} 
-                      onClick={() => setStatusFilter(key)} 
-                      className={`px-3 py-1.5 rounded text-sm ${
-                        statusFilter === key 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {key.replace('_',' ')} {key === 'all' ? `(${kpis.total})` : ''}
-                    </button>
-                  ))}
-                </div>
-                <div>
-                  <select 
-                    value={sortBy} 
-                    onChange={e => setSortBy(e.target.value as SortBy)} 
-                    className="border rounded px-2 py-1 text-sm"
-                  >
-                    <option value="due_asc">Due date ↑</option>
-                    <option value="due_desc">Due date ↓</option>
-                    <option value="status">Status</option>
-                    <option value="assignee">Assignee</option>
-                    {(selectedDepartment && (canViewDepartment || canViewAll)) && <option value="project">Project</option>}
-                  </select>
-                </div>
-              </div>
+              {/* Controls row removed; KPI boxes are the filter, sort moved above */}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredSorted.map((task) => (

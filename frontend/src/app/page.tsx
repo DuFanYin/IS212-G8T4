@@ -9,11 +9,7 @@ export default function RootPage() {
 
   useEffect(() => {
     const token = storage.getToken();
-    if (!token) {
-      router.push('/login');
-    } else {
-      router.push('/tasks');
-    }
+    router.push(token ? '/tasks' : '/login');
   }, [router]);
 
   return (
