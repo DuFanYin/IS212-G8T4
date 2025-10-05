@@ -20,6 +20,7 @@ class TaskService {
       description: taskDoc.description,
       dueDate: taskDoc.dueDate,
       status: taskDoc.status,
+      priority: taskDoc.priority,
       createdBy: taskDoc.createdBy?._id || taskDoc.createdBy,
       createdByName: taskDoc.createdBy?.name,
       assigneeId: taskDoc.assigneeId?._id || taskDoc.assigneeId,
@@ -111,6 +112,8 @@ class TaskService {
       if (taskData.projectId) {
         const projectRepository = new ProjectRepository();
         const project = await projectRepository.findById(taskData.projectId);
+
+        this.validatePriority(taskData.priority);
 
         // Validate collaborators are subset of project collaborators
         const invalidCollaborators = (taskData.collaborators || []).filter(
@@ -215,11 +218,34 @@ class TaskService {
         }
       }
 
+      if(updateData.projectId){
+        this.validatePriority(updateData.priority);
+
+        const projectRepository = new ProjectRepository();
+        const project = await projectRepository.findById(task.projectId);
+        if (!project) throw new Error('Project not found');
+
+        //No need to validate membership / department because addCollaborator function already does
+        for (const collaboratorId of task.collaborators) {
+          await projectService.addCollaborator(updateData.projectId, collaboratorId, userId);
+        }
+      }
+
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
       return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
       throw new Error(`Error updating task: ${error.message || 'unknown error'}`);
+    }
+  }
+
+  //Check if priority is given and between 1-10
+  validatePriority(priority){
+    if (priority === undefined || priority === null) {
+      throw new Error('Task priority must be provided');
+    }
+    if (priority < 1 || priority > 10 || typeof priority !== 'number') {
+      throw new Error('Task priority must be a number between 1 and 10 (inclusive)');
     }
   }
 
