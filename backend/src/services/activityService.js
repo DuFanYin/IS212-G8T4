@@ -1,11 +1,12 @@
 const ActivityLogRepository = require('../repositories/ActivityLogRepository');
 const ActivityLog = require('../domain/ActivityLog');
+const EventEmitter = require('events');
 
 class ActivityLogService {
   constructor(activityLogRepository) {
     this.activityLogRepository = activityLogRepository;
   }
-
+  
   /**
    * Log user activity
    * @param {string} userId - User ID
@@ -14,21 +15,32 @@ class ActivityLogService {
    * @param {string} resourceType - Type of resource (task, project, etc.)
    * @param {string} resourceId - Resource ID
    */
-  async logActivity(userId, action, details = {}, resourceType = null, resourceId = null) {
-    try {
-      const activityDoc = await this.activityLogRepository.create({
-        userId,
-        action,
-        details,
-        resourceType,
-        resourceId,
-        timestamp: new Date()
-      });
 
-      return new ActivityLog(activityDoc);
-    } catch (error) {
-      throw new Error(error?.message || 'Error logging activity');
-    }
+  logActivity(fn, actionName, options = {}) {
+    return async function(...args) {
+      try {
+        // assume last argument is always userId
+        const userId = args[args.length - 1];
+
+        let before = options.captureBefore ? await options.captureBefore(...args) : null;
+        const result = await fn.apply(this, args);
+        let after = options.captureAfter ? await options.captureAfter(result) : result;
+
+        let resourceType = options.resourceType;
+
+        const activityDoc = await activityLogRepository.create({
+          userId,
+          action: actionName,
+          details: { before, after },
+          resourceType,
+          resourceId: after?.id || before?.id || null
+        });
+        
+        return new ActivityLog(activityDoc);
+      } catch (error) {
+        throw new Error(`Error in logging: ${error.message}`);
+      }
+    };
   }
 
   /**
@@ -76,5 +88,9 @@ class ActivityLogService {
 // Create singleton instance
 const activityLogRepository = new ActivityLogRepository();
 const activityLogService = new ActivityLogService(activityLogRepository);
+const eventEmitter = new EventEmitter();
 
-module.exports = activityLogService;
+module.exports = {
+  activityLogService,
+  eventEmitter
+};

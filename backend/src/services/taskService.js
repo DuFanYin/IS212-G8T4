@@ -631,5 +631,34 @@ class TaskService {
 const taskRepository = new TaskRepository();
 const taskService = new TaskService(taskRepository);
 
-module.exports = taskService;
+//Emit event for Activity Logging
+taskService.createTask = logActionWrapper(taskService.createTask, 'createTask', {
+  captureBefore: () => null,
+  captureAfter: async (result) => result
+});
+
+taskService.updateTask = logActionWrapper(taskService.updateTask, 'updateTask', {
+  captureBefore: async (taskId) => await taskService.getById(taskId),
+  captureAfter: async (result) => result,
+  resourceType: "Task"
+});
+
+taskService.assignTask = logActionWrapper(taskService.assignTask, 'assignTask', {
+  captureBefore: async (taskId) => await taskService.getById(taskId),
+  captureAfter: async (result) => result,
+  resourceType: "Task"
+});
+
+taskService.updateTaskStatus = logActionWrapper(taskService.updateTaskStatus, 'updateTaskStatus', {
+  captureBefore: async (taskId) => await taskService.getById(taskId),
+  captureAfter: async (result) => result,
+  resourceType: "Task"
+});
+
+taskService.softDeleteTask = logActionWrapper(taskService.softDeleteTask, 'deleteTask', {
+  captureBefore: async (taskId) => await taskService.getById(taskId),
+  captureAfter: () => null,
+  resourceType: "Task"
+});
+
 module.exports = taskService;
