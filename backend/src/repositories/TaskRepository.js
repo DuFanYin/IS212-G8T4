@@ -70,6 +70,18 @@ class TaskRepository {
     });
   }
 
+    async findUnassignedTasks() {
+    // find tasks that are unassigned -> with no project id
+    return TaskModel.find({
+      $or: [
+        { projectId: { $exists: false } },
+        { projectId: null }
+      ],
+      isDeleted: false
+    });
+  }
+
+
   async create(taskData) {
     return TaskModel.create(taskData);
   }

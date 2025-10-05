@@ -469,6 +469,42 @@ class TaskService {
     }
   }
 
+    async getUnassignedTasks(userId) {
+    try {
+      // Retrieve the current user and verify access permissions
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+      if (!user) throw new Error('User not found');
+
+      // Fetch all unassigned tasks (tasks without a project)
+      const docs = await this.taskRepository.findUnassignedTasks();
+
+      // Populate related fields
+      const populated = await TaskModel.populate(docs, [
+        { path: 'assigneeId', select: 'name' },
+        { path: 'createdBy', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'projectId', select: 'name' },
+      ]);
+
+      // Filter tasks based on user’s visibility permissions
+      const visible = [];
+      for (const doc of populated) {
+        if (await this.isVisibleToUser(doc._id, userId)) {
+          visible.push(doc);
+        }
+      }
+
+      // Map results to standardized DTO format
+      return visible.map((d) => this.mapPopulatedTaskDocToDTO(d));
+    } catch (error) {
+      console.error('TaskService.getUnassignedTasks error:', error.message);
+      throw new Error(`Error fetching unassigned tasks: ${error.message}`);
+    }
+  }
+
+
   async getTasksByCollaborator(userId) {
     try {
       const taskDocs = await this.taskRepository.findTasksByCollaborator(userId);
