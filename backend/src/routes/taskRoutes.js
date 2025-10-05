@@ -11,7 +11,8 @@ const {
   updateTask, 
   assignTask, 
   updateTaskStatus, 
-  archiveTask 
+  archiveTask,
+  getUnassignedTasks 
 } = require('../controllers/taskController');
 
 // Create a new task
@@ -28,6 +29,9 @@ router.get('/team/:teamId', authMiddleware, getTeamTasks);
 
 // Get tasks by department
 router.get('/department/:departmentId', authMiddleware, getDepartmentTasks);
+
+// Get all unassigned tasks
+router.get('/unassigned', authMiddleware, getUnassignedTasks);
 
 // Get task by ID
 router.get('/:id', authMiddleware, getTaskById);

@@ -104,3 +104,13 @@ exports.updateTaskStatus = async (req, res) => {
     res.status(400).json({ status: 'error', message: err.message });
   }
 };
+
+// Get all unassigned tasks
+exports.getUnassignedTasks = async (req, res) => {
+  try {
+    const tasks = await TaskService.getUnassignedTasks(req.user.userId);
+    res.json({ status: 'success', data: tasks });
+  } catch (err) {
+    res.status(400).json({ status: 'error', message: err.message });
+  }
+};
