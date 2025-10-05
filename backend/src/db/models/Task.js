@@ -40,6 +40,12 @@ const taskSchema = new mongoose.Schema({
     enum: ['unassigned', 'ongoing', 'under_review', 'completed'],
     default: 'unassigned'
   },
+  priority: {
+    type: Number,
+    min: 1,
+    max: 10,
+    default: 5
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
