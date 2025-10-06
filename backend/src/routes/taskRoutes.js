@@ -10,9 +10,10 @@ const {
   getTaskById, 
   updateTask, 
   assignTask, 
-  updateTaskStatus, 
-  archiveTask,
-  getUnassignedTasks 
+  updateTaskStatus,
+  getUnassignedTasks,
+  updateTaskDueDate,
+  archiveTask 
 } = require('../controllers/taskController');
 
 // Create a new task
@@ -44,6 +45,9 @@ router.patch('/:id/assign', authMiddleware, assignTask);
 
 // Update task status
 router.patch('/:id/status', authMiddleware, updateTaskStatus);
+
+// Update task due date
+router.patch('/:id/due-date', authMiddleware, updateTaskDueDate);
 
 // Archive a task
 router.delete('/:id', authMiddleware, archiveTask);

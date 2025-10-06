@@ -48,7 +48,7 @@ class TaskService {
         try {
           const project = await projectService.getProjectById(dto.projectId);
           projectName = project?.name;
-        } catch {}
+        } catch { }
       }
 
       // Resolve assignee name
@@ -58,7 +58,7 @@ class TaskService {
           const userRepository = new UserRepository();
           const assigneeDoc = await userRepository.findById(dto.assigneeId);
           assigneeName = assigneeDoc?.name;
-        } catch {}
+        } catch { }
       }
 
       // Resolve creator name
@@ -68,7 +68,7 @@ class TaskService {
           const userRepository = new UserRepository();
           const creatorDoc = await userRepository.findById(dto.createdBy);
           createdByName = creatorDoc?.name;
-        } catch {}
+        } catch { }
       }
 
       // Resolve collaborator names
@@ -81,10 +81,10 @@ class TaskService {
             try {
               const doc = await userRepository.findById(id);
               if (doc?.name) names.push(doc.name);
-            } catch {}
+            } catch { }
           }
           collaboratorNames = names;
-        } catch {}
+        } catch { }
       }
 
       return { ...dto, projectName, assigneeName, createdByName, collaboratorNames };
@@ -340,7 +340,7 @@ class TaskService {
         // Own tasks
         if (task.assigneeId && task.assigneeId.toString?.() === user.id?.toString?.()) return true;
         if (task.createdBy && task.createdBy.toString?.() === user.id?.toString?.()) return true;
-        
+
         // Team members' tasks via assignee
         if (task.assigneeId) {
           const assigneeDoc = await userRepository.findById(task.assigneeId);
@@ -367,7 +367,7 @@ class TaskService {
             }
           }
         }
-        
+
         // Project tasks they're collaborating on
         if (task.isCollaborator(user.id)) return true;
       }
@@ -530,7 +530,7 @@ class TaskService {
         const ownTasks = await this.taskRepository.findTasksByAssignee(userId);
         const teamTasks = await this.taskRepository.findTasksByTeam(user.teamId);
         const projectTasks = await this.taskRepository.findTasksByCollaborator(userId);
-        
+
         taskDocs = [...ownTasks, ...teamTasks, ...projectTasks];
       } else if (user.isManager()) {
         // Manager: team tasks
@@ -621,6 +621,70 @@ class TaskService {
       return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
       throw new Error('Error updating task status');
+    }
+  }
+
+  /**
+   * Update a task's due date
+   * @param {string} taskId - Task ID
+   * @param {Date} newDueDate - New due date
+   * @param {string} userId - ID of user making the change
+   */
+  async updateTaskDueDate(taskId, newDueDate, userId) {
+    try {
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) throw new Error('Task not found');
+
+      const task = new Task(taskDoc);
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+
+      // Check if user can edit this task
+      if (!task.canBeEditedBy(user)) {
+        throw new Error('Not authorized to modify this task’s due date');
+      }
+
+      const oldDueDate = task.dueDate;
+      const updatedTaskDoc = await this.taskRepository.updateById(taskId, {
+        dueDate: newDueDate,
+        updatedAt: new Date()
+      });
+
+      const updatedTask = new Task(updatedTaskDoc);
+
+      // Log activity (pseudo — depends on how your ActivityRepository is set up)
+      try {
+        const ActivityRepository = require('../repositories/ActivityRepository');
+        const activityRepository = new ActivityRepository();
+        await activityRepository.log({
+          taskId,
+          field: 'dueDate',
+          oldValue: oldDueDate,
+          newValue: newDueDate,
+          changedBy: userId,
+          changedAt: new Date()
+        });
+      } catch (logErr) {
+        console.warn('Failed to log due date change:', logErr.message);
+      }
+
+      // Trigger collaborator notifications (pseudo — you’d need a NotificationService)
+      // try {
+      //   const notificationService = require('./notificationService');
+      //   await notificationService.notifyCollaborators(updatedTask.collaborators, {
+      //     type: 'dueDateChanged',
+      //     taskId,
+      //     oldDate: oldDueDate,
+      //     newDate: newDueDate
+      //   });
+      // } catch (notifyErr) {
+      //   console.warn('Failed to send due date change notifications:', notifyErr.message);
+      // }
+
+      return await this.buildEnrichedTaskDTO(updatedTask);
+    } catch (error) {
+      throw new Error(`Error updating task due date: ${error.message || 'unknown error'}`);
     }
   }
 
