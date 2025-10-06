@@ -3,6 +3,7 @@ const Task = require('../domain/Task');
 const UserRepository = require('../repositories/UserRepository');
 const ProjectRepository = require('../repositories/ProjectRepository');
 const projectService = require('./projectService');
+const { activityLogService } = require('./activityLogService');
 const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
@@ -668,33 +669,39 @@ const taskRepository = new TaskRepository();
 const taskService = new TaskService(taskRepository);
 
 //Emit event for Activity Logging
-taskService.createTask = logActionWrapper(taskService.createTask, 'createTask', {
-  captureBefore: () => null,
-  captureAfter: async (result) => result
+const taskMethods = [
+  'createTask',
+  'updateTask',
+  'assignTask',
+  'updateTaskStatus',
+  'softDeleteTask'
+];
+
+//Config for Logging
+const methodOptions = {
+  createTask: {
+    captureBefore: () => null,
+    captureAfter: async (result) => result
+  },
+  softDeleteTask: {
+    captureBefore: async (taskId) => await taskService.getById(taskId),
+    captureAfter: () => null,
+    resourceType: 'Task'
+  },
+  // Default options for other methods
+  default: {
+    captureBefore: async (taskId) => await taskService.getById(taskId),
+    captureAfter: async (result) => result,
+    resourceType: 'Task'
+  }
+};
+
+taskMethods.forEach((name) => {
+  const options = methodOptions[name] || methodOptions.default;
+  taskService[name] = activityLogService.logActivity(taskService[name], name, options);
 });
 
-taskService.updateTask = logActionWrapper(taskService.updateTask, 'updateTask', {
-  captureBefore: async (taskId) => await taskService.getById(taskId),
-  captureAfter: async (result) => result,
-  resourceType: "Task"
-});
-
-taskService.assignTask = logActionWrapper(taskService.assignTask, 'assignTask', {
-  captureBefore: async (taskId) => await taskService.getById(taskId),
-  captureAfter: async (result) => result,
-  resourceType: "Task"
-});
-
-taskService.updateTaskStatus = logActionWrapper(taskService.updateTaskStatus, 'updateTaskStatus', {
-  captureBefore: async (taskId) => await taskService.getById(taskId),
-  captureAfter: async (result) => result,
-  resourceType: "Task"
-});
-
-taskService.softDeleteTask = logActionWrapper(taskService.softDeleteTask, 'deleteTask', {
-  captureBefore: async (taskId) => await taskService.getById(taskId),
-  captureAfter: () => null,
-  resourceType: "Task"
-});
-
-module.exports = taskService;
+module.exports = {
+  taskService,
+  activityLogService
+};

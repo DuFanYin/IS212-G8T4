@@ -28,7 +28,7 @@ class ActivityLogService {
 
         let resourceType = options.resourceType;
 
-        const activityDoc = await activityLogRepository.create({
+        await this.activityLogRepository.create({
           userId,
           action: actionName,
           details: { before, after },
@@ -36,7 +36,7 @@ class ActivityLogService {
           resourceId: after?.id || before?.id || null
         });
         
-        return new ActivityLog(activityDoc);
+        return result;
       } catch (error) {
         throw new Error(`Error in logging: ${error.message}`);
       }
