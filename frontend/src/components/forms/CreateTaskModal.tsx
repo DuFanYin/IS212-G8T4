@@ -12,6 +12,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
     title: '',
     description: '',
     dueDate: '',
+    priority: 5,
     assigneeId: '',
     projectId: '',
     collaborators: []
@@ -37,6 +38,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
         title: formData.title.trim(),
         description: formData.description || '',
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : '',
+        priority: formData.priority || 5,
         // Only include optional IDs if they are non-empty strings
         ...(formData.assigneeId && formData.assigneeId.trim() !== '' ? { assigneeId: formData.assigneeId.trim() } : {}),
         ...(formData.projectId && formData.projectId.trim() !== '' ? { projectId: formData.projectId.trim() } : {}),
@@ -48,6 +50,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
         title: '',
         description: '',
         dueDate: '',
+        priority: 5,
         assigneeId: '',
         projectId: '',
         collaborators: []
@@ -59,9 +62,12 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: CreateTaskRequest) => ({ ...prev, [name]: value }));
+    setFormData((prev: CreateTaskRequest) => ({ 
+      ...prev, 
+      [name]: name === 'priority' ? parseInt(value) || 5 : value 
+    }));
   };
 
   if (!isOpen) return null;
@@ -118,6 +124,23 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+          
+          <div className="mb-4">
+            <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+              Priority
+            </label>
+            <select
+              id="priority"
+              name="priority"
+              value={formData.priority || 5}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                <option key={num} value={num}>{num} {num === 1 ? '(Lowest)' : num === 10 ? '(Highest)' : ''}</option>
+              ))}
+            </select>
           </div>
           
           <div className="mb-4">

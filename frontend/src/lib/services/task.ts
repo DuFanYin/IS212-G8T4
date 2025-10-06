@@ -57,6 +57,10 @@ export const taskService = {
   archiveTask: async (token: string, taskId: string): Promise<TaskResponse> => {
     const res = await fetch(`${API_URL}/tasks/${taskId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     return res.json();
+  },
+  getUnassignedTasks: async (token: string): Promise<TasksResponse> => {
+    const res = await fetch(`${API_URL}/tasks/unassigned`, { headers: { Authorization: `Bearer ${token}` } });
+    return res.json();
   }
 };
 

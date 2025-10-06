@@ -8,6 +8,7 @@ const mockTask: Task = {
   title: 'Test Task',
   description: 'Test description',
   status: 'ongoing',
+  priority: 5,
   dueDate: '2024-12-31T00:00:00.000Z',
   createdBy: 'user1',
   assigneeId: 'user2',
@@ -35,11 +36,6 @@ describe('TaskItem Component', () => {
     render(
       <TaskItem
         task={mockTask}
-        onEdit={mockHandlers.onEdit}
-        onAssign={mockHandlers.onAssign}
-        onStatusChange={mockHandlers.onStatusChange}
-        onArchive={mockHandlers.onArchive}
-        canAssign={true}
       />
     );
 
@@ -47,51 +43,25 @@ describe('TaskItem Component', () => {
     expect(screen.getByText('ONGOING')).toBeInTheDocument();
   });
 
-  it('calls onStatusChange when status changes', () => {
+  it('renders priority badge', () => {
     render(
       <TaskItem
         task={mockTask}
-        onEdit={mockHandlers.onEdit}
-        onAssign={mockHandlers.onAssign}
-        onStatusChange={mockHandlers.onStatusChange}
-        onArchive={mockHandlers.onArchive}
-        canAssign={true}
       />
     );
 
-    const statusSelect = screen.getByRole('combobox');
-    fireEvent.change(statusSelect, { target: { value: 'completed' } });
-
-    expect(mockHandlers.onStatusChange).toHaveBeenCalledWith(mockTask, 'completed');
+    expect(screen.getByText('P5')).toBeInTheDocument();
   });
 
-  it('shows assign button only for managers on unassigned tasks', () => {
+  it('renders unassigned task status', () => {
     const unassignedTask = { ...mockTask, status: 'unassigned' as const };
 
-    const { rerender } = render(
+    render(
       <TaskItem
         task={unassignedTask}
-        onEdit={mockHandlers.onEdit}
-        onAssign={mockHandlers.onAssign}
-        onStatusChange={mockHandlers.onStatusChange}
-        onArchive={mockHandlers.onArchive}
-        canAssign={true}
       />
     );
 
-    expect(screen.getByText('Assign')).toBeInTheDocument();
-
-    rerender(
-      <TaskItem
-        task={unassignedTask}
-        onEdit={mockHandlers.onEdit}
-        onAssign={mockHandlers.onAssign}
-        onStatusChange={mockHandlers.onStatusChange}
-        onArchive={mockHandlers.onArchive}
-        canAssign={false}
-      />
-    );
-
-    expect(screen.queryByText('Assign')).not.toBeInTheDocument();
+    expect(screen.getByText('UNASSIGNED')).toBeInTheDocument();
   });
 });

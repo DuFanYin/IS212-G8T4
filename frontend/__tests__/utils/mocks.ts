@@ -16,6 +16,7 @@ export const mockTask = {
   title: 'Test Task',
   description: 'Test description',
   status: 'ongoing' as const,
+  priority: 5,
   dueDate: '2024-12-31T00:00:00.000Z',
   createdBy: 'user1',
   assigneeId: 'user2',

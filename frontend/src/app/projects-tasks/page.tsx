@@ -29,6 +29,11 @@ export default function ProjectsTasksPage() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedProjectFilter, setSelectedProjectFilter] = useState('active');
   
+  // Unassigned tasks state
+  const [unassignedTasks, setUnassignedTasks] = useState<Task[]>([]);
+  const [unassignedTasksLoading, setUnassignedTasksLoading] = useState(false);
+  const [showUnassignedTasks, setShowUnassignedTasks] = useState(false);
+  
   // Modal states
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
@@ -95,6 +100,30 @@ export default function ProjectsTasksPage() {
     fetchProjectTasks();
   }, [selectedProject, token]);
 
+  // Fetch unassigned tasks
+  useEffect(() => {
+    if (!showUnassignedTasks || !token) {
+      setUnassignedTasks([]);
+      return;
+    }
+
+    async function fetchUnassignedTasks() {
+      try {
+        setUnassignedTasksLoading(true);
+        const response = await taskService.getUnassignedTasks(token!);
+        const fetchedTasks = response.data || [];
+        setUnassignedTasks(fetchedTasks);
+      } catch (err) {
+        console.error('Failed to fetch unassigned tasks:', err);
+        setUnassignedTasks([]);
+      } finally {
+        setUnassignedTasksLoading(false);
+      }
+    }
+
+    fetchUnassignedTasks();
+  }, [showUnassignedTasks, token]);
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -104,7 +133,8 @@ export default function ProjectsTasksPage() {
   }
 
   // Filter tasks based on selected filter
-  const filteredTasks = projectTasks.filter(task => {
+  const currentTasks = showUnassignedTasks ? unassignedTasks : projectTasks;
+  const filteredTasks = currentTasks.filter(task => {
     if (selectedFilter === 'all') return true;
     return task.status === selectedFilter;
   });
@@ -117,21 +147,34 @@ export default function ProjectsTasksPage() {
   });
 
   const handleCreateTask = async (taskData: CreateTaskRequest) => {
-    if (!selectedProject) return;
-    
-    const projectId = selectedProject.id || selectedProject._id;
-    if (!projectId) return;
-    
-    const taskWithProject = { ...taskData, projectId };
-    await createTask(taskWithProject);
-    
-    // Refresh project tasks
-    if (token) {
-      try {
-        const response = await taskService.getTasksByProject(token, projectId);
-        setProjectTasks(response.data || []);
-      } catch (err) {
-        console.error('Failed to refresh project tasks:', err);
+    if (showUnassignedTasks) {
+      // Create unassigned task (without projectId)
+      await createTask(taskData);
+      
+      // Refresh unassigned tasks
+      if (token) {
+        try {
+          const response = await taskService.getUnassignedTasks(token);
+          setUnassignedTasks(response.data || []);
+        } catch (err) {
+          console.error('Failed to refresh unassigned tasks:', err);
+        }
+      }
+    } else if (selectedProject) {
+      const projectId = selectedProject.id || selectedProject._id;
+      if (!projectId) return;
+      
+      const taskWithProject = { ...taskData, projectId };
+      await createTask(taskWithProject);
+      
+      // Refresh project tasks
+      if (token) {
+        try {
+          const response = await taskService.getTasksByProject(token, projectId);
+          setProjectTasks(response.data || []);
+        } catch (err) {
+          console.error('Failed to refresh project tasks:', err);
+        }
       }
     }
   };
@@ -159,7 +202,7 @@ export default function ProjectsTasksPage() {
                 >
                   New Project
                 </button>
-                {selectedProject && (
+                {(selectedProject || showUnassignedTasks) && (
                   <button 
                     onClick={() => setIsCreateTaskModalOpen(true)}
                     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -196,9 +239,12 @@ export default function ProjectsTasksPage() {
                     <div className="mb-6">
                       <div className="flex space-x-1">
                         <button
-                          onClick={() => setSelectedProjectFilter('active')}
+                          onClick={() => {
+                            setShowUnassignedTasks(false);
+                            setSelectedProjectFilter('active');
+                          }}
                           className={`px-2 py-1 rounded text-xs flex-1 ${
-                            selectedProjectFilter === 'active'
+                            selectedProjectFilter === 'active' && !showUnassignedTasks
                               ? 'bg-green-100 text-green-800'
                               : 'text-gray-600 hover:bg-green-50'
                           }`}
@@ -206,14 +252,30 @@ export default function ProjectsTasksPage() {
                           Active ({projects.filter(p => !p.isArchived).length})
                         </button>
                         <button
-                          onClick={() => setSelectedProjectFilter('archived')}
+                          onClick={() => {
+                            setShowUnassignedTasks(false);
+                            setSelectedProjectFilter('archived');
+                          }}
                           className={`px-2 py-1 rounded text-xs flex-1 ${
-                            selectedProjectFilter === 'archived'
+                            selectedProjectFilter === 'archived' && !showUnassignedTasks
                               ? 'bg-orange-100 text-orange-800'
                               : 'text-gray-600 hover:bg-orange-50'
                           }`}
                         >
                           Archived ({projects.filter(p => p.isArchived).length})
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowUnassignedTasks(true);
+                            setSelectedProject(null);
+                          }}
+                          className={`px-2 py-1 rounded text-xs flex-1 ${
+                            showUnassignedTasks
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'text-gray-600 hover:bg-blue-50'
+                          }`}
+                        >
+                          Unassigned Tasks
                         </button>
                       </div>
                     </div>
@@ -251,12 +313,12 @@ export default function ProjectsTasksPage() {
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  {selectedProject ? `Tasks - ${selectedProject.name}` : 'Tasks'}
+                  {showUnassignedTasks ? 'Unassigned Tasks' : selectedProject ? `Tasks - ${selectedProject.name}` : 'Tasks'}
                 </h2>
 
-                {!selectedProject ? (
+                {!selectedProject && !showUnassignedTasks ? (
                   <div className="p-8 text-center text-gray-500">
-                    Select a project to view its tasks
+                    Select a project or view unassigned tasks
                   </div>
                 ) : (
                   <>
@@ -273,32 +335,36 @@ export default function ProjectsTasksPage() {
                           className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         >
                           <option value="all">
-                            All ({projectTasks.length})
+                            All ({currentTasks.length})
                           </option>
                           <option value="unassigned">
-                            Unassigned ({projectTasks.filter(t => t.status === 'unassigned').length})
+                            Unassigned ({currentTasks.filter(t => t.status === 'unassigned').length})
                           </option>
                           <option value="ongoing">
-                            Ongoing ({projectTasks.filter(t => t.status === 'ongoing').length})
+                            Ongoing ({currentTasks.filter(t => t.status === 'ongoing').length})
                           </option>
                           <option value="under_review">
-                            Review ({projectTasks.filter(t => t.status === 'under_review').length})
+                            Review ({currentTasks.filter(t => t.status === 'under_review').length})
                           </option>
                           <option value="completed">
-                            Done ({projectTasks.filter(t => t.status === 'completed').length})
+                            Done ({currentTasks.filter(t => t.status === 'completed').length})
                           </option>
                         </select>
                       </div>
                     </div>
 
                     {/* Task List */}
-                    {projectTasksLoading ? (
+                    {(showUnassignedTasks ? unassignedTasksLoading : projectTasksLoading) ? (
                       <div className="p-8 text-center text-gray-500">Loading tasks...</div>
                     ) : filteredTasks.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">
-                        {selectedFilter === 'all' 
-                          ? 'No tasks found in this project. Create your first task!'
-                          : `No ${selectedFilter.replace('_', ' ')} tasks found.`}
+                        {showUnassignedTasks 
+                          ? (selectedFilter === 'all' 
+                            ? 'No unassigned tasks found.'
+                            : `No ${selectedFilter.replace('_', ' ')} unassigned tasks found.`)
+                          : (selectedFilter === 'all' 
+                            ? 'No tasks found in this project. Create your first task!'
+                            : `No ${selectedFilter.replace('_', ' ')} tasks found.`)}
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 gap-4">

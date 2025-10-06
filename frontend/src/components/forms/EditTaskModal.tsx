@@ -19,6 +19,7 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
         title: task.title,
         description: task.description,
         dueDate: task.dueDate,
+        priority: task.priority,
         collaborators: task.collaborators
       });
     } else {
@@ -29,10 +30,13 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
   if (!isOpen || !task) return null;
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: name === 'priority' ? parseInt(value) || 5 : value 
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,6 +48,7 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
         ...(formData.title && formData.title.trim() ? { title: formData.title.trim() } : {}),
         ...(typeof formData.description === 'string' ? { description: formData.description } : {}),
         ...(formData.dueDate ? { dueDate: new Date(formData.dueDate).toISOString() } : {}),
+        ...(typeof formData.priority === 'number' ? { priority: formData.priority } : {}),
         ...(Array.isArray(formData.collaborators) ? { collaborators: formData.collaborators } : {})
       };
       await onUpdate(payload);
@@ -91,7 +96,7 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="mb-6">
+          <div className="mb-4">
             <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-2">
               Due Date
             </label>
@@ -103,6 +108,22 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+          <div className="mb-6">
+            <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+              Priority
+            </label>
+            <select
+              id="priority"
+              name="priority"
+              value={formData.priority || task.priority || 5}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                <option key={num} value={num}>{num} {num === 1 ? '(Lowest)' : num === 10 ? '(Highest)' : ''}</option>
+              ))}
+            </select>
           </div>
           <div className="flex justify-end space-x-3">
             <button

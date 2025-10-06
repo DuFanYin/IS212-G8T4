@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, vi, beforeEach, expect } from 'vitest';
-import ProjectsPage from '@/app/projects/page';
+import ProjectsPage from '@/app/projects-tasks/page';
 
 vi.mock('@/contexts/UserContext', () => ({
   useUser: () => ({ user: { id: 'u1', name: 'User', role: 'manager', token: 't' } })
