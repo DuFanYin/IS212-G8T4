@@ -3,7 +3,7 @@ const Task = require('../domain/Task');
 const UserRepository = require('../repositories/UserRepository');
 const ProjectRepository = require('../repositories/ProjectRepository');
 const projectService = require('./projectService');
-const { activityLogService } = require('./activityLogService');
+const activityLogService  = require('./activityLogService');
 const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
@@ -39,7 +39,7 @@ class TaskService {
   }
 
   // Build enriched DTO with human-readable names when available
-  async buildEnrichedTaskDTO(task) {
+  async buildEnrichedTaskDTO(task, activityLog = null) {
     try {
       const dto = task.toDTO();
 
@@ -88,7 +88,10 @@ class TaskService {
         } catch {}
       }
 
-      return { ...dto, projectName, assigneeName, createdByName, collaboratorNames };
+      // Resolve Activity Log ID
+      let activityLogId = activityLog.id || null;
+
+      return { ...dto, projectName, assigneeName, createdByName, collaboratorNames, activityLogId };
     } catch {
       // Fallback to plain DTO
       return task.toDTO();
@@ -141,9 +144,12 @@ class TaskService {
         ...taskData,
         createdBy: userId
       });
+      
+      //Activity Logging
+      const activityLogDoc = await activityLogService.logActivity("created", taskDoc.id, null, taskDoc, userId);
 
       const task = new Task(taskDoc);
-      return await this.buildEnrichedTaskDTO(task);
+      return await this.buildEnrichedTaskDTO(task, activityLogDoc);
     } catch (error) {
       console.error('TaskService.createTask error:', error.message);
       throw new Error(`Error creating task: ${error.message}`);
@@ -232,9 +238,16 @@ class TaskService {
         }
       }
 
+      //Store for logging
+      const previousTaskDoc = this.taskRepository.getById(taskId);
+
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
-      return await this.buildEnrichedTaskDTO(updatedTask);
+
+      //Logging
+      const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousTaskDoc, updatedTaskDoc);
+
+      return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
       throw new Error(`Error updating task: ${error.message || 'unknown error'}`);
     }
@@ -585,9 +598,16 @@ class TaskService {
         throw new Error('Can only assign tasks to lower-ranked roles');
       }
 
+      //Store for logging
+      const previousTaskDoc = this.taskRepository.getById(taskId);
+
       const updatedTaskDoc = await this.taskRepository.assignTask(taskId, assigneeId);
       const updatedTask = new Task(updatedTaskDoc);
-      return await this.buildEnrichedTaskDTO(updatedTask);
+
+      //Logging
+      const activityLogDoc = await activityLogService.logActivity("assigned", taskId, previousTaskDoc, updatedTaskDoc);
+
+      return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
       throw new Error('Error assigning task');
     }
@@ -617,9 +637,16 @@ class TaskService {
         }
       }
 
+      //Store for logging
+      const previousTaskDoc = this.taskRepository.getById(taskId);
+
       const updatedTaskDoc = await this.taskRepository.updateStatus(taskId, status, userId);
       const updatedTask = new Task(updatedTaskDoc);
-      return await this.buildEnrichedTaskDTO(updatedTask);
+
+      //Logging
+      const activityLogDoc = await activityLogService.logActivity("status_changed", taskId, previousTaskDoc, updatedTaskDoc);
+
+      return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
       throw new Error('Error updating task status');
     }
@@ -638,10 +665,17 @@ class TaskService {
       if (!task.canBeEditedBy(user)) {
         throw new Error('Not authorized to delete this task');
       }
+      
+      //Store for logging
+      const previousTaskDoc = this.taskRepository.getById(taskId);
 
       const updatedTaskDoc = await this.taskRepository.softDelete(taskId);
       const updatedTask = new Task(updatedTaskDoc);
-      return await this.buildEnrichedTaskDTO(updatedTask);
+
+      //Logging
+      const activityLogDoc =  await activityLogService.logActivity("status_changed", taskId, previousTaskDoc, null);
+      
+      return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
       throw new Error('Error deleting task');
     }
@@ -668,40 +702,4 @@ class TaskService {
 const taskRepository = new TaskRepository();
 const taskService = new TaskService(taskRepository);
 
-//Emit event for Activity Logging
-const taskMethods = [
-  'createTask',
-  'updateTask',
-  'assignTask',
-  'updateTaskStatus',
-  'softDeleteTask'
-];
-
-//Config for Logging
-const methodOptions = {
-  createTask: {
-    captureBefore: () => null,
-    captureAfter: async (result) => result
-  },
-  softDeleteTask: {
-    captureBefore: async (taskId) => await taskService.getById(taskId),
-    captureAfter: () => null,
-    resourceType: 'Task'
-  },
-  // Default options for other methods
-  default: {
-    captureBefore: async (taskId) => await taskService.getById(taskId),
-    captureAfter: async (result) => result,
-    resourceType: 'Task'
-  }
-};
-
-taskMethods.forEach((name) => {
-  const options = methodOptions[name] || methodOptions.default;
-  taskService[name] = activityLogService.logActivity(taskService[name], name, options);
-});
-
-module.exports = {
-  taskService,
-  activityLogService
-};
+module.exports = taskService;
