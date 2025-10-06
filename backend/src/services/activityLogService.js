@@ -18,7 +18,7 @@ class ActivityLogService {
   async logActivity(action, resourceId, before, after, userId) {
     try {
       const activityLog = await this.activityLogRepository.create({
-        resourceId,
+        taskId: resourceId,
         userId,
         action,
         details: { before, after }

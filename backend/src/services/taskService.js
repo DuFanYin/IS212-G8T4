@@ -239,13 +239,13 @@ class TaskService {
       }
 
       //Store for logging
-      const previousTaskDoc = this.taskRepository.getById(taskId);
+      const previousTaskDoc = this.getById(taskId);
 
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
 
       //Logging
-      const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousTaskDoc, updatedTaskDoc);
+      const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousTaskDoc, updatedTaskDoc, userId);
 
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
@@ -599,13 +599,13 @@ class TaskService {
       }
 
       //Store for logging
-      const previousTaskDoc = this.taskRepository.getById(taskId);
+      const previousTaskDoc = this.getById(taskId);
 
       const updatedTaskDoc = await this.taskRepository.assignTask(taskId, assigneeId);
       const updatedTask = new Task(updatedTaskDoc);
 
       //Logging
-      const activityLogDoc = await activityLogService.logActivity("assigned", taskId, previousTaskDoc, updatedTaskDoc);
+      const activityLogDoc = await activityLogService.logActivity("assigned", taskId, previousTaskDoc, updatedTaskDoc, userId);
 
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
@@ -638,13 +638,13 @@ class TaskService {
       }
 
       //Store for logging
-      const previousTaskDoc = this.taskRepository.getById(taskId);
+      const previousTaskDoc = this.getById(taskId);
 
       const updatedTaskDoc = await this.taskRepository.updateStatus(taskId, status, userId);
       const updatedTask = new Task(updatedTaskDoc);
 
       //Logging
-      const activityLogDoc = await activityLogService.logActivity("status_changed", taskId, previousTaskDoc, updatedTaskDoc);
+      const activityLogDoc = await activityLogService.logActivity("status_changed", taskId, previousTaskDoc, updatedTaskDoc, userId);
 
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
@@ -667,13 +667,13 @@ class TaskService {
       }
       
       //Store for logging
-      const previousTaskDoc = this.taskRepository.getById(taskId);
+      const previousTaskDoc = this.getById(taskId);
 
       const updatedTaskDoc = await this.taskRepository.softDelete(taskId);
       const updatedTask = new Task(updatedTaskDoc);
 
       //Logging
-      const activityLogDoc =  await activityLogService.logActivity("status_changed", taskId, previousTaskDoc, null);
+      const activityLogDoc =  await activityLogService.logActivity("status_changed", taskId, previousTaskDoc, null, userId);
       
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
