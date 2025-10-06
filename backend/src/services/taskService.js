@@ -231,8 +231,34 @@ class TaskService {
         }
       }
 
+      // Track old values for change logging
+      const previousDueDate = task.dueDate;
+
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
+      
+      // Log due date change if applicable
+      if (Object.prototype.hasOwnProperty.call(updateData, 'dueDate')) {
+        try {
+          const newDueDate = updateData.dueDate;
+          const changed = (previousDueDate?.toString?.() || previousDueDate) !== (newDueDate?.toString?.() || newDueDate);
+          if (changed) {
+            const ActivityRepository = require('../repositories/ActivityRepository');
+            const activityRepository = new ActivityRepository();
+            await activityRepository.log({
+              taskId,
+              field: 'dueDate',
+              oldValue: previousDueDate,
+              newValue: newDueDate,
+              changedBy: userId,
+              changedAt: new Date()
+            });
+          }
+        } catch (logErr) {
+          console.warn('Failed to log due date change:', logErr.message);
+        }
+      }
+
       return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
       throw new Error(`Error updating task: ${error.message || 'unknown error'}`);
@@ -624,69 +650,7 @@ class TaskService {
     }
   }
 
-  /**
-   * Update a task's due date
-   * @param {string} taskId - Task ID
-   * @param {Date} newDueDate - New due date
-   * @param {string} userId - ID of user making the change
-   */
-  async updateTaskDueDate(taskId, newDueDate, userId) {
-    try {
-      const taskDoc = await this.taskRepository.findById(taskId);
-      if (!taskDoc) throw new Error('Task not found');
-
-      const task = new Task(taskDoc);
-      const userRepository = new UserRepository();
-      const userDoc = await userRepository.findById(userId);
-      const user = new User(userDoc);
-
-      // Check if user can edit this task
-      if (!task.canBeEditedBy(user)) {
-        throw new Error('Not authorized to modify this task’s due date');
-      }
-
-      const oldDueDate = task.dueDate;
-      const updatedTaskDoc = await this.taskRepository.updateById(taskId, {
-        dueDate: newDueDate,
-        updatedAt: new Date()
-      });
-
-      const updatedTask = new Task(updatedTaskDoc);
-
-      // Log activity (pseudo — depends on how your ActivityRepository is set up)
-      try {
-        const ActivityRepository = require('../repositories/ActivityRepository');
-        const activityRepository = new ActivityRepository();
-        await activityRepository.log({
-          taskId,
-          field: 'dueDate',
-          oldValue: oldDueDate,
-          newValue: newDueDate,
-          changedBy: userId,
-          changedAt: new Date()
-        });
-      } catch (logErr) {
-        console.warn('Failed to log due date change:', logErr.message);
-      }
-
-      // Trigger collaborator notifications (pseudo — you’d need a NotificationService)
-      // try {
-      //   const notificationService = require('./notificationService');
-      //   await notificationService.notifyCollaborators(updatedTask.collaborators, {
-      //     type: 'dueDateChanged',
-      //     taskId,
-      //     oldDate: oldDueDate,
-      //     newDate: newDueDate
-      //   });
-      // } catch (notifyErr) {
-      //   console.warn('Failed to send due date change notifications:', notifyErr.message);
-      // }
-
-      return await this.buildEnrichedTaskDTO(updatedTask);
-    } catch (error) {
-      throw new Error(`Error updating task due date: ${error.message || 'unknown error'}`);
-    }
-  }
+  // (Due date updates are handled within updateTask now)
 
   async softDeleteTask(taskId, userId) {
     try {

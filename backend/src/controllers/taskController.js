@@ -115,22 +115,4 @@ exports.getUnassignedTasks = async (req, res) => {
   }
 };
 
-// Update task due date
-exports.updateTaskDueDate = async (req, res) => {
-  try {
-    const { dueDate } = req.body;
-    if (!dueDate) {
-      return res.status(400).json({ status: 'error', message: 'Due date is required' });
-    }
-
-    const task = await TaskService.updateTaskDueDate(
-      req.params.id,
-      new Date(dueDate),
-      req.user.userId
-    );
-
-    res.json({ status: 'success', data: task });
-  } catch (err) {
-    res.status(400).json({ status: 'error', message: err.message });
-  }
-};
+// (Due date updates are handled via updateTask)
