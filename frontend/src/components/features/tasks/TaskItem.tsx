@@ -40,6 +40,13 @@ export const TaskItem = ({ task, onClick }: TaskItemProps) => {
     return due < today && task.status !== 'completed';
   };
 
+  const getPriorityColor = (priority: number) => {
+    if (priority >= 8) return 'bg-red-100 text-red-800'; // High priority
+    if (priority >= 6) return 'bg-orange-100 text-orange-800'; // Medium-high
+    if (priority >= 4) return 'bg-yellow-100 text-yellow-800'; // Medium
+    return 'bg-green-100 text-green-800'; // Low priority
+  };
+
   const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation();
     router.push(`/projects-tasks/task/${task.id}`);
@@ -57,6 +64,9 @@ export const TaskItem = ({ task, onClick }: TaskItemProps) => {
         <div className="flex items-center justify-between gap-2 mb-2 pr-12">
           <h3 className="text-base font-medium line-clamp-1 flex-1">{task.title}</h3>
           <div className="flex items-center gap-1 shrink-0">
+            <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(task.priority || 5)}`}>
+              P{(task.priority || 5)}
+            </span>
             <span className={`px-2 py-1 rounded text-xs ${getStatusColor(task.status)}`}>
               {task.status.replace('_', ' ').toUpperCase()}
             </span>

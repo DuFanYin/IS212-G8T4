@@ -91,23 +91,44 @@ export default function TaskDetailPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
-              <select
-                value={task.status}
-                onChange={async (e) => {
-                  if (!token) return;
-                  const res = await taskService.updateTaskStatus(token, task.id, { status: e.target.value as Task['status'] });
-                  if (res?.data) setTask(res.data);
-                }}
-                className="px-2 py-1 rounded text-sm border border-gray-300 bg-white text-gray-700"
-              >
-                <option value="unassigned">Unassigned</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="under_review">Under Review</option>
-                <option value="completed">Completed</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="priority" className="text-sm font-medium text-gray-700">Priority:</label>
+                  <select
+                    id="priority"
+                    value={task.priority || 5}
+                    onChange={async (e) => {
+                      if (!token) return;
+                      const newPriority = parseInt(e.target.value);
+                      const res = await taskService.updateTask(token, task.id, { priority: newPriority });
+                      if (res?.data) setTask(res.data);
+                    }}
+                    className="px-2 py-1 rounded text-sm border border-gray-300 bg-white text-gray-700"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                      <option key={num} value={num}>{num}</option>
+                    ))}
+                  </select>
+                </div>
+                <select
+                  value={task.status}
+                  onChange={async (e) => {
+                    if (!token) return;
+                    const res = await taskService.updateTaskStatus(token, task.id, { status: e.target.value as Task['status'] });
+                    if (res?.data) setTask(res.data);
+                  }}
+                  className="px-2 py-1 rounded text-sm border border-gray-300 bg-white text-gray-700"
+                >
+                  <option value="unassigned">Unassigned</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="under_review">Under Review</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
             </div>
             <p className="text-gray-700 mb-4">{task.description}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+              <div><span className="font-medium">Priority:</span> {task.priority || 5}/10</div>
               <div><span className="font-medium">Due:</span> {new Date(task.dueDate).toLocaleString()}</div>
               <div><span className="font-medium">Created:</span> {new Date(task.createdAt).toLocaleString()}</div>
               {task.assigneeName && <div><span className="font-medium">Assignee:</span> {task.assigneeName}</div>}

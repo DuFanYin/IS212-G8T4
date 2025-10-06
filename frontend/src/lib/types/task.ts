@@ -3,6 +3,7 @@ export interface Task {
   title: string;
   description: string;
   status: 'unassigned' | 'ongoing' | 'under_review' | 'completed';
+  priority: number;
   dueDate: string;
   createdBy: string;
   createdByName?: string;
@@ -35,6 +36,7 @@ export interface CreateTaskRequest {
   title: string;
   description: string;
   dueDate: string;
+  priority?: number;
   assigneeId?: string;
   projectId?: string;
   collaborators?: string[];
@@ -44,6 +46,7 @@ export interface UpdateTaskRequest {
   title?: string;
   description?: string;
   dueDate?: string;
+  priority?: number;
   collaborators?: string[];
 }
 
