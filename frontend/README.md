@@ -13,55 +13,57 @@ src/
 │   │   ├── page.tsx             # Login page
 │   │   └── reset-password/
 │   │       └── page.tsx         # Password reset
-│   ├── projects/
-│   │   └── page.tsx             # Project management
-│   ├── tasks/
-│   │   └── page.tsx             # Task management
+│   ├── orgnisation/
+│   │   └── page.tsx             # Organization management
+│   ├── projects-tasks/          # Combined projects and tasks interface
+│   │   ├── page.tsx             # Main projects-tasks page
+│   │   ├── project/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx     # Individual project view
+│   │   └── task/
+│   │       └── [id]/
+│   │           └── page.tsx     # Individual task view
 │   ├── users/
 │   │   └── page.tsx             # User management
 │   ├── layout.tsx               # Root layout with providers
-│   └── page.tsx                 # Landing page
+│   ├── page.tsx                 # Landing page
+│   ├── favicon.ico              # App favicon
+│   └── globals.css              # Global styles
 ├── components/                   # Reusable UI components
 │   ├── features/
+│   │   ├── projects/
+│   │   │   └── ProjectItem.tsx  # Project display component
 │   │   ├── tasks/
-│   │   │   └── TaskItem.tsx
-│   │   └── users/
-│   │       ├── UserList.tsx
-│   │       ├── UserProfile.tsx
-│   │       └── UserSelector.tsx
+│   │   │   ├── TaskItem.tsx     # Task display component
+│   │   │   └── SubtaskList.tsx  # Subtask list component
+│   │   ├── users/
+│   │   │   ├── UserList.tsx     # User list component
+│   │   │   ├── UserProfile.tsx  # User profile component
+│   │   │   └── UserSelector.tsx # User selection component
+│   │   └── timeline/            # Timeline-related components (empty)
 │   ├── forms/
-│   │   ├── AssignTaskModal.tsx
-│   │   ├── CreateProjectModal.tsx
-│   │   ├── CreateTaskModal.tsx
-│   │   ├── EditProjectModal.tsx
-│   │   └── EditTaskModal.tsx
-│   └── layout/
-│       └── Header.tsx
+│   │   ├── AssignTaskModal.tsx  # Task assignment modal
+│   │   ├── CreateProjectModal.tsx # Project creation modal
+│   │   ├── CreateTaskModal.tsx  # Task creation modal
+│   │   ├── EditProjectModal.tsx # Project editing modal
+│   │   └── EditTaskModal.tsx    # Task editing modal
+│   ├── layout/
+│   │   └── Header.tsx           # App header component
+│   └── timeline/
+│       ├── Legend.tsx           # Timeline legend component
+│       ├── OrgSelectors.tsx     # Organization selectors
+│       ├── TimelineGrid.tsx     # Timeline grid component
+│       └── TimelineRows.tsx     # Timeline rows component
 ├── contexts/
-│   └── UserContext.tsx           # Global user state
+│   └── UserContext.tsx          # Global user state management
 ├── lib/
 │   ├── hooks/
 │   │   ├── useTasks.ts          # Task management hook
-│   │   └── useUsers.ts          # User management hook
+│   │   ├── useUsers.ts          # User management hook
+│   │   └── useTimeline.ts       # Timeline management hook
 │   ├── services/                # API service layer (split by domain)
-│   │   ├── api.ts               # Barrel re-exports
-│   │   ├── auth.ts
-│   │   ├── config.ts
-│   │   ├── project.ts
-│   │   ├── subtask.ts
-│   │   ├── task.ts
-│   │   └── user.ts
 │   ├── types/                   # TypeScript type definitions
-│   │   ├── project.ts
-│   │   ├── subtask.ts
-│   │   ├── task.ts
-│   │   └── user.ts
 │   └── utils/
-│       ├── auth.ts
-│       ├── formatDate.ts
-│       ├── inactivityTracker.ts
-│       └── storage.ts
-└── app/globals.css              # Global styles
 ```
 
 ## 🚀 Features
