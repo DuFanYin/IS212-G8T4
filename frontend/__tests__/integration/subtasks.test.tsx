@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, vi, beforeEach } from 'vitest';
-import TasksPage from '@/app/tasks/page';
+import TasksPage from '@/app/projects-tasks/page';
 
 vi.mock('@/lib/hooks/useTasks', () => ({
   useTasks: () => ({

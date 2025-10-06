@@ -50,7 +50,12 @@ describe('Header Component', () => {
     vi.mocked(useUser).mockReturnValueOnce({
       user: null,
       logout: mockLogout,
-      refreshUser: mockRefreshUser
+      refreshUser: mockRefreshUser,
+      canAssignTasks: vi.fn(),
+      canSeeAllTasks: vi.fn(),
+      canSeeDepartmentTasks: vi.fn(),
+      canSeeTeamTasks: vi.fn(),
+      getVisibleUsersScope: vi.fn()
     });
 
     render(<Header />);
