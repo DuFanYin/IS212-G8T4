@@ -93,6 +93,21 @@ export default function TaskDetailPage() {
               <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
+                  <label htmlFor="dueDate" className="text-sm font-medium text-gray-700">Due:</label>
+                  <input
+                    id="dueDate"
+                    type="date"
+                    value={task.dueDate ? new Date(task.dueDate).toISOString().substring(0, 10) : ''}
+                    onChange={async (e) => {
+                      if (!token) return;
+                      const iso = e.target.value ? new Date(e.target.value).toISOString() : '';
+                      const res = await taskService.updateTask(token, task.id, iso ? { dueDate: iso } : {});
+                      if (res?.data) setTask(res.data);
+                    }}
+                    className="px-2 py-1 rounded text-sm border border-gray-300 bg-white text-gray-700"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
                   <label htmlFor="priority" className="text-sm font-medium text-gray-700">Priority:</label>
                   <select
                     id="priority"
