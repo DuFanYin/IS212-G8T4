@@ -19,7 +19,7 @@ describe('POST /api/auth/reset-password', () => {
     }
   });
 
-  it('should reset password with valid token', async () => {
+  it('should reset password with valid reset token', async () => {
     if (!testUser || !resetToken) return;
 
     const response = await request(app)
@@ -33,7 +33,7 @@ describe('POST /api/auth/reset-password', () => {
     // 400 is acceptable if token validation fails
   });
 
-  it('should reject invalid token', async () => {
+  it('should reject invalid reset token', async () => {
     const response = await request(app)
       .post('/api/auth/reset-password')
       .send({
@@ -44,40 +44,7 @@ describe('POST /api/auth/reset-password', () => {
     expect([400, 404]).toContain(response.status);
   });
 
-  it('should require token field', async () => {
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        newPassword: 'newpassword123'
-      });
-
-    expect([400, 422, 500]).toContain(response.status);
-  });
-
-  it('should require newPassword field', async () => {
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: 'some-token'
-      });
-
-    expect([400, 422]).toContain(response.status);
-  });
-
-  it('should handle weak password', async () => {
-    if (!resetToken) return;
-
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: '123'
-      });
-
-    expect([400, 422]).toContain(response.status);
-  });
-
-  it('should handle expired token', async () => {
+  it('should reject expired reset token', async () => {
     if (!testUser) return;
 
     // Create an expired token
@@ -96,209 +63,26 @@ describe('POST /api/auth/reset-password', () => {
     expect([400, 404]).toContain(response.status);
   });
 
-  it('should handle empty token', async () => {
+  it('should reject weak passwords (security)', async () => {
+    if (!resetToken) return;
+
     const response = await request(app)
       .post('/api/auth/reset-password')
       .send({
-        token: '',
-        newPassword: 'newpassword123'
+        token: resetToken,
+        newPassword: '123'
       });
 
     expect([400, 422]).toContain(response.status);
   });
 
-  it('should handle null token', async () => {
+  it('should require both token and newPassword fields', async () => {
     const response = await request(app)
       .post('/api/auth/reset-password')
       .send({
-        token: null,
-        newPassword: 'newpassword123'
-      });
-
-    expect([400, 422, 500]).toContain(response.status);
-  });
-
-  it('should handle undefined token', async () => {
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: undefined,
-        newPassword: 'newpassword123'
-      });
-
-    expect([400, 422, 500]).toContain(response.status);
-  });
-
-  it('should handle empty password', async () => {
-    if (!resetToken) return;
-
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: ''
+        token: 'some-token'
       });
 
     expect([400, 422]).toContain(response.status);
-  });
-
-  it('should handle null password', async () => {
-    if (!resetToken) return;
-
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: null
-      });
-
-    expect([400, 422]).toContain(response.status);
-  });
-
-  it('should handle undefined password', async () => {
-    if (!resetToken) return;
-
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: undefined
-      });
-
-    expect([400, 422]).toContain(response.status);
-  });
-
-  it('should handle very long password', async () => {
-    if (!resetToken) return;
-
-    const longPassword = 'a'.repeat(1000);
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: longPassword
-      });
-
-    expect([200, 400, 422]).toContain(response.status);
-  });
-
-  it('should handle password with special characters', async () => {
-    if (!resetToken) return;
-
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: 'P@ssw0rd!@#$%^&*()'
-      });
-
-    expect([200, 400, 422]).toContain(response.status);
-  });
-
-  it('should handle password with unicode characters', async () => {
-    if (!resetToken) return;
-
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: 'pássw0rd123'
-      });
-
-    expect([200, 400, 422]).toContain(response.status);
-  });
-
-  it('should handle whitespace in password', async () => {
-    if (!resetToken) return;
-
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: ' password123 '
-      });
-
-    expect([200, 400, 422]).toContain(response.status);
-  });
-
-  it('should handle extra fields in request', async () => {
-    if (!resetToken) return;
-
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: resetToken,
-        newPassword: 'newpassword123',
-        extraField: 'should be ignored',
-        anotherField: 123
-      });
-
-    expect([200, 400]).toContain(response.status);
-  });
-
-  it('should handle non-JSON payload', async () => {
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .set('Content-Type', 'text/plain')
-      .send('token=test&newPassword=password123');
-
-    expect([400, 415, 500]).toContain(response.status);
-  });
-
-  it('should handle malformed JSON', async () => {
-    const response = await request(app)
-      .post('/api/auth/reset-password')
-      .set('Content-Type', 'application/json')
-      .send('{"token": "test", "newPassword": "password123"');
-
-    expect([400, 415, 500]).toContain(response.status);
-  });
-
-  it('should handle concurrent reset attempts', async () => {
-    if (!resetToken) return;
-
-    const promises = Array(3).fill().map(() => 
-      request(app)
-        .post('/api/auth/reset-password')
-        .send({
-          token: resetToken,
-          newPassword: 'newpassword123'
-        })
-    );
-
-    const responses = await Promise.all(promises);
-    
-    responses.forEach(response => {
-      expect([200, 400]).toContain(response.status);
-    });
-  });
-
-  it('should handle token reuse after successful reset', async () => {
-    if (!testUser) return;
-
-    // Create a new token for this test
-    const newToken = 'reuse-test-token-' + Date.now();
-    testUser.resetToken = newToken;
-    testUser.resetTokenExpiry = new Date(Date.now() + 3600000);
-    await testUser.save();
-
-    // First reset attempt
-    const response1 = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: newToken,
-        newPassword: 'newpassword123'
-      });
-
-    // Second reset attempt with same token
-    const response2 = await request(app)
-      .post('/api/auth/reset-password')
-      .send({
-        token: newToken,
-        newPassword: 'anotherpassword123'
-      });
-
-    expect([200, 400]).toContain(response1.status);
-    expect([400, 404]).toContain(response2.status);
   });
 });

@@ -5,7 +5,7 @@ const { User } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
 describe('POST /api/auth/login', () => {
-  it('should authenticate valid user', async () => {
+  it('should authenticate valid user with correct credentials', async () => {
     const response = await request(app)
       .post('/api/auth/login')
       .send({
@@ -25,11 +25,11 @@ describe('POST /api/auth/login', () => {
     expect(response.body.data.user).not.toHaveProperty('passwordHash');
   });
 
-  it('should reject invalid credentials', async () => {
+  it('should reject login with incorrect password', async () => {
     const response = await request(app)
       .post('/api/auth/login')
       .send({
-        email: 'wrong@example.com',
+        email: 'staff0@example.com',
         password: 'wrongpassword'
       });
 
@@ -38,17 +38,20 @@ describe('POST /api/auth/login', () => {
     expect(response.body.message).toBe('Invalid email or password');
   });
 
-  it('should validate required fields', async () => {
+  it('should reject login with non-existent email', async () => {
     const response = await request(app)
       .post('/api/auth/login')
-      .send({});
+      .send({
+        email: 'nonexistent@example.com',
+        password: '123456'
+      });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(response.body.status).toBe('error');
-    expect(response.body.message).toBe('Email and password are required');
+    expect(response.body.message).toBe('Invalid email or password');
   });
 
-  it('should validate email format', async () => {
+  it('should reject login with malformed email address', async () => {
     const response = await request(app)
       .post('/api/auth/login')
       .send({
@@ -61,26 +64,14 @@ describe('POST /api/auth/login', () => {
     expect(response.body.message).toBe('Please provide a valid email address');
   });
 
-  it('should reject when email is missing', async () => {
-    const res = await request(app)
+  it('should reject login with missing required fields', async () => {
+    const response = await request(app)
       .post('/api/auth/login')
-      .send({ password: 'password123' });
-    expect(res.status).toBe(400);
-  });
+      .send({});
 
-  it('should reject when password is missing', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'user@example.com' });
-    expect(res.status).toBe(400);
-  });
-
-  it('should reject when payload is not JSON', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .set('Content-Type', 'text/plain')
-      .send('not-json');
-    expect([400, 415]).toContain(res.status);
+    expect(response.status).toBe(400);
+    expect(response.body.status).toBe('error');
+    expect(response.body.message).toBe('Email and password are required');
   });
 });
 

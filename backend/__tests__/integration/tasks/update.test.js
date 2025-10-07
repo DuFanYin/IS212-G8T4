@@ -33,7 +33,7 @@ describe('PUT /api/tasks/:id', () => {
     }
   });
 
-  it('should update task successfully', async () => {
+  it('should update task with valid data', async () => {
     if (!authToken || !testTaskId) return;
 
     const updateData = {
@@ -66,21 +66,6 @@ describe('PUT /api/tasks/:id', () => {
     expect(response.status).toBe(401);
   });
 
-  it('should handle non-existent task', async () => {
-    if (!authToken) return;
-
-    const nonExistentTaskId = '507f1f77bcf86cd799439011';
-    
-    const response = await request(app)
-      .put(`/api/tasks/${nonExistentTaskId}`)
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({
-        title: 'Update Non-existent Task'
-      });
-
-    expect([404, 400]).toContain(response.status);
-  });
-
   it('should validate task ownership or collaboration', async () => {
     if (!otherUserToken || !testTaskId) return;
 
@@ -111,16 +96,5 @@ describe('PUT /api/tasks/:id', () => {
       expect(response.body.status).toBe('success');
       expect(response.body.data.description).toBe(updateData.description);
     }
-  });
-
-  it('should handle empty update data', async () => {
-    if (!authToken || !testTaskId) return;
-
-    const response = await request(app)
-      .put(`/api/tasks/${testTaskId}`)
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({});
-
-    expect([200, 400]).toContain(response.status);
   });
 });

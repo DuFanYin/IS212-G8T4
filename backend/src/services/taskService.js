@@ -6,6 +6,7 @@ const projectService = require('./projectService');
 const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
+const ActivityLogRepository = require('../repositories/ActivityLogRepository');
 
 class TaskService {
   constructor(taskRepository) {
@@ -183,6 +184,15 @@ class TaskService {
         }
       }
 
+      // Validate due date is not in the past
+      if (updateData.dueDate) {
+        const dueDate = new Date(updateData.dueDate);
+        const now = new Date();
+        if (dueDate < now) {
+          throw new Error('Due date cannot be in the past');
+        }
+      }
+
       // Handle assignment changes
       if (updateData.assigneeId) {
         const userRepository = new UserRepository();
@@ -243,15 +253,17 @@ class TaskService {
           const newDueDate = updateData.dueDate;
           const changed = (previousDueDate?.toString?.() || previousDueDate) !== (newDueDate?.toString?.() || newDueDate);
           if (changed) {
-            const ActivityRepository = require('../repositories/ActivityRepository');
-            const activityRepository = new ActivityRepository();
-            await activityRepository.log({
+            
+            const activityRepository = new ActivityLogRepository();
+            await activityRepository.create({
               taskId,
-              field: 'dueDate',
-              oldValue: previousDueDate,
-              newValue: newDueDate,
-              changedBy: userId,
-              changedAt: new Date()
+              userId,
+              action: 'updated',
+              details: {
+                field: 'dueDate',
+                oldValue: previousDueDate,
+                newValue: newDueDate
+              }
             });
           }
         } catch (logErr) {

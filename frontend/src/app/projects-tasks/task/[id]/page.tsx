@@ -11,6 +11,7 @@ import { SubtaskList } from '@/components/features/tasks/SubtaskList';
 import type { Subtask } from '@/lib/types/subtask';
 import { storage } from '@/lib/utils/storage';
 import { UserSelector } from '@/components/features/users/UserSelector';
+import { EditTaskModal } from '@/components/forms/EditTaskModal';
 
 export default function TaskDetailPage() {
   const params = useParams();
@@ -27,6 +28,7 @@ export default function TaskDetailPage() {
   const [assigneeResetTick, setAssigneeResetTick] = useState<number>(0);
   const [collabResetTick, setCollabResetTick] = useState<number>(0);
   const token = storage.getToken();
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => {
     const taskId = params?.id as string | undefined;
@@ -92,39 +94,13 @@ export default function TaskDetailPage() {
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <label htmlFor="dueDate" className="text-sm font-medium text-gray-700">Due:</label>
-                  <input
-                    id="dueDate"
-                    type="date"
-                    value={task.dueDate ? new Date(task.dueDate).toISOString().substring(0, 10) : ''}
-                    onChange={async (e) => {
-                      if (!token) return;
-                      const iso = e.target.value ? new Date(e.target.value).toISOString() : '';
-                      const res = await taskService.updateTask(token, task.id, iso ? { dueDate: iso } : {});
-                      if (res?.data) setTask(res.data);
-                    }}
-                    className="px-2 py-1 rounded text-sm border border-gray-300 bg-white text-gray-700"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label htmlFor="priority" className="text-sm font-medium text-gray-700">Priority:</label>
-                  <select
-                    id="priority"
-                    value={task.priority || 5}
-                    onChange={async (e) => {
-                      if (!token) return;
-                      const newPriority = parseInt(e.target.value);
-                      const res = await taskService.updateTask(token, task.id, { priority: newPriority });
-                      if (res?.data) setTask(res.data);
-                    }}
-                    className="px-2 py-1 rounded text-sm border border-gray-300 bg-white text-gray-700"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                      <option key={num} value={num}>{num}</option>
-                    ))}
-                  </select>
-                </div>
+                <button
+                  type="button"
+                  className="px-3 py-2 text-sm rounded bg-gray-900 text-white"
+                  onClick={() => setIsEditOpen(true)}
+                >
+                  Edit
+                </button>
                 <select
                   value={task.status}
                   onChange={async (e) => {
@@ -280,6 +256,24 @@ export default function TaskDetailPage() {
               />
             </div>
           </div>
+          <EditTaskModal
+            isOpen={isEditOpen}
+            task={task}
+            onClose={() => setIsEditOpen(false)}
+            onUpdate={async (data) => {
+              if (!token) return;
+              const res = await taskService.updateTask(token, task.id, data);
+              if (res?.status === 'success' && res?.data) {
+                setTask(res.data);
+              } else {
+                const ref = await taskService.getTaskById(token, task.id);
+                if (ref?.data) setTask(ref.data);
+                if (!res || res.status !== 'success') {
+                  alert(res?.message || 'Failed to update task');
+                }
+              }
+            }}
+          />
         </div>
       </main>
     </div>

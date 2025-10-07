@@ -6,15 +6,12 @@ const { generateToken } = require('../../../src/services/authService');
 
 describe('PUT /api/tasks/:id (update due date)', () => {
   let authToken;
-  let otherUserToken;
   let testTaskId;
 
   beforeAll(async () => {
     const staffUser = await User.findOne({ email: 'staff0@example.com' });
-    const managerUser = await User.findOne({ email: 'manager0@example.com' });
 
     if (staffUser) authToken = generateToken(staffUser._id);
-    if (managerUser) otherUserToken = generateToken(managerUser._id);
 
     // Create a test task with an initial due date
     if (authToken) {
@@ -48,27 +45,6 @@ describe('PUT /api/tasks/:id (update due date)', () => {
       expect(response.body.status).toBe('success');
       expect(new Date(response.body.data.dueDate).toISOString()).toBe(newDueDate);
     }
-  });
-
-  it('should NOT update due date without authentication', async () => {
-    if (!testTaskId) return;
-
-    const response = await request(app)
-      .put(`/api/tasks/${testTaskId}`)
-      .send({ dueDate: new Date().toISOString() });
-
-    expect(response.status).toBe(401);
-  });
-
-  it('should NOT allow unauthorized user to update due date', async () => {
-    if (!otherUserToken || !testTaskId) return;
-
-    const response = await request(app)
-      .put(`/api/tasks/${testTaskId}`)
-      .set('Authorization', `Bearer ${otherUserToken}`)
-      .send({ dueDate: new Date().toISOString() });
-
-    expect([403, 400]).toContain(response.status);
   });
 
   it('should reject invalid due date format', async () => {

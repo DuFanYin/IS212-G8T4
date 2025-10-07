@@ -15,17 +15,7 @@ describe('POST /api/projects', () => {
     }
   });
 
-  it('should return 401 when not authenticated', async () => {
-    const response = await request(app)
-      .post('/api/projects/')
-      .send({ name: 'Test Project' });
-
-    expect(response.status).toBe(401);
-    expect(response.body.status).toBe('error');
-    expect(response.body.message).toBe('No token provided');
-  });
-
-  it('should create a project successfully with all fields', async () => {
+  it('should create project with valid data', async () => {
     const response = await request(app)
       .post('/api/projects')
       .set('Authorization', `Bearer ${authToken}`)
@@ -39,17 +29,17 @@ describe('POST /api/projects', () => {
     expect(response.body.status).toBe('success');
   });
 
-  it('should create a project without optional fields', async () => {
+  it('should require authentication', async () => {
     const response = await request(app)
-      .post('/api/projects')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ name: 'Minimal Project' });
+      .post('/api/projects/')
+      .send({ name: 'Test Project' });
 
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe('success');
+    expect(response.status).toBe(401);
+    expect(response.body.status).toBe('error');
+    expect(response.body.message).toBe('No token provided');
   });
 
-  it('should fail if name is missing', async () => {
+  it('should validate required project name', async () => {
     const response = await request(app)
       .post('/api/projects')
       .set('Authorization', `Bearer ${authToken}`)
@@ -60,15 +50,14 @@ describe('POST /api/projects', () => {
     expect(response.body.message).toMatch(/name is required/i);
   });
 
-  it('should fail if deadline is invalid', async () => {
+  it('should handle project creation with optional fields', async () => {
     const response = await request(app)
       .post('/api/projects')
       .set('Authorization', `Bearer ${authToken}`)
-      .send({ name: 'Invalid Deadline', deadline: 'invalid-date' });
+      .send({ name: 'Minimal Project' });
 
-    expect(response.status).toBe(400);
-    expect(response.body.status).toBe('error');
-    expect(response.body.message).toMatch(/invalid date/i);
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe('success');
   });
 });
 

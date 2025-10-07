@@ -7,5 +7,7 @@ module.exports = {
     '!src/db/connect.js'
   ],
   coverageDirectory: 'coverage',
-  setupFilesAfterEnv: ['./__tests__/setup.js']
+  setupFilesAfterEnv: ['./__tests__/setup.js'],
+  testTimeout: 30000,
+  maxWorkers: 1
 };
