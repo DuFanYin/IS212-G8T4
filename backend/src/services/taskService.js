@@ -174,7 +174,21 @@ class TaskService {
       // Staff can only update specific fields
       if (user.isStaff()) {
         const isStatusUpdate = Object.keys(updateData).length === 1 && updateData.hasOwnProperty('status');
-        if (!isStatusUpdate) {
+
+        const isCollaborator = task.collaborators
+          ?.map(c => c.toString())
+          .includes(user.id?.toString());
+
+        if (isCollaborator) {
+          const allowedFields = ['title', 'dueDate', 'collaborators', 'attachments'];
+          const attemptedFields = Object.keys(updateData);
+          const invalidFields = attemptedFields.filter(f => !allowedFields.includes(f));
+          if (invalidFields.length > 0 && !isStatusUpdate) {
+            throw new Error(
+              `Collaborator staff cannot modify these fields: ${invalidFields.join(', ')}`
+            );
+          }
+        } else {
           const allowedFields = ['title', 'dueDate', 'collaborators'];
           const attemptedFields = Object.keys(updateData);
           const invalidFields = attemptedFields.filter(f => !allowedFields.includes(f));
@@ -228,7 +242,7 @@ class TaskService {
         }
       }
 
-      if(updateData.projectId){
+      if (updateData.projectId) {
         this.validatePriority(updateData.priority);
 
         const projectRepository = new ProjectRepository();
@@ -246,14 +260,14 @@ class TaskService {
 
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
-      
+
       // Log due date change if applicable
       if (Object.prototype.hasOwnProperty.call(updateData, 'dueDate')) {
         try {
           const newDueDate = updateData.dueDate;
           const changed = (previousDueDate?.toString?.() || previousDueDate) !== (newDueDate?.toString?.() || newDueDate);
           if (changed) {
-            
+
             const activityRepository = new ActivityLogRepository();
             await activityRepository.create({
               taskId,
@@ -278,7 +292,7 @@ class TaskService {
   }
 
   //Check if priority is given and between 1-10
-  validatePriority(priority){
+  validatePriority(priority) {
     if (priority === undefined || priority === null) {
       throw new Error('Task priority must be provided');
     }
@@ -507,7 +521,7 @@ class TaskService {
     }
   }
 
-    async getUnassignedTasks(userId) {
+  async getUnassignedTasks(userId) {
     try {
       // Retrieve the current user and verify access permissions
       const userRepository = new UserRepository();
@@ -683,6 +697,40 @@ class TaskService {
       return await this.buildEnrichedTaskDTO(updatedTask);
     } catch (error) {
       throw new Error('Error deleting task');
+    }
+  }
+
+  async removeAttachment(taskId, attachmentId, userId) {
+    try {
+      // 1. Fetch task
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) throw new Error('Task not found');
+
+      const task = new Task(taskDoc);
+
+      // 2. Fetch user
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+
+      // 3. Check permissions
+      if (!task.canRemoveAttachment(user)) {
+        throw new Error('Not authorized to remove this attachment');
+      }
+
+      // 4. Find and remove attachment
+      const attachment = taskDoc.attachments.id(attachmentId);
+      if (!attachment) throw new Error('Attachment not found');
+
+      attachment.deleteOne();
+
+      // 5. Save updated task
+      await taskDoc.save();
+
+      // 6. Return removed attachment for controller to handle file deletion
+      return attachment.toObject ? attachment.toObject() : attachment;
+    } catch (error) {
+      throw new Error(error.message || 'Error removing attachment');
     }
   }
 
