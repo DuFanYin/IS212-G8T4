@@ -42,10 +42,10 @@ class Task {
   canBeCompletedBy(user) {
     // Staff auto-own tasks they create
     if (this.createdBy?.toString() === user.id?.toString()) return true;
-    
+
     // Assignment transfers ownership
     if (this.assigneeId?.toString() === user.id?.toString()) return true;
-    
+
     // Collaborators can complete
     return this.collaborators.some(collab => collab.toString() === user.id?.toString());
   }
@@ -60,12 +60,12 @@ class Task {
     if (user.isStaff()) {
       return this.createdBy?.toString() === user.id?.toString();
     }
-    
+
     // Managers must be collaborators to update task status
     if (user.isManager()) {
       return this.collaborators.some(collab => collab.toString() === user.id?.toString());
     }
-    
+
     return false;
   }
 
@@ -96,6 +96,18 @@ class Task {
 
   hasAttachments() {
     return this.attachments && this.attachments.length > 0;
+  }
+
+  canRemoveAttachment(user) {
+    // Task owner can always remove
+    if (this.createdBy?.toString() === user.id?.toString()) return true;
+
+    // Managers can remove if they are collaborators
+    if (user.isManager()) {
+      return this.collaborators.some(collab => collab.toString() === user.id?.toString());
+    }
+
+    return false;
   }
 
   // Required DTOs
