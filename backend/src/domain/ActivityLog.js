@@ -5,7 +5,7 @@ class ActivityLog {
     this.action = data.action;
     this.details = data.details || {};
     this.resourceType = data.resourceType;
-    this.resourceId = data.resourceId;
+    this.taskId = data.resourceId;
     this.timestamp = data.timestamp;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;

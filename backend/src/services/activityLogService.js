@@ -5,7 +5,7 @@ class ActivityLogService {
   constructor(activityLogRepository) {
     this.activityLogRepository = activityLogRepository;
   }
-
+  
   /**
    * Log user activity
    * @param {string} userId - User ID
@@ -14,20 +14,19 @@ class ActivityLogService {
    * @param {string} resourceType - Type of resource (task, project, etc.)
    * @param {string} resourceId - Resource ID
    */
-  async logActivity(userId, action, details = {}, resourceType = null, resourceId = null) {
+
+  async logActivity(action, resourceId, before, after, userId) {
     try {
-      const activityDoc = await this.activityLogRepository.create({
+      const activityLog = await this.activityLogRepository.create({
+        taskId: resourceId,
         userId,
         action,
-        details,
-        resourceType,
-        resourceId,
-        timestamp: new Date()
+        details: { before, after }
       });
 
-      return new ActivityLog(activityDoc);
+      return new ActivityLog(activityLog);
     } catch (error) {
-      throw new Error(error?.message || 'Error logging activity');
+      throw new Error(`Error in logging: ${error.message}`);
     }
   }
 
@@ -77,4 +76,4 @@ class ActivityLogService {
 const activityLogRepository = new ActivityLogRepository();
 const activityLogService = new ActivityLogService(activityLogRepository);
 
-module.exports = activityLogService;
+module.exports = activityLogService
