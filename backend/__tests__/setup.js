@@ -8,7 +8,7 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
 const { connectDB, disconnectDB } = require('../src/db/connect');
 let connection;
 
-// Connect to test database before all tests (seeding handled in globalSetup)
+// Connect to test database before all tests
 beforeAll(async () => {
   connection = await connectDB();
 }, 30000);

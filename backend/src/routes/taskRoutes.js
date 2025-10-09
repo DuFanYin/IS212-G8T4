@@ -10,9 +10,11 @@ const {
   getTaskById, 
   updateTask, 
   assignTask, 
-  updateTaskStatus, 
-  archiveTask,
-  getUnassignedTasks 
+  updateTaskStatus,
+  getUnassignedTasks,
+  addAttachment,
+  removeAttachment,
+  archiveTask 
 } = require('../controllers/taskController');
 
 // Create a new task
@@ -44,6 +46,12 @@ router.patch('/:id/assign', authMiddleware, assignTask);
 
 // Update task status
 router.patch('/:id/status', authMiddleware, updateTaskStatus);
+
+// Add task attachments
+router.post('/:id/attachments', authMiddleware, addAttachment);
+
+// Remove task attachments
+router.delete('/:id/attachments/:attachmentId', authMiddleware, removeAttachment);
 
 // Archive a task
 router.delete('/:id', authMiddleware, archiveTask);

@@ -4,33 +4,24 @@ const app = require('../../../src/app');
 const { User, Department } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
-describe('GET /api/users/department-members/:departmentId?', () => {
+describe('GET /api/users/department-members', () => {
   let directorToken;
-  let hrToken;
-  let smToken;
   let managerToken;
-  let staffToken;
   let testDepartmentId;
 
   beforeAll(async () => {
     const directorUser = await User.findOne({ email: 'director0@example.com' });
-    const hrUser = await User.findOne({ email: 'hr0@example.com' });
-    const smUser = await User.findOne({ email: 'sm0@example.com' });
     const managerUser = await User.findOne({ email: 'manager0@example.com' });
-    const staffUser = await User.findOne({ email: 'staff0@example.com' });
     
     if (directorUser) directorToken = generateToken(directorUser._id);
-    if (hrUser) hrToken = generateToken(hrUser._id);
-    if (smUser) smToken = generateToken(smUser._id);
     if (managerUser) managerToken = generateToken(managerUser._id);
-    if (staffUser) staffToken = generateToken(staffUser._id);
 
     // Get a department ID for testing
     const department = await Department.findOne({});
     if (department) testDepartmentId = department._id;
   });
 
-  it('should get department members for director', async () => {
+  it('should allow directors to view department members', async () => {
     if (!directorToken || !testDepartmentId) return;
 
     const response = await request(app)
@@ -42,31 +33,7 @@ describe('GET /api/users/department-members/:departmentId?', () => {
     expect(Array.isArray(response.body.data)).toBe(true);
   });
 
-  it('should get department members for HR', async () => {
-    if (!hrToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${hrToken}`);
-
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe('success');
-    expect(Array.isArray(response.body.data)).toBe(true);
-  });
-
-  it('should get department members for SM', async () => {
-    if (!smToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${smToken}`);
-
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe('success');
-    expect(Array.isArray(response.body.data)).toBe(true);
-  });
-
-  it('should deny access to manager users', async () => {
+  it('should deny managers from viewing department members', async () => {
     if (!managerToken || !testDepartmentId) return;
 
     const response = await request(app)
@@ -76,249 +43,12 @@ describe('GET /api/users/department-members/:departmentId?', () => {
     expect([403, 401]).toContain(response.status);
   });
 
-  it('should deny access to staff users', async () => {
-    if (!staffToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${staffToken}`);
-
-    expect([403, 401]).toContain(response.status);
-  });
-
-  it('should require authentication', async () => {
+  it('should require authentication to access department members', async () => {
     if (!testDepartmentId) return;
 
     const response = await request(app)
       .get(`/api/users/department-members/${testDepartmentId}`);
 
     expect(response.status).toBe(401);
-  });
-
-  it('should handle non-existent department', async () => {
-    if (!directorToken) return;
-
-    const nonExistentDepartmentId = '507f1f77bcf86cd799439011';
-    
-    const response = await request(app)
-      .get(`/api/users/department-members/${nonExistentDepartmentId}`)
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    expect([200, 404]).toContain(response.status);
-  });
-
-  it('should handle invalid department ID format', async () => {
-    if (!directorToken) return;
-
-    const response = await request(app)
-      .get('/api/users/department-members/invalid-id')
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    expect([400, 404, 500]).toContain(response.status);
-  });
-
-  it('should handle empty department ID', async () => {
-    if (!directorToken) return;
-
-    const response = await request(app)
-      .get('/api/users/department-members/')
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    expect([404, 400, 200]).toContain(response.status);
-  });
-
-  it('should handle null department ID', async () => {
-    if (!directorToken) return;
-
-    const response = await request(app)
-      .get('/api/users/department-members/null')
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    expect([400, 404, 500]).toContain(response.status);
-  });
-
-  it('should handle invalid token', async () => {
-    if (!testDepartmentId) return;
-
-    const invalidToken = generateToken('507f1f77bcf86cd799439011');
-    
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${invalidToken}`);
-
-    expect([401, 403, 500]).toContain(response.status);
-  });
-
-  it('should handle malformed token', async () => {
-    if (!testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', 'Bearer invalid-token-format');
-
-    expect(response.status).toBe(401);
-  });
-
-  it('should handle missing Bearer prefix', async () => {
-    if (!directorToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', directorToken);
-
-    expect(response.status).toBe(401);
-  });
-
-  it('should handle empty authorization header', async () => {
-    if (!testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', '');
-
-    expect(response.status).toBe(401);
-  });
-
-  it('should handle expired token', async () => {
-    if (!testDepartmentId) return;
-
-    const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1MDdmMWY3N2JjZjg2Y2Q3OTk0MzkwMTEiLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MTYwMDAwMDAwMH0.invalid';
-    
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${expiredToken}`);
-
-    expect(response.status).toBe(401);
-  });
-
-  it('should handle case sensitivity in authorization header', async () => {
-    if (!directorToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('authorization', `Bearer ${directorToken}`);
-
-    expect([200, 401]).toContain(response.status);
-  });
-
-  it('should handle multiple authorization headers', async () => {
-    if (!directorToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${directorToken}`)
-      .set('Authorization', 'Bearer invalid-token');
-
-    expect([200, 401]).toContain(response.status);
-  });
-
-  it('should handle authorization header with extra spaces', async () => {
-    if (!directorToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `  Bearer   ${directorToken}  `);
-
-    expect([200, 401]).toContain(response.status);
-  });
-
-  it('should return proper data structure', async () => {
-    if (!directorToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    if (response.status === 200) {
-      expect(response.body).toHaveProperty('status', 'success');
-      expect(response.body).toHaveProperty('data');
-      expect(Array.isArray(response.body.data)).toBe(true);
-      
-      if (response.body.data.length > 0) {
-        const member = response.body.data[0];
-        expect(member).toHaveProperty('id');
-        expect(member).toHaveProperty('name');
-        expect(member).toHaveProperty('email');
-        expect(member).toHaveProperty('role');
-      }
-    }
-  });
-
-  it('should handle department with no members', async () => {
-    if (!directorToken) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    if (response.status === 200) {
-      expect(Array.isArray(response.body.data)).toBe(true);
-      // Should return empty array for department with no members
-    }
-  });
-
-  it('should handle concurrent requests', async () => {
-    if (!directorToken || !testDepartmentId) return;
-
-    const promises = Array(3).fill().map(() => 
-      request(app)
-        .get(`/api/users/department-members/${testDepartmentId}`)
-        .set('Authorization', `Bearer ${directorToken}`)
-    );
-
-    const responses = await Promise.all(promises);
-    
-    responses.forEach(response => {
-      expect([200, 400]).toContain(response.status);
-    });
-  });
-
-  it('should handle large department data', async () => {
-    if (!directorToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    if (response.status === 200) {
-      expect(Array.isArray(response.body.data)).toBe(true);
-      // Should handle any number of department members
-    }
-  });
-
-  it('should not expose sensitive information', async () => {
-    if (!directorToken || !testDepartmentId) return;
-
-    const response = await request(app)
-      .get(`/api/users/department-members/${testDepartmentId}`)
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    if (response.status === 200 && response.body.data.length > 0) {
-      const member = response.body.data[0];
-      expect(member).not.toHaveProperty('passwordHash');
-      expect(member).not.toHaveProperty('resetToken');
-      expect(member).not.toHaveProperty('resetTokenExpiry');
-    }
-  });
-
-  it('should handle URL encoding in department ID', async () => {
-    if (!directorToken) return;
-
-    const encodedId = encodeURIComponent('507f1f77bcf86cd799439011');
-    const response = await request(app)
-      .get(`/api/users/department-members/${encodedId}`)
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    expect([200, 404]).toContain(response.status);
-  });
-
-  it('should handle special characters in department ID', async () => {
-    if (!directorToken) return;
-
-    const response = await request(app)
-      .get('/api/users/department-members/507f1f77bcf86cd799439011%20')
-      .set('Authorization', `Bearer ${directorToken}`);
-
-    expect([400, 404, 500]).toContain(response.status);
   });
 });

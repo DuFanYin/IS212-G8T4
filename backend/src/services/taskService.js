@@ -7,6 +7,7 @@ const activityLogService  = require('./activityLogService');
 const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
+const ActivityLogRepository = require('../repositories/ActivityLogRepository');
 
 class TaskService {
   constructor(taskRepository) {
@@ -49,7 +50,7 @@ class TaskService {
         try {
           const project = await projectService.getProjectById(dto.projectId);
           projectName = project?.name;
-        } catch {}
+        } catch { }
       }
 
       // Resolve assignee name
@@ -59,7 +60,7 @@ class TaskService {
           const userRepository = new UserRepository();
           const assigneeDoc = await userRepository.findById(dto.assigneeId);
           assigneeName = assigneeDoc?.name;
-        } catch {}
+        } catch { }
       }
 
       // Resolve creator name
@@ -69,7 +70,7 @@ class TaskService {
           const userRepository = new UserRepository();
           const creatorDoc = await userRepository.findById(dto.createdBy);
           createdByName = creatorDoc?.name;
-        } catch {}
+        } catch { }
       }
 
       // Resolve collaborator names
@@ -82,10 +83,10 @@ class TaskService {
             try {
               const doc = await userRepository.findById(id);
               if (doc?.name) names.push(doc.name);
-            } catch {}
+            } catch { }
           }
           collaboratorNames = names;
-        } catch {}
+        } catch { }
       }
 
       // Resolve Activity Log ID
@@ -180,13 +181,36 @@ class TaskService {
       // Staff can only update specific fields
       if (user.isStaff()) {
         const isStatusUpdate = Object.keys(updateData).length === 1 && updateData.hasOwnProperty('status');
-        if (!isStatusUpdate) {
+
+        const isCollaborator = task.collaborators
+          ?.map(c => c.toString())
+          .includes(user.id?.toString());
+
+        if (isCollaborator) {
+          const allowedFields = ['title', 'dueDate', 'collaborators', 'attachments'];
+          const attemptedFields = Object.keys(updateData);
+          const invalidFields = attemptedFields.filter(f => !allowedFields.includes(f));
+          if (invalidFields.length > 0 && !isStatusUpdate) {
+            throw new Error(
+              `Collaborator staff cannot modify these fields: ${invalidFields.join(', ')}`
+            );
+          }
+        } else {
           const allowedFields = ['title', 'dueDate', 'collaborators'];
           const attemptedFields = Object.keys(updateData);
           const invalidFields = attemptedFields.filter(f => !allowedFields.includes(f));
           if (invalidFields.length > 0) {
             throw new Error(`Staff cannot modify these fields: ${invalidFields.join(', ')}`);
           }
+        }
+      }
+
+      // Validate due date is not in the past
+      if (updateData.dueDate) {
+        const dueDate = new Date(updateData.dueDate);
+        const now = new Date();
+        if (dueDate < now) {
+          throw new Error('Due date cannot be in the past');
         }
       }
 
@@ -225,7 +249,7 @@ class TaskService {
         }
       }
 
-      if(updateData.projectId){
+      if (updateData.projectId) {
         this.validatePriority(updateData.priority);
 
         const projectRepository = new ProjectRepository();
@@ -238,14 +262,16 @@ class TaskService {
         }
       }
 
-      //Store for logging
-      const previousTaskDoc = this.getById(taskId);
+      // Track old values for change logging
+      const previousDueDate = task.dueDate;
 
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
 
+      const updateDueDate = task.dueDate;
+
       //Logging
-      const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousTaskDoc, updatedTaskDoc, userId);
+      const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousDueDate, updateDueDate, userId);
 
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
@@ -254,7 +280,7 @@ class TaskService {
   }
 
   //Check if priority is given and between 1-10
-  validatePriority(priority){
+  validatePriority(priority) {
     if (priority === undefined || priority === null) {
       throw new Error('Task priority must be provided');
     }
@@ -354,7 +380,7 @@ class TaskService {
         // Own tasks
         if (task.assigneeId && task.assigneeId.toString?.() === user.id?.toString?.()) return true;
         if (task.createdBy && task.createdBy.toString?.() === user.id?.toString?.()) return true;
-        
+
         // Team members' tasks via assignee
         if (task.assigneeId) {
           const assigneeDoc = await userRepository.findById(task.assigneeId);
@@ -381,7 +407,7 @@ class TaskService {
             }
           }
         }
-        
+
         // Project tasks they're collaborating on
         if (task.isCollaborator(user.id)) return true;
       }
@@ -483,7 +509,7 @@ class TaskService {
     }
   }
 
-    async getUnassignedTasks(userId) {
+  async getUnassignedTasks(userId) {
     try {
       // Retrieve the current user and verify access permissions
       const userRepository = new UserRepository();
@@ -544,7 +570,7 @@ class TaskService {
         const ownTasks = await this.taskRepository.findTasksByAssignee(userId);
         const teamTasks = await this.taskRepository.findTasksByTeam(user.teamId);
         const projectTasks = await this.taskRepository.findTasksByCollaborator(userId);
-        
+
         taskDocs = [...ownTasks, ...teamTasks, ...projectTasks];
       } else if (user.isManager()) {
         // Manager: team tasks
@@ -599,7 +625,7 @@ class TaskService {
       }
 
       //Store for logging
-      const previousTaskDoc = this.getById(taskId);
+      const previousTaskDoc = this.getById(taskId).;
 
       const updatedTaskDoc = await this.taskRepository.assignTask(taskId, assigneeId);
       const updatedTask = new Task(updatedTaskDoc);
@@ -652,6 +678,8 @@ class TaskService {
     }
   }
 
+  // (Due date updates are handled within updateTask now)
+
   async softDeleteTask(taskId, userId) {
     try {
       const taskDoc = await this.taskRepository.findById(taskId);
@@ -678,6 +706,40 @@ class TaskService {
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
       throw new Error('Error deleting task');
+    }
+  }
+
+  async removeAttachment(taskId, attachmentId, userId) {
+    try {
+      // 1. Fetch task
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) throw new Error('Task not found');
+
+      const task = new Task(taskDoc);
+
+      // 2. Fetch user
+      const userRepository = new UserRepository();
+      const userDoc = await userRepository.findById(userId);
+      const user = new User(userDoc);
+
+      // 3. Check permissions
+      if (!task.canRemoveAttachment(user)) {
+        throw new Error('Not authorized to remove this attachment');
+      }
+
+      // 4. Find and remove attachment
+      const attachment = taskDoc.attachments.id(attachmentId);
+      if (!attachment) throw new Error('Attachment not found');
+
+      attachment.deleteOne();
+
+      // 5. Save updated task
+      await taskDoc.save();
+
+      // 6. Return removed attachment for controller to handle file deletion
+      return attachment.toObject ? attachment.toObject() : attachment;
+    } catch (error) {
+      throw new Error(error.message || 'Error removing attachment');
     }
   }
 

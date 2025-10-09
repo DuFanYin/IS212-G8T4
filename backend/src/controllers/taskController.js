@@ -1,5 +1,8 @@
 const TaskService = require('../services/taskService');
-
+const path = require('path');
+const multerMiddle = require('../middleware/attachmentMiddleware');
+const multer = require('multer');
+const fs = require("fs");
 
 // Create a new task
 
@@ -114,3 +117,89 @@ exports.getUnassignedTasks = async (req, res) => {
     res.status(400).json({ status: 'error', message: err.message });
   }
 };
+
+exports.addAttachment = async (req, res) => {
+  multerMiddle.single('file')(req, res, async (err) => {
+    try {
+      // Handle multer errors
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ status: 'error', message: 'File too large' });
+        }
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+          return res.status(415).json({ status: 'error', message: 'Unsupported file format' });
+        }
+        return res.status(400).json({ status: 'error', message: err.message });
+      } else if (err) {
+        return res.status(500).json({ status: 'error', message: err.message });
+      }
+
+      // Now multer succeeded, proceed with your original controller logic
+      const taskId = req.params.id;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ status: 'error', message: 'No file uploaded' });
+      }
+
+      // Store relative path in DB (e.g., storage/<taskId>/<filename>)
+      const attachmentPath = path.relative(process.cwd(), file.path);
+
+      // Find the task first
+      const task = await TaskService.getById(taskId);
+      if (!task) {
+        return res.status(404).json({ status: 'error', message: 'Task not found' });
+      }
+
+      // Add the attachment to the task
+      task.attachments.push({
+        filename: file.originalname,
+        path: attachmentPath,
+        uploadedBy: req.user.userId,
+        uploadedAt: new Date(),
+      });
+
+      // Save or update task
+      const updatedTask = await TaskService.updateTask(taskId, { attachments: task.attachments }, req.user.userId);
+
+      res.status(201).json({
+        status: 'success',
+        message: 'Attachment added successfully',
+        data: updatedTask,
+      });
+    } catch (err) {
+      res.status(500).json({ message: 'Error uploading attachment' });
+    }
+  })
+};
+
+exports.removeAttachment = async (req, res) => {
+  try {
+    const { id: taskId, attachmentId } = req.params;
+    const userId = req.user.userId;
+
+    if (!attachmentId) {
+      return res.status(404).json({ message: 'Attachment not found' });
+    }
+
+    const removedAttachment = await TaskService.removeAttachment(taskId, attachmentId, userId);
+
+    // Delete from disk
+    const filePath = path.join(process.cwd(), removedAttachment.path);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    res.json({ status: 'success', message: 'Attachment removed' });
+  } catch (err) {
+    // Permission / not found specific handling
+    if (err.message.includes('Not authorized')) {
+      return res.status(403).json({ status: 'error', message: err.message });
+    }
+
+    if (err.message.includes('Attachment not found')) {
+      return res.status(404).json({ status: 'error', message: err.message });
+    }
+
+    // Fallback for unexpected errors
+    return res.status(500).json({ status: 'error', message: 'Error removing attachment' });
+  }
+}

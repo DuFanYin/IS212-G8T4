@@ -20,6 +20,7 @@ export default function ProjectDetailPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string>('all');
   const token = storage.getToken();
 
   useEffect(() => {
@@ -69,6 +70,49 @@ export default function ProjectDetailPage() {
       </div>
     );
   }
+
+  // Calculate project task statistics
+  const now = new Date();
+  const projectStats = {
+    total: tasks.length,
+    completed: tasks.filter(t => t.status === 'completed').length,
+    inProgress: tasks.filter(t => t.status === 'ongoing' || t.status === 'under_review').length,
+    overdue: tasks.filter(t => new Date(t.dueDate) < now && t.status !== 'completed').length,
+    unassigned: tasks.filter(t => t.status === 'unassigned').length,
+  };
+
+  const completionPercentage = projectStats.total > 0 ? Math.round((projectStats.completed / projectStats.total) * 100) : 0;
+
+  // Filter tasks based on active filter
+  const getFilteredTasks = () => {
+    switch (activeFilter) {
+      case 'overdue':
+        return tasks.filter(t => new Date(t.dueDate) < now && t.status !== 'completed');
+      case 'in-progress':
+        return tasks.filter(t => t.status === 'ongoing' || t.status === 'under_review');
+      case 'completed':
+        return tasks.filter(t => t.status === 'completed');
+      case 'unassigned':
+        return tasks.filter(t => t.status === 'unassigned');
+      default:
+        return tasks;
+    }
+  };
+
+  const getFilterTitle = () => {
+    switch (activeFilter) {
+      case 'overdue':
+        return 'Overdue Tasks';
+      case 'in-progress':
+        return 'Tasks In Progress';
+      case 'completed':
+        return 'Completed Tasks';
+      case 'unassigned':
+        return 'Unassigned Tasks';
+      default:
+        return 'All Tasks';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -121,25 +165,102 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
+          {/* Project Dashboard */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Tasks</h2>
-            {tasks.length === 0 ? (
-              <div className="text-gray-500">No tasks in this project.</div>
+            <h2 className="text-xl font-semibold mb-6">Project Dashboard</h2>
+            
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+              <StatCard
+                title="Total"
+                value={projectStats.total}
+                icon="📋"
+                color="blue"
+                onClick={() => setActiveFilter('all')}
+                active={activeFilter === 'all'}
+              />
+              <StatCard
+                title="Completed"
+                value={projectStats.completed}
+                icon="✅"
+                color="green"
+                onClick={() => setActiveFilter('completed')}
+                active={activeFilter === 'completed'}
+              />
+              <StatCard
+                title="In Progress"
+                value={projectStats.inProgress}
+                icon="🔄"
+                color="yellow"
+                onClick={() => setActiveFilter('in-progress')}
+                active={activeFilter === 'in-progress'}
+              />
+              <StatCard
+                title="Overdue"
+                value={projectStats.overdue}
+                icon="⚠️"
+                color="red"
+                onClick={() => setActiveFilter('overdue')}
+                active={activeFilter === 'overdue'}
+              />
+              <StatCard
+                title="Unassigned"
+                value={projectStats.unassigned}
+                icon="❓"
+                color="gray"
+                onClick={() => setActiveFilter('unassigned')}
+                active={activeFilter === 'unassigned'}
+              />
+            </div>
+
+            {/* Progress Section */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Project Progress</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>Completion Rate</span>
+                    <span>{completionPercentage}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${completionPercentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-blue-600">{completionPercentage}%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filtered Tasks Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">{getFilterTitle()}</h2>
+              <span className="text-sm text-gray-500">
+                {getFilteredTasks().length} of {tasks.length} tasks
+              </span>
+            </div>
+            
+            {getFilteredTasks().length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-2">📝</div>
+                <div className="text-gray-500">
+                  {activeFilter === 'all' 
+                    ? 'No tasks in this project.'
+                    : `No ${activeFilter.replace('-', ' ')} tasks found.`
+                  }
+                </div>
+              </div>
             ) : (
               <div className="divide-y">
-                {tasks.map((t) => (
-                  <div key={t.id} className="py-4 flex items-start justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900">{t.title}</div>
-                      <div className="text-sm text-gray-600">{t.description}</div>
-                      <div className="text-xs text-gray-500 mt-1">Due: {new Date(t.dueDate).toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">Assignee: {t.assigneeName || '-'}</div>
-                      {(t.collaboratorNames?.length ?? t.collaborators?.length ?? 0) > 0 && (
-                        <div className="text-xs text-gray-600 mt-1">Collaborators: {(t.collaboratorNames && t.collaboratorNames.length > 0 ? t.collaboratorNames : t.collaborators || []).join(', ')}</div>
-                      )}
-                    </div>
-                    <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">{t.status.replace('_', ' ')}</span>
-                  </div>
+                {getFilteredTasks().map((t) => (
+                  <TaskCard
+                    key={t.id}
+                    task={t}
+                    onClick={() => router.push(`/projects-tasks/task/${t.id}`)}
+                  />
                 ))}
               </div>
             )}
@@ -208,6 +329,105 @@ function ProjectCollaboratorPicker({ project, onUpdated }: { project: Project; o
       >
         {adding ? 'Adding...' : 'Add'}
       </button>
+    </div>
+  );
+}
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: string;
+  color: 'blue' | 'green' | 'yellow' | 'red' | 'gray';
+  onClick: () => void;
+  active: boolean;
+}
+
+function StatCard({ title, value, icon, color, onClick, active }: StatCardProps) {
+  const colorClasses = {
+    blue: 'bg-blue-50 border-blue-200 text-blue-800',
+    green: 'bg-green-50 border-green-200 text-green-800',
+    yellow: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+    red: 'bg-red-50 border-red-200 text-red-800',
+    gray: 'bg-gray-50 border-gray-200 text-gray-800',
+  };
+
+  const activeColorClasses = {
+    blue: 'bg-blue-100 border-blue-300',
+    green: 'bg-green-100 border-green-300',
+    yellow: 'bg-yellow-100 border-yellow-300',
+    red: 'bg-red-100 border-red-300',
+    gray: 'bg-gray-100 border-gray-300',
+  };
+
+  return (
+    <div
+      className={`
+        p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:shadow-md
+        ${active ? activeColorClasses[color] : colorClasses[color]}
+        ${active ? 'shadow-md' : ''}
+      `}
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-medium opacity-75">{title}</p>
+          <p className="text-2xl font-bold">{value}</p>
+        </div>
+        <div className="text-2xl">{icon}</div>
+      </div>
+    </div>
+  );
+}
+
+interface TaskCardProps {
+  task: Task;
+  onClick: () => void;
+}
+
+function TaskCard({ task, onClick }: TaskCardProps) {
+  const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'completed';
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'ongoing':
+        return 'bg-blue-100 text-blue-800';
+      case 'under_review':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'unassigned':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div
+      className="py-4 flex items-start justify-between hover:bg-gray-50 cursor-pointer transition-colors duration-200 px-2 rounded"
+      onClick={onClick}
+    >
+      <div className="flex-1">
+        <div className="font-medium text-gray-900">{task.title}</div>
+        <div className="text-sm text-gray-600 mt-1">{task.description}</div>
+        <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
+          <span>Due: {formatDate(task.dueDate)}</span>
+          {task.assigneeName && <span>Assignee: {task.assigneeName}</span>}
+          {(task.collaboratorNames?.length ?? 0) > 0 && (
+            <span>Collaborators: {task.collaboratorNames?.join(', ')}</span>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-2">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(task.status)}`}>
+          {task.status.replace('_', ' ')}
+        </span>
+        {isOverdue && (
+          <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+            Overdue
+          </span>
+        )}
+      </div>
     </div>
   );
 }

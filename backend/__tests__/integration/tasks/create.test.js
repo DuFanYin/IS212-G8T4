@@ -26,7 +26,7 @@ describe('POST /api/tasks/', () => {
     if (staffUser) staffToken = generateToken(staffUser._id);
   });
 
-  it('should create a new task', async () => {
+  it('should create a new task with valid data', async () => {
     const response = await request(app)
       .post('/api/tasks/')
       .set('Authorization', `Bearer ${staffToken}`)
@@ -45,20 +45,35 @@ describe('POST /api/tasks/', () => {
     expect(response.body.data).toHaveProperty('title', 'Test Task');
   });
 
-  it('should require authentication', async () => {
+  it('should require authentication to create tasks', async () => {
     const res = await request(app)
       .post('/api/tasks/')
       .send({ title: 'No Auth Task' });
     expect(res.status).toBe(401);
   });
 
-  it('should validate required title', async () => {
+  it('should validate required title field', async () => {
     const token = await loginAs('manager');
     const res = await request(app)
       .post('/api/tasks/')
       .set('Authorization', `Bearer ${token}`)
       .send({ });
     expect([400, 422]).toContain(res.status);
+  });
+
+  it('should handle task creation with optional fields', async () => {
+    const response = await request(app)
+      .post('/api/tasks/')
+      .set('Authorization', `Bearer ${staffToken}`)
+      .send({
+        title: 'Minimal Task',
+        description: 'Task with minimal required fields',
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.status).toBe('success');
+    expect(response.body.data).toHaveProperty('title', 'Minimal Task');
   });
 });
 
