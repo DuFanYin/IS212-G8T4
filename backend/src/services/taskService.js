@@ -263,15 +263,13 @@ class TaskService {
       }
 
       // Track old values for change logging
-      const previousDueDate = task.dueDate;
+      const previousTaskDoc = task;
 
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
 
-      const updateDueDate = task.dueDate;
-
       //Logging
-      const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousDueDate, updateDueDate, userId);
+      const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousTaskDoc, updatedTaskDoc, userId);
 
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
@@ -625,13 +623,13 @@ class TaskService {
       }
 
       //Store for logging
-      const previousTaskDoc = this.getById(taskId).;
+      const previousAssignee = (await this.getById(taskId)).assigneeId;
 
       const updatedTaskDoc = await this.taskRepository.assignTask(taskId, assigneeId);
       const updatedTask = new Task(updatedTaskDoc);
 
       //Logging
-      const activityLogDoc = await activityLogService.logActivity("assigned", taskId, previousTaskDoc, updatedTaskDoc, userId);
+      const activityLogDoc = await activityLogService.logActivity("assigned", taskId, previousAssignee, assigneeId, userId);
 
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
@@ -664,13 +662,13 @@ class TaskService {
       }
 
       //Store for logging
-      const previousTaskDoc = this.getById(taskId);
+      const previousStatus = (await this.getById(taskId)).status;
 
       const updatedTaskDoc = await this.taskRepository.updateStatus(taskId, status, userId);
       const updatedTask = new Task(updatedTaskDoc);
 
       //Logging
-      const activityLogDoc = await activityLogService.logActivity("status_changed", taskId, previousTaskDoc, updatedTaskDoc, userId);
+      const activityLogDoc = await activityLogService.logActivity("status_changed", taskId, previousStatus, status, userId);
 
       return await this.buildEnrichedTaskDTO(updatedTask, activityLogDoc);
     } catch (error) {
