@@ -130,7 +130,6 @@ class TaskService {
 
         // Add task creator to project collaborators if not already included
         if (!project.collaborators.includes(userId)) {
-          const projectRepository = new ProjectRepository();
           await projectRepository.addCollaborators(taskData.projectId, [userId]);
         }
       }
@@ -693,7 +692,7 @@ class TaskService {
       }
       
       //Store for logging
-      const previousTaskDoc = this.getById(taskId);
+      const previousTaskDoc = await this.getById(taskId);
 
       const updatedTaskDoc = await this.taskRepository.softDelete(taskId);
       const updatedTask = new Task(updatedTaskDoc);

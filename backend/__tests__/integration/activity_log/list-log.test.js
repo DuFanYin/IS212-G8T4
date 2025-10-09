@@ -4,7 +4,7 @@ const app = require('../../../src/app');
 const { User } = require('../../../src/db/models');
 const { generateToken } = require('../../../src/services/authService');
 
-describe('GET /api/projects', () => {
+describe('GET /api/logs', () => {
   let authToken;
 
   beforeEach(async () => {
@@ -20,7 +20,7 @@ describe('GET /api/projects', () => {
     expect(response.body.message).toBe('No token provided');
   });
 
-  it('should return all projects successfully for authenticated user', async () => {
+  it('should return all activity logs successfully for authenticated user', async () => {
     const response = await request(app)
       .get('/api/logs/')
       .set('Authorization', `Bearer ${authToken}`);
