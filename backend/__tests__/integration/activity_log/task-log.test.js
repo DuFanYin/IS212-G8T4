@@ -59,7 +59,7 @@ describe('Task Activity Logging', () => {
 
     const log = await ActivityLog.findOne({ taskId, action: 'assigned' });
     expect(log).toBeTruthy();
-    expect(log.details.after.assigneeId.toString()).toBe(assigneeUser._id.toString());
+    expect(log.details.after).toBe(assigneeUser._id.toString());
   });
 
   test('should update task status and log "status_changed"', async () => {
@@ -72,7 +72,7 @@ describe('Task Activity Logging', () => {
 
     const log = await ActivityLog.findOne({ taskId, action: 'status_changed' });
     expect(log).toBeTruthy();
-    expect(log.details.after.status).toBe('in_progress');
+    expect(log.details.after).toBe('in_progress');
   });
 
   test('should soft delete a task and log "status_changed"', async () => {
