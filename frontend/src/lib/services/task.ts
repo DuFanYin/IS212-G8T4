@@ -61,6 +61,24 @@ export const taskService = {
   getUnassignedTasks: async (token: string): Promise<TasksResponse> => {
     const res = await fetch(`${API_URL}/tasks/unassigned`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
+  },
+  addAttachment: async (token: string, taskId: string, file: File): Promise<TaskResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch(`${API_URL}/tasks/${taskId}/attachments`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    return res.json();
+  },
+  removeAttachment: async (token: string, taskId: string, attachmentId: string): Promise<{ status: string; message: string }> => {
+    const res = await fetch(`${API_URL}/tasks/${taskId}/attachments/${attachmentId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
   }
 };
 

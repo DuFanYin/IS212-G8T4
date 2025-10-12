@@ -63,10 +63,8 @@ describe('CreateTaskModal Component', () => {
       expect(mockOnCreateTask).toHaveBeenCalledWith({
         title: 'Test Task',
         description: '',
-        dueDate: '2024-12-31',
-        assigneeId: '',
-        projectId: '',
-        collaborators: []
+        dueDate: '2024-12-31T00:00:00.000Z',
+        priority: 5
       });
     });
   });

@@ -8,19 +8,45 @@ Test suite following Next.js best practices with unit and integration test separ
 __tests__/
 ├── unit/                    # Unit tests (isolated components/hooks)
 │   ├── components/         # Component unit tests
-│   │   ├── Header.test.tsx
-│   │   ├── UserSelector.test.tsx
-│   │   ├── UserList.test.tsx
-│   │   ├── TaskItem.test.tsx
-│   │   └── CreateTaskModal.test.tsx
+│   │   ├── features/       # Feature-specific components
+│   │   │   ├── ActivityLogList.test.tsx
+│   │   │   ├── AttachmentList.test.tsx
+│   │   │   ├── AttachmentUpload.test.tsx
+│   │   │   ├── tasks/
+│   │   │   │   └── TaskItem.test.tsx
+│   │   │   └── users/
+│   │   │       ├── UserList.test.tsx
+│   │   │       └── UserSelector.test.tsx
+│   │   ├── forms/          # Form components
+│   │   │   ├── AssignTaskModal.test.tsx
+│   │   │   ├── CreateProjectModal.test.tsx
+│   │   │   ├── CreateTaskModal.test.tsx
+│   │   │   ├── EditProjectModal.test.tsx
+│   │   │   └── EditTaskModal.test.tsx
+│   │   ├── layout/         # Layout components
+│   │   │   └── Header.test.tsx
+│   │   └── timeline/       # Timeline components
+│   │       ├── Legend.test.tsx
+│   │       └── TimelineGrid.test.tsx
 │   ├── hooks/              # Custom hook unit tests
-│   │   ├── useUsers.test.tsx
-│   │   └── useTasks.test.tsx
+│   │   ├── useTasks.test.tsx
+│   │   ├── useTimeline.test.tsx
+│   │   └── useUsers.test.tsx
+│   ├── services/           # Service layer tests
+│   │   ├── activityLog.test.tsx
+│   │   └── task.test.tsx
 │   └── utils/              # Utility function tests
+│       ├── access.test.tsx
+│       ├── formatDate.test.tsx
+│       └── storage.test.tsx
 ├── integration/            # Integration tests (full page flows)
 │   ├── login.test.tsx      # Login page integration
-│   ├── users.test.tsx      # Users page integration
-│   └── tasks.test.tsx      # Tasks page integration
+│   ├── projects.test.tsx   # Projects page integration
+│   ├── reset-password.test.tsx # Password reset flow
+│   ├── subtasks.test.tsx   # Subtasks functionality
+│   ├── task-detail.test.tsx # Task detail page
+│   ├── tasks.test.tsx      # Tasks page integration
+│   └── users.test.tsx      # Users page integration
 ├── fixtures/              # Test fixtures and mock data
 │   └── mocks/            # API service mocks
 │       └── api.ts        # Mock API responses
@@ -33,25 +59,50 @@ __tests__/
 
 ## Test Coverage
 
-- **Total**: 33 tests across 10 files
-- **Unit Tests**: 20 tests (Components: 14, Hooks: 6)
-- **Integration Tests**: 13 tests
+- **Total**: 119 tests across 29 files
+- **Unit Tests**: 89 tests (Components: 58, Hooks: 12, Services: 7, Utils: 16)
+- **Integration Tests**: 30 tests
 
 ### Test Files
 
-**Unit Tests**
-- `Header.test.tsx` (3 tests)
-- `UserSelector.test.tsx` (3 tests) 
-- `UserList.test.tsx` (5 tests)
-- `TaskItem.test.tsx` (3 tests)
-- `CreateTaskModal.test.tsx` (3 tests)
-- `useUsers.test.tsx` (3 tests)
-- `useTasks.test.tsx` (3 tests)
+**Unit Tests - Components (58 tests)**
+- `ActivityLogList.test.tsx` (5 tests)
+- `AttachmentList.test.tsx` (5 tests)
+- `AttachmentUpload.test.tsx` (6 tests)
+- `AssignTaskModal.test.tsx` (4 tests)
+- `CreateProjectModal.test.tsx` (2 tests)
+- `CreateTaskModal.test.tsx` (4 tests)
+- `EditProjectModal.test.tsx` (2 tests)
+- `EditTaskModal.test.tsx` (4 tests)
+- `Header.test.tsx` (4 tests)
+- `Legend.test.tsx` (4 tests)
+- `TimelineGrid.test.tsx` (4 tests)
+- `TaskItem.test.tsx` (4 tests)
+- `UserList.test.tsx` (6 tests)
+- `UserSelector.test.tsx` (4 tests)
 
-**Integration Tests**
-- `login.test.tsx` (3 tests)
-- `users.test.tsx` (3 tests)
-- `tasks.test.tsx` (4 tests)
+**Unit Tests - Hooks (12 tests)**
+- `useTasks.test.tsx` (4 tests)
+- `useTimeline.test.tsx` (3 tests)
+- `useUsers.test.tsx` (5 tests)
+
+**Unit Tests - Services (7 tests)**
+- `activityLog.test.tsx` (3 tests)
+- `task.test.tsx` (4 tests)
+
+**Unit Tests - Utils (16 tests)**
+- `access.test.tsx` (7 tests)
+- `formatDate.test.tsx` (4 tests)
+- `storage.test.tsx` (5 tests)
+
+**Integration Tests (30 tests)**
+- `login.test.tsx` (4 tests)
+- `projects.test.tsx` (4 tests)
+- `reset-password.test.tsx` (3 tests)
+- `subtasks.test.tsx` (2 tests)
+- `task-detail.test.tsx` (4 tests)
+- `tasks.test.tsx` (5 tests)
+- `users.test.tsx` (4 tests)
 
 ## Commands
 
@@ -96,15 +147,29 @@ renderWithUser(<Component />, mockUser);
 
 ## Recent Updates
 
+### New Features Testing (Latest Release)
+- **Attachment Components**: Upload/download functionality with file validation
+- **Activity Logging**: Timeline display and activity tracking
+- **Enhanced Task Management**: Updated task service with attachment methods
+- **Timeline Components**: Grid and legend components for project visualization
+- **Form Components**: Modal forms for task assignment and editing
+- **Project Management**: Project creation and editing modals
+- **Utility Functions**: Storage, date formatting, and access control utilities
+- **Service Layer**: Comprehensive testing of API service methods
+
 ### Infrastructure Fixes
 - Fixed JSX syntax errors in `setup.ts`
 - Added comprehensive API mocks in `fixtures/mocks/api.ts`
 - Resolved component property access issues
 - Fixed form validation testing
+- Enhanced test organization with proper categorization
 
 ### Key Improvements
 - **CreateTaskModal**: Removed HTML5 validation to enable JavaScript validation
 - **TaskItem**: Added safe property access for optional arrays
 - **Login tests**: Fixed auth service mocking
 - **useTasks hook**: Improved state management testing
-- **100% test pass rate**: All 33 tests passing consistently
+- **New Components**: Complete test coverage for attachment and activity log features
+- **Project Components**: Added comprehensive testing for project management features
+- **Service Testing**: Added dedicated service layer tests for better coverage
+- **100% test pass rate**: All 119 tests passing consistently

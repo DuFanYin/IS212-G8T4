@@ -26,6 +26,7 @@ export interface Task {
 }
 
 export interface TaskAttachment {
+  _id?: string;
   filename: string;
   path: string;
   uploadedBy: string;

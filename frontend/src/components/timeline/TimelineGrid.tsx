@@ -17,7 +17,7 @@ export function TimelineGrid(props: {
 }) {
   const { rows, rowHeights, rowOffsets, totalHeight, dateHeaderLabels, todayLinePosition, verticalGridLines, projectSpans, timelineBounds, handleClick, STATUS_COLOR = { completed: 'bg-green-500', ongoing: 'bg-blue-500', under_review: 'bg-yellow-500', overdue: 'bg-red-500', default: 'bg-gray-400' } } = props;
   return (
-    <div className="relative flex-1 overflow-hidden">
+    <div className="relative flex-1 overflow-hidden" data-testid="timeline-grid">
       <div className="h-9 bg-gray-50 relative">
         {dateHeaderLabels}
         <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30" style={{ left: `${todayLinePosition}%` }} />

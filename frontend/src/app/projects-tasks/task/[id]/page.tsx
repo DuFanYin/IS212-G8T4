@@ -12,6 +12,9 @@ import type { Subtask } from '@/lib/types/subtask';
 import { storage } from '@/lib/utils/storage';
 import { UserSelector } from '@/components/features/users/UserSelector';
 import { EditTaskModal } from '@/components/forms/EditTaskModal';
+import AttachmentUpload from '@/components/features/AttachmentUpload';
+import AttachmentList from '@/components/features/AttachmentList';
+import ActivityLogList from '@/components/features/ActivityLogList';
 
 export default function TaskDetailPage() {
   const params = useParams();
@@ -29,6 +32,7 @@ export default function TaskDetailPage() {
   const [collabResetTick, setCollabResetTick] = useState<number>(0);
   const token = storage.getToken();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const taskId = params?.id as string | undefined;
@@ -90,6 +94,18 @@ export default function TaskDetailPage() {
       <main>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <button onClick={() => router.push('/projects-tasks')} className="text-sm text-gray-600 hover:text-gray-900">← Back to Projects & Tasks</button>
+          
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {errorMessage}
+              <button 
+                onClick={() => setErrorMessage(null)}
+                className="ml-2 text-red-500 hover:text-red-700"
+              >
+                ×
+              </button>
+            </div>
+          )}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
@@ -140,22 +156,49 @@ export default function TaskDetailPage() {
               )}
             </div>
 
-            {(task.attachments?.length ?? 0) > 0 && (
-              <div className="mt-6">
-                <div className="font-medium text-gray-800 mb-2">Attachments</div>
-                <div className="space-y-2 text-sm text-gray-700">
-                  {task.attachments.map((a) => (
-                    <div key={`${a.path}-${a.uploadedAt}`} className="flex items-center justify-between">
-                      <div>
-                        <div className="text-gray-900">{a.filename}</div>
-                        <div className="text-xs text-gray-500">Uploaded by {a.uploadedBy} · {new Date(a.uploadedAt).toLocaleString()}</div>
-                      </div>
-                      <a href={a.path} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">View</a>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Attachments Section */}
+            <div className="mt-6">
+              <div className="font-medium text-gray-800 mb-2">Attachments</div>
+              <AttachmentList
+                attachments={task.attachments || []}
+                taskId={task.id}
+                token={token || ''}
+                onAttachmentRemoved={() => {
+                  // Refresh task data after attachment removal
+                  const fetchTask = async () => {
+                    try {
+                      const taskRes = await taskService.getTaskById(token || '', task.id);
+                      if (taskRes.status === 'success') {
+                        setTask(taskRes.data);
+                      }
+                    } catch {
+                      setErrorMessage('Failed to refresh task data');
+                    }
+                  };
+                  fetchTask();
+                }}
+                onError={setErrorMessage}
+              />
+              <AttachmentUpload
+                taskId={task.id}
+                token={token || ''}
+                onAttachmentAdded={() => {
+                  // Refresh task data after attachment addition
+                  const fetchTask = async () => {
+                    try {
+                      const taskRes = await taskService.getTaskById(token || '', task.id);
+                      if (taskRes.status === 'success') {
+                        setTask(taskRes.data);
+                      }
+                    } catch {
+                      setErrorMessage('Failed to refresh task data');
+                    }
+                  };
+                  fetchTask();
+                }}
+                onError={setErrorMessage}
+              />
+            </div>
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
               {user && canAssignTasks() && (
@@ -255,6 +298,13 @@ export default function TaskDetailPage() {
                 onSubtasksUpdated={setSubtasks}
               />
             </div>
+
+            {/* Activity Log Section */}
+            <ActivityLogList
+              taskId={task.id}
+              token={token || ''}
+              onError={setErrorMessage}
+            />
           </div>
           <EditTaskModal
             isOpen={isEditOpen}

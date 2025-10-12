@@ -26,7 +26,7 @@ src/
 │   ├── projectService.js
 │   ├── taskService.js
 │   ├── subtaskService.js
-│   ├── activityService.js
+│   ├── activityLogService.js
 │   ├── authService.js
 │   └── organizationService.js
 ├── controllers/              # HTTP request handling
@@ -35,15 +35,18 @@ src/
 │   ├── projectController.js
 │   ├── taskController.js
 │   ├── subtaskController.js
+│   ├── activityLogController.js
 │   └── organizationController.js
 ├── middleware/               # Request processing middleware
-│   └── authMiddleware.js
+│   ├── authMiddleware.js
+│   └── attachmentMiddleware.js
 ├── routes/                   # API route definitions
 │   ├── authRoutes.js
 │   ├── userRoutes.js         # User management routes
 │   ├── projectRoutes.js
 │   ├── taskRoutes.js
 │   ├── subtaskRoutes.js
+│   ├── activityLogRoutes.js
 │   └── organizationRoutes.js
 ├── scripts/                  # Utility scripts
 │   └── generateSecret.js
@@ -101,10 +104,13 @@ src/
 - `GET    /api/tasks/project/:projectId`            - Get tasks by project
 - `GET    /api/tasks/team/:teamId`                  - Get tasks by team (manager of team, director+, HR/SM)
 - `GET    /api/tasks/department/:departmentId`      - Get tasks by department (director+, HR/SM)
+- `GET    /api/tasks/unassigned`                   - Get all unassigned tasks
 - `GET    /api/tasks/:id`                           - Get task by ID (with visibility check)
 - `PUT    /api/tasks/:id`                           - Update task
 - `PATCH  /api/tasks/:id/assign`                    - Assign task to user
 - `PATCH  /api/tasks/:id/status`                    - Update task status
+- `POST   /api/tasks/:id/attachments`              - Add attachment to task
+- `DELETE /api/tasks/:id/attachments/:attachmentId` - Remove attachment from task
 - `DELETE /api/tasks/:id`                           - Archive (soft delete) task
 
 ### **Subtask Routes** (`src/routes/subtaskRoutes.js`)
@@ -116,11 +122,19 @@ src/
 - `PATCH  /api/tasks/subtasks/:id/status`           - Update subtask status
 - `DELETE /api/tasks/subtasks/:id`                  - Archive (soft delete) subtask
 
+### **Activity Log Routes** (`src/routes/activityLogRoutes.js`)
+
+- `GET    /api/logs/`                               - Get activity logs (with optional filters)
+
 ### **Organization Routes** (`src/routes/organizationRoutes.js`)
 
 - `GET    /api/organization/departments`            - Get all departments (SM only)
 - `GET    /api/organization/departments/:departmentId/teams` - Get teams by department (Director+)
 - `GET    /api/organization/teams`                  - Get all teams (SM only)
+
+
+
+
 
 ## Current Repository Layer (Data Access)
 
@@ -135,7 +149,8 @@ src/
 **Methods:**
 - Basic CRUD: `findById()`, `findActiveTasks()`, `create()`, `updateById()`
 - Assignment operations: `assignTask()`, `updateStatus()`, `addCollaborator()`
-- Query methods: `findTasksByAssignee()`, `findTasksByCreator()`, `findTasksByProject()`, `findTasksByCollaborator()`, `findTasksByTeam()`, `findTasksByDepartment()`
+- Query methods: `findTasksByAssignee()`, `findTasksByCreator()`, `findTasksByProject()`, `findTasksByCollaborator()`, `findTasksByTeam()`, `findTasksByDepartment()`, `findUnassignedTasks()`
+- Attachment operations: `addAttachment()`, `removeAttachment()`
 - Soft delete: `softDelete()`
 
 ### **ProjectRepository** (`src/repositories/ProjectRepository.js`)
@@ -188,8 +203,9 @@ src/
 ### **TaskService** (`src/services/taskService.js`)
 **Methods:**
 - Core operations: `createTask()`, `updateTask()`, `assignTask()`, `updateTaskStatus()`, `softDeleteTask()`
+- Attachment operations: `addAttachment()`, `removeAttachment()`
 - Visibility: `isVisibleToUser()`
-- Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByTeam()`, `getTasksByDepartment()`, `getTasksByCollaborator()`, `getById()`
+- Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByTeam()`, `getTasksByDepartment()`, `getTasksByCollaborator()`, `getUnassignedTasks()`, `getById()`
 - Utilities: `mapPopulatedTaskDocToDTO()`, `buildEnrichedTaskDTO()` - Handle data transformation and name resolution
 
 
@@ -199,7 +215,7 @@ src/
 - Queries: `getSubtaskById()`, `getSubtasksByParentTask()`
 
 
-### **ActivityService** (`src/services/activityService.js`)
+### **ActivityLogService** (`src/services/activityLogService.js`)
 **Methods:**
 - Logging: `logActivity()`
 - Queries: `getUserActivityLogs()`, `getResourceActivityLogs()`, `getAllActivityLogs()`
@@ -216,6 +232,46 @@ src/
 
 
 
+## Current Middleware Layer
+
+### **AuthMiddleware** (`src/middleware/authMiddleware.js`)
+**Purpose:** JWT token validation and user authentication
+**Methods:**
+- `authenticate()` - Validates JWT tokens and attaches user info to request
+- Role-based access control for protected routes
+
+### **AttachmentMiddleware** (`src/middleware/attachmentMiddleware.js`)
+**Purpose:** File upload handling for task attachments
+**Features:**
+- Multer-based file upload with disk storage
+- File type validation (PDF, DOCX, XLSX only)
+- File size limits (5MB maximum)
+- Dynamic folder creation per task ID
+- Unique filename generation with timestamps
+
+## File Storage System
+
+### **Storage Structure**
+```
+src/storage/
+├── <taskId>/
+│   ├── <timestamp>-<random>.pdf
+│   ├── <timestamp>-<random>.docx
+│   └── <timestamp>-<random>.xlsx
+└── ...
+```
+
+### **Attachment Model**
+```javascript
+{
+  _id: ObjectId,
+  filename: String,        // Original filename
+  path: String,           // Relative path from project root
+  uploadedBy: String,     // User ID who uploaded
+  uploadedAt: Date        // Upload timestamp
+}
+```
+
 ## Current Domain Classes (Pure Business Logic)
 
 ### **User Domain** (`src/domain/User.js`)
@@ -231,6 +287,7 @@ src/
 - Permission checks: `canBeCompletedBy()`, `canBeAssignedBy()`, `canBeEditedBy()`
 - Collaboration: `isCollaborator()`
 - Business logic: `updateStatus()`, `assignTo()`, `addCollaborator()`
+- Attachment operations: `addAttachment()`, `removeAttachment()`, `hasAttachments()`
 - Utilities: `hasAttachments()`
 - DTOs: `toDTO()`
 
@@ -252,14 +309,6 @@ src/
 **Methods:**
 - Time utilities: `isRecent()`, `isToday()`, `isThisWeek()`
 - DTOs: `toDTO()`, `toSafeDTO()`
-
-### Summary
-
-The architecture contains **only the essential methods** needed for the first release according to project requirements. The codebase is lean, focused, and ready for implementation with clean, domain-driven design principles.
-
----
-
-
 
 ##
 ### Architecture Pattern

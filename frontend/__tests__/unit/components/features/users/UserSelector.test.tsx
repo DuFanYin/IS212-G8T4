@@ -64,7 +64,7 @@ describe('UserSelector Component', () => {
       />
     );
     
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText('Loading users…')).toBeInTheDocument();
   });
 
   it('displays users when loaded and allows selection', () => {
