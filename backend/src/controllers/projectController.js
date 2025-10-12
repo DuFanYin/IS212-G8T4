@@ -152,7 +152,17 @@ const setStatusProject = async (req, res) => {
       message: error.message 
     });
   }
-};
+}
+async function getProjectProgress(req, res, next) {
+  try {
+    const userId = req.user?.id || req.user?._id; // works with either shape
+    const stats = await projectService.getProjectProgress(req.params.projectId, userId);
+    res.json(stats); // { total, unassigned, ongoing, under_review, completed, percent }
+  } catch (err) {
+    next(err);
+  }
+}
+;
 
 module.exports = {
   createProject,
@@ -161,5 +171,6 @@ module.exports = {
   updateProject,
   addCollaborators,
   removeCollaborators,
-  setStatusProject
+  setStatusProject,
+  getProjectProgress
 };
