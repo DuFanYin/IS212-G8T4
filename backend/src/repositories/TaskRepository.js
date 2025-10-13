@@ -20,7 +20,13 @@ class TaskRepository {
   }
 
   async findTasksByProject(projectId) {
-    return TaskModel.find({ projectId, isDeleted: false }).sort({ priority: -1 });
+    return TaskModel.find({
+      isDeleted: false,
+      $or: [
+        { projectId },               // legacy single project
+        { projects: projectId }      // NEW: array membership
+      ]
+    }).sort({ priority: -1 });
   }
 
   async findTasksByCollaborator(userId) {
@@ -70,17 +76,17 @@ class TaskRepository {
     });
   }
 
-    async findUnassignedTasks() {
-    // find tasks that are unassigned -> with no project id
+  async findUnassignedTasks() {
     return TaskModel.find({
-      $or: [
-        { projectId: { $exists: false } },
-        { projectId: null }
-      ],
-      isDeleted: false
+      isDeleted: false,
+      $and: [
+        // legacy field absent/null
+        { $or: [{ projectId: { $exists: false } }, { projectId: null }] },
+        // new array either absent or empty
+        { $or: [{ projects: { $exists: false } }, { projects: { $size: 0 } }] }
+      ]
     });
   }
-
 
   async create(taskData) {
     return TaskModel.create(taskData);
@@ -117,6 +123,51 @@ class TaskRepository {
   async softDelete(id) {
     return TaskModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
   }
+
+  async setProjects(taskId, projectIds = []) {
+    const uniqueIds = [...new Set((projectIds || []).filter(Boolean))];
+    const primary = uniqueIds.length ? uniqueIds[0] : null; // keep old field aligned
+
+    return TaskModel.findByIdAndUpdate(
+      taskId,
+      { projects: uniqueIds, projectId: primary },
+      { new: true }
+    );
+  }
+
+  async countByStatusForProject(projectId) {
+    const mongoose = require('mongoose');
+    const id = new mongoose.Types.ObjectId(projectId);
+
+    const rows = await TaskModel.aggregate([
+      {
+        $match: {
+          isDeleted: false,
+          $or: [
+            { projectId: id },   // legacy
+            { projects: id }     // new array
+          ]
+        }
+      },
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+
+    const map = rows.reduce((m, r) => { m[r._id] = r.count; return m; }, {});
+    const total = Object.values(map).reduce((a, b) => a + b, 0);
+    const done = map.completed || 0; // your status enum includes 'completed'
+    const percent = total ? Math.round((done / total) * 100) : 0;
+
+    return {
+      total,
+      unassigned: map.unassigned || 0,
+      ongoing: map.ongoing || 0,
+      under_review: map.under_review || 0,
+      completed: done,
+      percent
+    };
+  }
+
+  
 }
 
 module.exports = TaskRepository;

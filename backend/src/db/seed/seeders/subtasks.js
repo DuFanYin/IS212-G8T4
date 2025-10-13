@@ -32,9 +32,9 @@ module.exports = async function seedSubtasks(_count, { tasks }) {
   const rng = new SeededRandom(67890);
   const docs = [];
 
-  // Create 0-2 subtasks per task with indexed titles; use only non-HR collaborators
+  // Create exactly 2 subtasks per task (targets 30 total for 15 tasks)
   (tasks || []).forEach((t, i) => {
-    const num = faker.number.int({ min: 0, max: 2 }); // 0-2 subtasks per task
+    const num = 2;
     for (let s = 0; s < num; s++) {
       const idx = String(s + 1).padStart(2, '0');
       const collabs = Array.isArray(t.collaborators) ? t.collaborators.filter(Boolean) : [];

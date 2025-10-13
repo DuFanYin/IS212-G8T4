@@ -33,6 +33,7 @@ const { SEED_COUNTS } = require('./config');
     await seedActivityLogs(SEED_COUNTS.activityLogs, { users, tasks, projects });
 
     const elapsed = ((Date.now() - start) / 1000).toFixed(2);
+    const roleCounts = users.reduce((acc, u) => { acc[u.role] = (acc[u.role] || 0) + 1; return acc; }, {});
     console.log('✅ Seed complete', {
       counts: {
         departments: departments.length,
@@ -43,6 +44,7 @@ const { SEED_COUNTS } = require('./config');
         subtasks: subtasks.length,
         comments: comments.length,
         activityLogs: SEED_COUNTS.activityLogs,
+        roles: roleCounts
       },
       elapsedSec: elapsed,
     });

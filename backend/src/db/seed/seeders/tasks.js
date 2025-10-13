@@ -29,31 +29,27 @@ module.exports = async function seedTasks(_count, { users, projects }) {
     return { createdAt: new Date(createdMs), dueDate: new Date(dueMs) };
   }
 
-  // Assign 1 or 2 tasks per user in alternating pattern to spread evenly
-  const perUserAssigned = new Map();
-  let totalTasks = 0;
-  nonHrUsers.forEach((u, i) => {
-    const n = (i % 2 === 0) ? 1 : 2; // keep even distribution rule
-    perUserAssigned.set(u._id.toString(), n);
-    totalTasks += n;
-  });
+  // Target fixed number of tasks with a known count of unassigned
+  const TARGET = 15;
+  const UNASSIGNED = 3;
 
   const docs = [];
   let creatorIdx = 0;
   let projectIdx = 0;
   let taskCounter = 0;
 
-  nonHrUsers.forEach((assigneeUser, userIdx) => {
-    const assignCount = perUserAssigned.get(assigneeUser._id.toString()) || 1;
-    for (let k = 0; k < assignCount; k++) {
+  const assignees = nonHrUsers.slice(0, Math.max(1, Math.min(nonHrUsers.length, TARGET)));
+  outer: for (let userIdx = 0; userIdx < assignees.length; userIdx++) {
+    const assigneeUser = assignees[userIdx];
+    for (;;) {
       taskCounter += 1;
       const idx = String(taskCounter).padStart(2, '0');
       const creator = creatorPool[creatorIdx % creatorPool.length];
       creatorIdx += 1;
       const assignedProject = projectPool.length ? projectPool[projectIdx % projectPool.length] : null;
       projectIdx += 1;
-      // Leave a small portion (~20%) of tasks without a project
-      const project = (taskCounter % 5 === 0) ? null : assignedProject;
+      // Ensure exactly UNASSIGNED tasks without a project
+      const project = (taskCounter <= UNASSIGNED) ? null : assignedProject;
 
       // Build collaborators: 4 or 5 total, exclude HR and the assignee if possible
       const collSize = pick([1, 2, 3, 4, 5]);
@@ -105,9 +101,10 @@ module.exports = async function seedTasks(_count, { users, projects }) {
         priority: ((taskCounter - 1) % 10) + 1,
         isDeleted: false,
       });
+      if (taskCounter >= TARGET) break outer;
     }
-  });
+  }
 
-  const inserted = await Task.insertMany(docs, { ordered: true });
+  const inserted = await Task.insertMany(docs.slice(0, TARGET), { ordered: true });
   return inserted.map((t) => t.toObject());
 };

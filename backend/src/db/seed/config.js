@@ -4,14 +4,14 @@ const toInt = (v, d) => {
 };
 
 const SEED_COUNTS = {
-  departments: toInt(process.env.SEED_DEPARTMENTS, 4),
-  teams: toInt(process.env.SEED_TEAMS, 8),
-  users: toInt(process.env.SEED_USERS, 40),
-  projects: toInt(process.env.SEED_PROJECTS, 10),
-  tasks: toInt(process.env.SEED_TASKS, 80),
-  subtasks: toInt(process.env.SEED_SUBTASKS, 160),
-  comments: toInt(process.env.SEED_COMMENTS, 200),
-  activityLogs: toInt(process.env.SEED_ACTIVITY_LOGS, 300),
+  departments: toInt(process.env.SEED_DEPARTMENTS, 2),
+  teams: toInt(process.env.SEED_TEAMS, 4),
+  users: toInt(process.env.SEED_USERS, 14),
+  projects: toInt(process.env.SEED_PROJECTS, 5),
+  tasks: toInt(process.env.SEED_TASKS, 15),
+  subtasks: toInt(process.env.SEED_SUBTASKS, 20),
+  comments: toInt(process.env.SEED_COMMENTS, 40),
+  activityLogs: toInt(process.env.SEED_ACTIVITY_LOGS, 60),
 };
 
 module.exports = { SEED_COUNTS };

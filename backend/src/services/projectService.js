@@ -3,11 +3,36 @@ const Project = require('../domain/Project');
 const UserRepository = require('../repositories/UserRepository');
 const User = require('../domain/User');
 const ProjectModel = require('../db/models/Project');
+const TaskRepository = require('../repositories/TaskRepository');
+
 
 class ProjectService {
-  constructor(projectRepository, userRepository) {
+  constructor(projectRepository, userRepository, taskRepository) {
     this.projectRepository = projectRepository;
     this.userRepository = userRepository;
+    this.taskRepository = taskRepository;
+  }
+
+    /**
+   * Managers (or owners) can view aggregated progress for tasks in a project.
+   * Returns: { total, unassigned, ongoing, under_review, completed, percent }
+   */
+  async getProjectProgress(projectId, userId) {
+    // 1) Load project and requesting user
+    const project = await this.getProjectDomainById(projectId);
+    const userDoc = await this.userRepository.findById(userId);
+    if (!userDoc) throw new Error('User not found');
+    const user = new User(userDoc);
+
+    // 2) Authorize: allow if user can see all tasks (manager-like) OR can modify this project (owner/manager)
+    const isManagerLike = typeof user.canSeeAllTasks === 'function' && user.canSeeAllTasks();
+    const isOwnerOrManager = typeof project.canBeModifiedBy === 'function' && project.canBeModifiedBy(user);
+    if (!isManagerLike && !isOwnerOrManager) {
+      throw new Error('Not Authorized');
+    }
+
+    // 3) Aggregate status buckets via TaskRepository (supports both projectId and projects[])
+    return this.taskRepository.countByStatusForProject(projectId);
   }
 
   // Internal: fetch domain Project by id (for permission/logic checks)
@@ -339,6 +364,7 @@ class ProjectService {
 // Create singleton instance
 const projectRepository = new ProjectRepository();
 const userRepository = new UserRepository();
-const projectService = new ProjectService(projectRepository, userRepository);
+const taskRepository = new TaskRepository();
+const projectService = new ProjectService(projectRepository, userRepository, taskRepository);
 
 module.exports = projectService;

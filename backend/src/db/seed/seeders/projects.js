@@ -10,7 +10,7 @@ module.exports = async function seedProjects(_count, { users, teams, departments
   const ownersPool = managers.length > 0 ? managers : nonHrUsers;
 
   const deptPool = departments && departments.length ? departments : [];
-  const numProjects = 10; // hardcoded count with indexed names
+  const numProjects = 5; // reduced to 5 projects
 
   const docs = [];
   for (let i = 0; i < numProjects; i++) {
