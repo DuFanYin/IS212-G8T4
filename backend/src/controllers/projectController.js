@@ -155,14 +155,16 @@ const setStatusProject = async (req, res) => {
 }
 async function getProjectProgress(req, res, next) {
   try {
-    const userId = req.user?.id || req.user?._id; // works with either shape
-    const stats = await projectService.getProjectProgress(req.params.projectId, userId);
-    res.json(stats); // { total, unassigned, ongoing, under_review, completed, percent }
+    const userId = req.user?.userId; // tokens set by authMiddleware
+    const stats = await ProjectService.getProjectProgress(req.params.projectId, userId);
+    return res.status(200).json({ status: 'success', data: stats });
   } catch (err) {
-    next(err);
+    // Map known auth errors to 403; otherwise 400
+    const message = err?.message || 'Error fetching project progress';
+    const status = /not authorized/i.test(message) ? 403 : 400;
+    return res.status(status).json({ status: 'error', message });
   }
 }
-;
 
 module.exports = {
   createProject,

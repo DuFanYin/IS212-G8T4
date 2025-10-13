@@ -14,7 +14,8 @@ const {
   getUnassignedTasks,
   addAttachment,
   removeAttachment,
-  archiveTask 
+  archiveTask,
+  setTaskProjects
 } = require('../controllers/taskController');
 
 // Create a new task
@@ -46,6 +47,9 @@ router.patch('/:id/assign', authMiddleware, assignTask);
 
 // Update task status
 router.patch('/:id/status', authMiddleware, updateTaskStatus);
+
+// Set task projects
+router.patch('/:id/projects', authMiddleware, setTaskProjects);
 
 // Add task attachments
 router.post('/:id/attachments', authMiddleware, addAttachment);

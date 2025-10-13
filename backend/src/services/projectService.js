@@ -7,7 +7,7 @@ const TaskRepository = require('../repositories/TaskRepository');
 
 
 class ProjectService {
-  constructor(projectRepository, userRepository) {
+  constructor(projectRepository, userRepository, taskRepository) {
     this.projectRepository = projectRepository;
     this.userRepository = userRepository;
     this.taskRepository = taskRepository;
@@ -365,6 +365,6 @@ class ProjectService {
 const projectRepository = new ProjectRepository();
 const userRepository = new UserRepository();
 const taskRepository = new TaskRepository();
-const projectService = new ProjectService(projectRepository, userRepository);
+const projectService = new ProjectService(projectRepository, userRepository, taskRepository);
 
 module.exports = projectService;

@@ -203,3 +203,14 @@ exports.removeAttachment = async (req, res) => {
     return res.status(500).json({ status: 'error', message: 'Error removing attachment' });
   }
 }
+
+// Set task projects
+exports.setTaskProjects = async (req, res) => {
+  try {
+    const { projectIds } = req.body;
+    const task = await TaskService.setTaskProjects(req.params.id, projectIds, req.user.userId);
+    res.json({ status: 'success', data: task });
+  } catch (err) {
+    res.status(400).json({ status: 'error', message: err.message });
+  }
+};

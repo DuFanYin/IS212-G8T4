@@ -755,6 +755,35 @@ class TaskService {
       throw new Error('Error fetching task');
     }
   }
+
+  async setTaskProjects(taskId, projectIds, userId) {
+    try {
+      const taskDoc = await this.taskRepository.findById(taskId);
+      if (!taskDoc) {
+        throw new Error('Task not found');
+      }
+
+      const task = new Task(taskDoc);
+      
+      // Check if user can edit this task
+      if (!task.canBeEditedBy({ id: userId })) {
+        throw new Error('Not authorized to edit this task');
+      }
+
+      const updatedTaskDoc = await this.taskRepository.setProjects(taskId, projectIds);
+      const populated = await TaskModel.populate(updatedTaskDoc, [
+        { path: 'assigneeId', select: 'name' },
+        { path: 'createdBy', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'projectId', select: 'name' },
+        { path: 'projects', select: 'name' }
+      ]);
+      
+      return this.mapPopulatedTaskDocToDTO(populated);
+    } catch (error) {
+      throw new Error(`Error setting task projects: ${error.message}`);
+    }
+  }
 }
 
 // Create singleton instance
