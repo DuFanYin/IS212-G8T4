@@ -79,6 +79,14 @@ export const taskService = {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
+  },
+  setTaskProjects: async (token: string, taskId: string, projectIds: string[]): Promise<TaskResponse> => {
+    const res = await fetch(`${API_URL}/tasks/${taskId}/projects`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ projectIds })
+    });
+    return res.json();
   }
 };
 

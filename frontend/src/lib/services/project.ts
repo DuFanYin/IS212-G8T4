@@ -53,6 +53,16 @@ export const projectService = {
       body: JSON.stringify({ collaboratorId })
     });
     return res.json();
+  },
+  // NEW: get project progress (manager/owner roles)
+  getProjectProgress: async (
+    token: string,
+    projectId: string
+  ): Promise<{ status: string; data: { total: number; unassigned: number; ongoing: number; under_review: number; completed: number; percent: number } }> => {
+    const res = await fetch(`${API_URL}/projects/${projectId}/progress`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.json();
   }
 };
 

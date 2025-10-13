@@ -6,53 +6,58 @@ This directory contains focused integration tests that verify core functionality
 
 ```
 __tests__/
-├── integration/               # Integration tests (API endpoints)
+├── integration/                 # Integration tests (API endpoints)
 │   ├── auth/
-│   │   ├── login.test.js      # POST /api/auth/login (5)
-│   │   ├── request-reset.test.js # POST /api/auth/request-reset (4)
-│   │   └── reset-password.test.js # POST /api/auth/reset-password (5)
+│   │   ├── login.test.js                #   POST /api/auth/login                      (5)
+│   │   ├── request-reset.test.js        #   POST /api/auth/request-reset              (4)
+│   │   └── reset-password.test.js       #   POST /api/auth/reset-password             (5)
 │   ├── organization/
-│   │   ├── departments.test.js # GET /api/organization/departments (3)
-│   │   ├── teams.test.js      # GET /api/organization/teams (4)
-│   │   └── department-teams.test.js # GET /api/organization/departments/:id/teams (5)
+│   │   ├── departments.test.js          #   GET  /api/organization/departments        (3)
+│   │   ├── teams.test.js                #   GET  /api/organization/teams              (4)
+│   │   └── department-teams.test.js     #   GET  /api/organization/departments/:id/teams (5)
 │   ├── users/
-│   │   ├── profile.test.js    # GET /api/users/profile (1)
-│   │   ├── team-members.test.js # GET /api/users/team-members (3)
-│   │   └── department-members.test.js # GET /api/users/department-members (3)
+│   │   ├── profile.test.js              #   GET  /api/users/profile                   (1)
+│   │   ├── team-members.test.js         #   GET  /api/users/team-members              (3)
+│   │   └── department-members.test.js   #   GET  /api/users/department-members        (3)
 │   ├── tasks/
-│   │   ├── create.test.js     # POST /api/tasks/ (4)
-│   │   ├── list.test.js       # GET /api/tasks/ (2)
-│   │   ├── get-by-id.test.js  # GET /api/tasks/:id (1)
-│   │   ├── assign.test.js     # PUT /api/tasks/:id/assign (3)
-│   │   ├── status.test.js     # PUT /api/tasks/:id/status (2)
-│   │   ├── archive.test.js    # DELETE /api/tasks/:id (1)
-│   │   ├── update.test.js     # PUT /api/tasks/:id (4)
-│   │   ├── update-due-date.test.js # PUT /api/tasks/:id (3)
-│   │   ├── department-tasks.test.js # GET /api/tasks/department/:id (4)
-│   │   ├── project-tasks.test.js # GET /api/tasks/project/:id (3)
-│   │   ├── team-tasks.test.js # GET /api/tasks/team/:id (3)
-│   │   ├── unassigned-tasks.test.js # GET /api/tasks/unassigned (3)
-│   │   └── priority_tasks.test.js # Task priority handling (4)
+│   │   ├── create.test.js               #   POST /api/tasks/                          (4)
+│   │   ├── list.test.js                 #   GET  /api/tasks/                          (2)
+│   │   ├── get-by-id.test.js            #   GET  /api/tasks/:id                       (1)
+│   │   ├── assign.test.js               #   PATCH /api/tasks/:id/assign               (3)
+│   │   ├── status.test.js               #   PATCH /api/tasks/:id/status               (2)
+│   │   ├── archive.test.js              #   DELETE /api/tasks/:id                     (1)
+│   │   ├── update.test.js               #   PUT  /api/tasks/:id                       (4)
+│   │   ├── update-due-date.test.js      #   PUT  /api/tasks/:id                       (3)
+│   │   ├── department-tasks.test.js     #   GET  /api/tasks/department/:id            (4)
+│   │   ├── project-tasks.test.js        #   GET  /api/tasks/project/:id               (3)
+│   │   ├── team-tasks.test.js           #   GET  /api/tasks/team/:id                  (3)
+│   │   ├── unassigned-tasks.test.js     #   GET  /api/tasks/unassigned                (3)
+│   │   ├── priority-tasks.test.js       #   Task priority handling                    (5)
+│   │   └── tasks-grouping.test.js       #   Task grouping across projects/categories
 │   ├── subtasks/
-│   │   ├── create.test.js     # POST /api/tasks/:id/subtasks (2)
-│   │   ├── list.test.js       # GET /api/tasks/:id/subtasks (1)
-│   │   ├── get-by-id.test.js  # GET /api/tasks/subtasks/:id (2)
-│   │   ├── update.test.js     # PUT /api/tasks/subtasks/:id (2)
-│   │   ├── update-status.test.js # PATCH /api/tasks/subtasks/:id/status (2)
-│   │   └── delete.test.js     # DELETE /api/tasks/subtasks/:id (2)
+│   │   ├── create.test.js               #   POST /api/tasks/:id/subtasks              (2)
+│   │   ├── list.test.js                 #   GET  /api/tasks/:id/subtasks              (1)
+│   │   ├── get-by-id.test.js            #   GET  /api/tasks/subtasks/:id              (2)
+│   │   ├── update.test.js               #   PUT  /api/tasks/subtasks/:id              (2)
+│   │   ├── update-status.test.js        #   PATCH /api/tasks/subtasks/:id/status      (2)
+│   │   └── delete.test.js               #   DELETE /api/tasks/subtasks/:id            (2)
 │   ├── projects/
-│   │   ├── create.test.js     # POST /api/projects (4)
-│   │   ├── list.test.js       # GET /api/projects (2)
-│   │   ├── update.test.js     # PUT /api/projects/:projectId (3)
-│   │   ├── permissions.test.js # Role checks for update (2)
-│   │   ├── collaborators.test.js # POST /api/projects/:id/collaborators (3)
-│   │   ├── remove-collaborators.test.js # DELETE /api/projects/:id/collaborators (4)
-│   │   ├── archive.test.js    # PATCH /api/projects/:projectId/archive (2)
-│   │   └── department-projects.test.js # GET /api/projects/departments/:id (3)
-└── setup.js                   # Test configuration
+│   │   ├── create.test.js               #   POST /api/projects                        (4)
+│   │   ├── list.test.js                 #   GET  /api/projects                        (2)
+│   │   ├── update.test.js               #   PUT  /api/projects/:projectId             (3)
+│   │   ├── permissions.test.js          #   Role checks for update                    (2)
+│   │   ├── collaborators.test.js        #   PUT  /api/projects/:projectId/collaborators (3)
+│   │   ├── remove-collaborators.test.js #   DELETE /api/projects/:projectId/collaborators (4)
+│   │   ├── archive.test.js              #   PUT  /api/projects/:projectId/archive     (2)
+│   │   └── department-projects.test.js  #   GET  /api/projects/departments/:id        (3)
+│   ├── activity_log/
+│   │   ├── list-log.test.js             #   GET  /api/activity-log (list recent activity)
+│   │   └── task-log.test.js             #   Task lifecycle logging (create/update/assign/status)
+└── setup.js                             #   Test configuration
 ```
 
-## All Test Files and Cases (117)
+
+## All Test Files and Cases (135)
 
 ### Authentication & Security Tests
 
@@ -127,13 +132,13 @@ __tests__/
   - GET /api/tasks/:id › should return task by ID if user has access
 
 - tasks/assign.test.js (3)
-  - PUT /api/tasks/:id/assign › should allow managers to assign tasks to team members
-  - PUT /api/tasks/:id/assign › should deny staff from assigning tasks
-  - PUT /api/tasks/:id/assign › should prevent assigning to equal-or-higher role users
+  - PATCH /api/tasks/:id/assign › should allow managers to assign tasks to team members
+  - PATCH /api/tasks/:id/assign › should deny staff from assigning tasks
+  - PATCH /api/tasks/:id/assign › should prevent assigning to equal-or-higher role users
 
 - tasks/status.test.js (2)
-  - PUT /api/tasks/:id/status › should allow task status updates
-  - PUT /api/tasks/:id/status › should require authentication for status updates
+  - PATCH /api/tasks/:id/status › should allow task status updates
+  - PATCH /api/tasks/:id/status › should require authentication for status updates
 
 - tasks/archive.test.js (1)
   - DELETE /api/tasks/:id › should archive task (soft delete)
@@ -170,12 +175,17 @@ __tests__/
   - GET /api/tasks/unassigned › should require authentication
   - GET /api/tasks/unassigned › should return empty array when no unassigned tasks exist
 
-- tasks/priority_tasks.test.js (5)
+- tasks/priority-tasks.test.js (5)
   - Task API › should create task with projectId and priority successfully
   - Task API › should require priority when task has projectId
   - Task API › should return tasks sorted by descending priority
   - Task API › should throw error if changing projectId without providing new priority
   - Task API › should allow changing projectId with new priority
+
+- tasks/tasks-grouping.test.js
+  - should allow a task to belong to multiple projects via projects[]
+  - should return tasks by project including those from projects[]
+  - should compute project progress including multi-project tasks
 
 ### Subtask Management Tests
 
@@ -224,13 +234,13 @@ __tests__/
   - PUT /api/projects/:projectId › should allow managers to update projects
 
 - projects/collaborators.test.js (3)
-  - POST /api/projects/:projectId/collaborators › should add new collaborator
-  - POST /api/projects/:projectId/collaborators › should prevent duplicate collaborators
-  - POST /api/projects/:projectId/collaborators › should require authentication
+  - PUT /api/projects/:projectId/collaborators › should add new collaborator
+  - PUT /api/projects/:projectId/collaborators › should prevent duplicate collaborators
+  - PUT /api/projects/:projectId/collaborators › should require authentication
 
 - projects/archive.test.js (2)
-  - PATCH /api/projects/:projectId/archive › should archive project
-  - PATCH /api/projects/:projectId/archive › should unarchive project
+  - PUT /api/projects/:projectId/archive › should archive project
+  - PUT /api/projects/:projectId/archive › should unarchive project
 
 - projects/department-projects.test.js (3)
   - GET /api/projects/departments/:departmentId › should return projects for department
@@ -243,29 +253,17 @@ __tests__/
   - DELETE /api/projects/:projectId/collaborators › should validate project ownership
   - DELETE /api/projects/:projectId/collaborators › should prevent removing project owner
 
-## Running Tests
+### Activity Log Tests
 
-```bash
-# Run all tests
-npm test
+- activity_log/list-log.test.js
+  - GET /api/activity-log › should list recent activity entries with pagination
+  - GET /api/activity-log › should require authentication
 
-# Run a specific test file (examples)
-npm test integration/auth/login.test.js
-npm test integration/auth/request-reset.test.js
-npm test integration/auth/reset-password.test.js
-npm test integration/organization/departments.test.js
-npm test integration/organization/teams.test.js
-npm test integration/organization/department-teams.test.js
-npm test integration/users/profile.test.js
-npm test integration/tasks/create.test.js
-npm test integration/tasks/priority_tasks.test.js
-npm test integration/tasks/unassigned-tasks.test.js
-npm test integration/subtasks/create.test.js
-npm test integration/subtasks/update-status.test.js
-npm test integration/projects/update.test.js
-npm test integration/projects/remove-collaborators.test.js
-npm test integration/projects/department-projects.test.js
-```
+- activity_log/task-log.test.js
+  - should log create/update/assign/status changes for tasks
+  - should return activity entry IDs on task responses where applicable
+
+
 
 ## Test Philosophy
 
@@ -277,13 +275,8 @@ Tests focus on **core business requirements** with balanced coverage:
 - **Data Validation**: Input validation for required fields and business rules
 - **Error Handling**: Graceful handling of common error scenarios
 
-### Balanced Test Coverage (117 total tests)
-- **Authentication**: 14 tests covering login, password reset, and security
-- **User Management**: 7 tests for profile and team/department member access
-- **Organization**: 12 tests for department and team hierarchy management
-- **Task Management**: 65 tests covering CRUD, assignment, filtering, and priority
-- **Subtask Management**: 11 tests for parent-child task relationships
-- **Project Management**: 8 tests for project lifecycle and collaboration
+### Balanced Test Coverage (135 total tests)
+The suite covers authentication, users, organization, tasks (including grouping and attachments), subtasks, projects, and activity logs.
 
 ### What We Test
 - ✅ Core business functionality and user workflows

@@ -87,6 +87,20 @@ module.exports = async function seedTasks(_count, { users, projects }) {
 
       const isStandalone = !project;
       const assignedStatus = pick(['ongoing', 'under_review', 'completed']);
+
+      // Multi-project assignment: for some tasks, attach to 2 projects when available
+      let projectsArray = [];
+      if (!isStandalone) {
+        projectsArray = [project._id];
+        // Roughly every 3rd task, add a second distinct project if exists
+        if (projectPool.length > 1 && (taskCounter % 3 === 0)) {
+          const alt = projectPool[(projectIdx + 1) % projectPool.length];
+          if (alt && alt._id.toString() !== project._id.toString()) {
+            projectsArray.push(alt._id);
+          }
+        }
+      }
+
       docs.push({
         title: `Task-${idx}`,
         description: `Seeded Task ${idx}`,
@@ -95,7 +109,10 @@ module.exports = async function seedTasks(_count, { users, projects }) {
         createdAt: bounded.createdAt,
         createdBy: creator._id,
         assigneeId: isStandalone ? null : assigneeUser._id,
-        projectId: project ? project._id : null,
+        // Keep legacy single projectId aligned to the first project if any
+        projectId: isStandalone ? null : (projectsArray[0] || project?._id || null),
+        // New multi-projects array
+        projects: isStandalone ? [] : projectsArray,
         collaborators: collaborators.slice(0, collSize),
         attachments: [],
         priority: ((taskCounter - 1) % 10) + 1,

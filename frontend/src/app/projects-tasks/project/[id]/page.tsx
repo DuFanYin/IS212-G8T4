@@ -22,6 +22,7 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const token = storage.getToken();
+  const [progress, setProgress] = useState<{ total: number; unassigned: number; ongoing: number; under_review: number; completed: number; percent: number } | null>(null);
 
   useEffect(() => {
     const projectId = params?.id as string | undefined;
@@ -37,6 +38,14 @@ export default function ProjectDetailPage() {
 
         const tasksRes = await taskService.getTasksByProject(token, id);
         setTasks(tasksRes.data || []);
+
+        // Fetch aggregated progress (if authorized)
+        try {
+          const progRes = await projectService.getProjectProgress(token, id);
+          if (progRes?.status === 'success') {
+            setProgress(progRes.data);
+          }
+        } catch {}
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load project');
       } finally {
@@ -81,7 +90,11 @@ export default function ProjectDetailPage() {
     unassigned: tasks.filter(t => t.status === 'unassigned').length,
   };
 
-  const completionPercentage = projectStats.total > 0 ? Math.round((projectStats.completed / projectStats.total) * 100) : 0;
+  const completionPercentage = typeof progress?.percent === 'number'
+    ? progress.percent
+    : projectStats.total > 0
+      ? Math.round((projectStats.completed / projectStats.total) * 100)
+      : 0;
 
   // Filter tasks based on active filter
   const getFilteredTasks = () => {
@@ -173,7 +186,7 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <StatCard
                 title="Total"
-                value={projectStats.total}
+                value={progress?.total ?? projectStats.total}
                 icon="📋"
                 color="blue"
                 onClick={() => setActiveFilter('all')}
@@ -181,7 +194,7 @@ export default function ProjectDetailPage() {
               />
               <StatCard
                 title="Completed"
-                value={projectStats.completed}
+                value={progress?.completed ?? projectStats.completed}
                 icon="✅"
                 color="green"
                 onClick={() => setActiveFilter('completed')}
@@ -189,7 +202,7 @@ export default function ProjectDetailPage() {
               />
               <StatCard
                 title="In Progress"
-                value={projectStats.inProgress}
+                value={progress ? (progress.ongoing + progress.under_review) : projectStats.inProgress}
                 icon="🔄"
                 color="yellow"
                 onClick={() => setActiveFilter('in-progress')}
@@ -205,7 +218,7 @@ export default function ProjectDetailPage() {
               />
               <StatCard
                 title="Unassigned"
-                value={projectStats.unassigned}
+                value={progress?.unassigned ?? projectStats.unassigned}
                 icon="❓"
                 color="gray"
                 onClick={() => setActiveFilter('unassigned')}
