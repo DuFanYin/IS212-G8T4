@@ -3,9 +3,10 @@
 import { useState } from 'react';
 
 const data = [
-    { department: 'HR', ongoing: 5, under_review: 2, completed: 8 },
-    { department: 'Finance', ongoing: 3, under_review: 4, completed: 6 },
-    { department: 'IT', ongoing: 7, under_review: 1, completed: 5 },
+    { department: 'Alpha', ongoing: 5, under_review: 2, completed: 8 },
+    { department: 'Beta', ongoing: 3, under_review: 4, completed: 6 },
+    { department: 'Gamma', ongoing: 7, under_review: 1, completed: 5 },
+    { department: 'Delta', ongoing: 20, under_review: 8, completed: 4 },
 ];
 
 // Map status keys to professional labels

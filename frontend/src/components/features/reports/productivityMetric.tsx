@@ -9,8 +9,8 @@ const metrics = [
 
 export default function ProductivityMetric() {
     return (
-        <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Productivity Metrics</h2>
+        <div className="bg-white rounded-lg shadow p-6 mb-8 relative">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Productivity Metrics</h2>
             <div className="flex flex-row gap-8">
                 {metrics.map((metric) => (
                     <div key={metric.label} className="flex-1 text-center">
