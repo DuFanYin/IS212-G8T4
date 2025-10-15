@@ -4,6 +4,7 @@ import { useUser } from '@/contexts/UserContext';
 import type { User } from '@/lib/types/user';
 import TasksMetric from '@/components/features/reports/tasksMetric';
 import ProductivityMetric from '@/components/features/reports/productivityMetric';
+import ProductivityIndex from '@/components/features/reports/productivityIndex';
 
 export default function DepartmentReportPage() {
     const { user }: { user: User | null } = useUser();
@@ -13,6 +14,7 @@ export default function DepartmentReportPage() {
             <h1 className="text-2xl font-bold mb-6">Department Report</h1>
             <TasksMetric />
             <ProductivityMetric />
+            <ProductivityIndex />
         </main>
     );
 }
