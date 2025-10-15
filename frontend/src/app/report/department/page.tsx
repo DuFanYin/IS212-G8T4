@@ -5,6 +5,7 @@ import type { User } from '@/lib/types/user';
 import TasksMetric from '@/components/features/reports/tasksMetric';
 import ProductivityMetric from '@/components/features/reports/productivityMetric';
 import ProductivityIndex from '@/components/features/reports/productivityIndex';
+import WorkTable from '@/components/features/reports/workTable';
 
 export default function DepartmentReportPage() {
     const { user }: { user: User | null } = useUser();
@@ -15,6 +16,7 @@ export default function DepartmentReportPage() {
             <TasksMetric />
             <ProductivityMetric />
             <ProductivityIndex />
+            <WorkTable />
         </main>
     );
 }
