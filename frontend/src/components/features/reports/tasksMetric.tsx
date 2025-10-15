@@ -25,9 +25,17 @@ export default function TasksMetric() {
     const [hovered, setHovered] = useState<{ deptIdx: number; status: string } | null>(null);
 
     return (
-        <section className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Task Metrics</h2>
-            <div className="flex gap-10">
+        <section className="bg-white rounded-lg shadow p-6 mb-8 relative">
+            <h2 className="text-2xl font-semibold mb-4">Task Metrics</h2>
+            <div className="absolute top-6 right-6 flex gap-6 z-10">
+                {Object.entries(STATUS_COLORS).map(([status, color]) => (
+                    <div key={status} className="flex items-center gap-2">
+                        <span style={{ background: color }} className="inline-block w-4 h-4 rounded"></span>
+                        <span className="text-sm text-gray-600 whitespace-nowrap">{STATUS_LABELS[status]}</span>
+                    </div>
+                ))}
+            </div>
+            <div className="flex justify-center gap-10">
                 {data.map((dept, deptIdx) => {
                     const total = dept.ongoing + dept.under_review + dept.completed;
                     return (
@@ -65,14 +73,6 @@ export default function TasksMetric() {
                         </div>
                     );
                 })}
-            </div>
-            <div className="flex gap-6 mt-6">
-                {Object.entries(STATUS_COLORS).map(([status, color]) => (
-                    <div key={status} className="flex items-center gap-2">
-                        <span style={{ background: color }} className="inline-block w-4 h-4 rounded"></span>
-                        <span className="text-sm text-gray-600">{STATUS_LABELS[status]}</span>
-                    </div>
-                ))}
             </div>
         </section>
     );
