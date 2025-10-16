@@ -14,6 +14,10 @@ import { useRouter } from 'next/navigation';
 // getItemDates moved to TimelineGrid component
 import { loadOrgSelectors } from '@/lib/utils/orgAccess';
 import { type Department, type Team } from '@/lib/services/organization';
+import ProductivityIndex from '@/components/features/reports/productivityIndex';
+import ProductivityMetric from '@/components/features/reports/productivityMetric';
+import TasksMetric from '@/components/features/reports/tasksMetric';
+import Card from '@/components/layout/Cards';
 
 // ========================= Local Types (can be moved to types file) =========================
 type TimelineRow = { type: 'project' | 'task' | 'subtask'; item?: TimelineItem; projectName?: string };
@@ -346,6 +350,11 @@ function TimelineView() {
           </div>
         )}
       </div>
+      <Card>
+        <TasksMetric></TasksMetric>
+        <ProductivityMetric></ProductivityMetric>
+        <ProductivityIndex></ProductivityIndex>
+      </Card>
       </div>
   );
 }
