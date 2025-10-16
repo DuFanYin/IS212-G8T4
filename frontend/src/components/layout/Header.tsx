@@ -5,6 +5,7 @@ import type { User } from '@/lib/types/user';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canViewTeam, canViewDepartment } from '@/lib/utils/access';
+import Dropdown from './Dropdown';
 
 export default function Header() {
   const { user, logout }: { user: User | null; logout: () => void } = useUser();
@@ -47,6 +48,10 @@ export default function Header() {
                     Organization
                   </Link>
                 )}
+                <Dropdown
+                  label="Report"
+                  options={['Personal', 'Team', 'Department', 'Company']}
+                />
               </nav>
             )}
           </div>
