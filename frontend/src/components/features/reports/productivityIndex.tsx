@@ -1,16 +1,28 @@
 'use client';
 
-// Example team data
-const team = { name: 'Alpha', completed: 22, overdue: 2, totalTasks: 25 };
-
-function getProductivityIndex(completed: number, overdue: number, totalTasks: number) {
-  if (totalTasks === 0) return 0;
-  return Math.max(0, ((completed - overdue) / totalTasks));
+interface metricProps {
+  tasks: Array<{
+    departmentName?: string;
+    name: string | null;
+    ongoing: number;
+    under_review: number;
+    completed: number;
+    overdue: number;
+  }>;
 }
 
-export default function ProductivityIndex() {
-  const index = getProductivityIndex(team.completed, team.overdue, team.totalTasks);
-  const percent = Math.min(index, 1); // decimal value for arc
+function getProductivityIndex(tasks) {
+  const totalTasks = tasks.reduce((sum, t) => sum + t.ongoing + t.under_review + t.completed + t.overdue, 0);
+  const completedTasks = tasks.reduce((sum, t) => sum + t.completed, 0);
+  const overdueTasks = tasks.reduce((sum, t) => sum + t.overdue, 0);
+
+  if (totalTasks === 0) return 0;
+  return Math.max(0, ((completedTasks - overdueTasks) / totalTasks));
+}
+
+export default function ProductivityIndex({tasks}: metricProps) {
+  const index = getProductivityIndex(tasks);
+  const percent = Math.min(index, 1); 
   const size = 120;
   const strokeWidth = 14;
   const radius = (size - strokeWidth) / 2;
@@ -21,7 +33,7 @@ export default function ProductivityIndex() {
     <div className="w-full flex flex-col items-center justify-center py-2">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Team Productivity Index</h2>
       <div className="flex flex-col items-center justify-center">
-        <span className="mb-2 text-base font-medium text-gray-700">{team.name}</span>
+        <span className="mb-2 text-base font-medium text-gray-700">{tasks[0].departmentName || "Personal"}</span>
         <svg
           className="mb-2 block mx-auto drop-shadow-lg"
           viewBox={`0 0 ${size} ${size}`}

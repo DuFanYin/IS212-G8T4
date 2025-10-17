@@ -145,10 +145,12 @@ function TimelineView() {
   useEffect(() => {
     const loadTasks = async () => {
       const results: {
+        departmentName?: string;
         name: string;
         ongoing: number;
         under_review: number;
         completed: number;
+        overdue: number;
       }[] = [];
 
       for (const team of teams) {
@@ -174,6 +176,7 @@ function TimelineView() {
         }).length;
 
         results.push({
+          departmentName: currentDepartmentName,
           name: team.name,
           ongoing,
           under_review,
@@ -407,7 +410,7 @@ function TimelineView() {
       <Card>
         <TasksMetric tasks={teamStats} />
         <ProductivityMetric tasks={teamStats} />
-        <ProductivityIndex />
+        <ProductivityIndex tasks={teamStats}/>
       </Card>
       </div>
   );
