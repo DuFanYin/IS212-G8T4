@@ -18,6 +18,8 @@ import ProductivityIndex from '@/components/features/reports/productivityIndex';
 import ProductivityMetric from '@/components/features/reports/productivityMetric';
 import TasksMetric from '@/components/features/reports/tasksMetric';
 import Card from '@/components/layout/Cards';
+// UseTasks hook
+import { useTasks } from '@/lib/hooks/useTasks';
 
 // ========================= Local Types (can be moved to types file) =========================
 type TimelineRow = { type: 'project' | 'task' | 'subtask'; item?: TimelineItem; projectName?: string };
@@ -134,6 +136,49 @@ function TimelineView() {
     load();
   }, [token, user]);
 
+  //For Metrics
+  const { tasks, loading: tasksLoading, fetchTeamTasks } = useTasks();
+  const [teamStats, setTeamStats] = useState<
+    { name: string; ongoing: number; under_review: number; completed: number }[]
+  >([]);
+
+  useEffect(() => {
+    const loadTasks = async () => {
+      const results: {
+        name: string;
+        ongoing: number;
+        under_review: number;
+        completed: number;
+      }[] = [];
+
+      for (const team of teams) {
+        // Fetch tasks for this team
+        await fetchTeamTasks(team.id);
+
+        // Filter non-deleted valid tasks
+        const validTasks = tasks.filter(
+          (t) => t.projectId && !t.isDeleted
+        );
+
+        // Count by status
+        const ongoing = validTasks.filter((t) => t.status === 'ongoing').length;
+        const under_review = validTasks.filter((t) => t.status === 'under_review').length;
+        const completed = validTasks.filter((t) => t.status === 'completed').length;
+
+        results.push({
+          name: team.name,
+          ongoing,
+          under_review,
+          completed,
+        });
+      }
+
+      setTeamStats(results);
+    };
+
+    if (teams.length) loadTasks();
+  }, [teams, fetchTeamTasks]);
+
   // Default selections from user
   useEffect(() => {
     if (!user) return;
@@ -239,7 +284,7 @@ function TimelineView() {
     }
   };
 
-  if (loading) {
+  if (loading || tasksLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-gray-500">Loading timeline...</div>
@@ -351,7 +396,7 @@ function TimelineView() {
         )}
       </div>
       <Card>
-        <TasksMetric></TasksMetric>
+        <TasksMetric tasks={teamStats}></TasksMetric>
         <ProductivityMetric></ProductivityMetric>
         <ProductivityIndex></ProductivityIndex>
       </Card>
