@@ -2,12 +2,6 @@
 
 import { useState } from 'react';
 
-const data = [
-  { department: 'Alpha', ongoing: 5, under_review: 2, completed: 8 },
-  { department: 'Beta', ongoing: 3, under_review: 4, completed: 6 },
-  { department: 'Gamma', ongoing: 7, under_review: 1, completed: 5 },
-  { department: 'Delta', ongoing: 20, under_review: 8, completed: 4 },
-];
 
 // Professional labels & colors
 const STATUS_LABELS: Record<string, string> = {
@@ -29,9 +23,16 @@ const STACK_ORDER: Array<keyof typeof STATUS_LABELS> = [
   'completed',
 ];
 
-export default function TasksMetric() {
+export default function TasksMetric({ tasks }: TasksMetricProps) {
   const [hovered, setHovered] = useState<{ deptIdx: number; status: string } | null>(null);
 
+  const rows = tasks.map(t => ({
+      name: t.name ?? 'No team',
+      ongoing: t.ongoing,
+      under_review: t.under_review,
+      completed: t.completed,
+    }))
+  console.log(tasks);
   return (
     <div className="w-full flex flex-col items-center justify-center py-2">
       <h2 className="font-semibold text-gray-800 text-lg mb-4">Task Metrics</h2>
@@ -52,19 +53,17 @@ export default function TasksMetric() {
 
       {/* Chart */}
       <div className="mt-6 flex items-end justify-center gap-8 w-full">
-        {data.map((dept, deptIdx) => {
-          const total = dept.ongoing + dept.under_review + dept.completed || 1; 
+        {rows.map((group, groupIdx) => {
+          const total = group.ongoing + group.under_review + group.completed || 1;
           return (
-            <div key={dept.department} className="flex flex-col items-center">
-              {/* Dept label */}
-              <span className="mb-2 text-base font-semibold">{dept.department}</span>
+            <div key={group.name} className="flex flex-col items-center">
+              <span className="mb-2 text-base font-semibold">{group.name}</span>
 
               {/* Stacked vertical bar */}
               <div className="relative flex flex-col-reverse h-36 w-10 rounded-lg bg-white border border-blue-100 shadow-md">
                 {STACK_ORDER.map((status) => {
-                  const value = dept[status as keyof typeof dept] as number;
+                  const value = group[status as keyof typeof group] as number;
                   const pct = (value / total) * 100;
-
                   return (
                     <div
                       key={status}
@@ -74,19 +73,19 @@ export default function TasksMetric() {
                         transition: 'opacity 150ms ease',
                         opacity:
                           hovered &&
-                          hovered.deptIdx === deptIdx &&
+                          hovered.groupIdx === groupIdx &&
                           hovered.status !== status
                             ? 0.6
                             : 1,
                         cursor: 'pointer',
                         position: 'relative',
                       }}
-                      onMouseEnter={() => setHovered({ deptIdx, status })}
+                      onMouseEnter={() => setHovered({ groupIdx, status })}
                       onMouseLeave={() => setHovered(null)}
                       aria-label={`${STATUS_LABELS[status]}: ${value}`}
                     >
                       {hovered &&
-                        hovered.deptIdx === deptIdx &&
+                        hovered.groupIdx === groupIdx &&
                         hovered.status === status && (
                           <div className="absolute left-1/2 -top-7 -translate-x-1/2 bg-white text-blue-700 px-2 py-1 rounded shadow text-xs z-10 whitespace-nowrap border border-blue-200">
                             {STATUS_LABELS[status]}: {value}

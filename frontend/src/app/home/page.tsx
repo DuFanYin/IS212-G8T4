@@ -396,9 +396,9 @@ function TimelineView() {
         )}
       </div>
       <Card>
-        <TasksMetric tasks={teamStats}></TasksMetric>
-        <ProductivityMetric></ProductivityMetric>
-        <ProductivityIndex></ProductivityIndex>
+        <TasksMetric tasks={teamStats} />
+        <ProductivityMetric />
+        <ProductivityIndex />
       </Card>
       </div>
   );
