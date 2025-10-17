@@ -139,7 +139,7 @@ function TimelineView() {
   //For Metrics
   const { tasks, loading: tasksLoading, fetchTeamTasks } = useTasks();
   const [teamStats, setTeamStats] = useState<
-    { name: string; ongoing: number; under_review: number; completed: number }[]
+    { name: string; ongoing: number; under_review: number; completed: number; overdue: number }[]
   >([]);
 
   useEffect(() => {
@@ -164,12 +164,21 @@ function TimelineView() {
         const ongoing = validTasks.filter((t) => t.status === 'ongoing').length;
         const under_review = validTasks.filter((t) => t.status === 'under_review').length;
         const completed = validTasks.filter((t) => t.status === 'completed').length;
+        const overdue = validTasks.filter((t) => {
+          if (t.dueDate) {
+            const due = new Date(t.dueDate);
+            const now = new Date();
+            return t.status !== 'completed' && due < now;
+          }
+          return false;
+        }).length;
 
         results.push({
           name: team.name,
           ongoing,
           under_review,
           completed,
+          overdue
         });
       }
 
@@ -397,7 +406,7 @@ function TimelineView() {
       </div>
       <Card>
         <TasksMetric tasks={teamStats} />
-        <ProductivityMetric />
+        <ProductivityMetric tasks={teamStats} />
         <ProductivityIndex />
       </Card>
       </div>

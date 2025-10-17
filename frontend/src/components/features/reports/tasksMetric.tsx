@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 
-
 // Professional labels & colors
 const STATUS_LABELS: Record<string, string> = {
   ongoing: 'On-going',
@@ -23,7 +22,17 @@ const STACK_ORDER: Array<keyof typeof STATUS_LABELS> = [
   'completed',
 ];
 
-export default function TasksMetric({ tasks }: TasksMetricProps) {
+interface metricProps {
+  tasks: Array<{
+    name: string | null;
+    ongoing: number;
+    under_review: number;
+    completed: number;
+    overdue: number;
+  }>;
+}
+
+export default function TasksMetric({ tasks }: metricProps) {
   const [hovered, setHovered] = useState<{ deptIdx: number; status: string } | null>(null);
 
   const rows = tasks.map(t => ({
@@ -31,8 +40,7 @@ export default function TasksMetric({ tasks }: TasksMetricProps) {
       ongoing: t.ongoing,
       under_review: t.under_review,
       completed: t.completed,
-    }))
-  console.log(tasks);
+    }));
   return (
     <div className="w-full flex flex-col items-center justify-center py-2">
       <h2 className="font-semibold text-gray-800 text-lg mb-4">Task Metrics</h2>
