@@ -33,14 +33,14 @@ interface metricProps {
 }
 
 export default function TasksMetric({ tasks }: metricProps) {
-  const [hovered, setHovered] = useState<{ deptIdx: number; status: string } | null>(null);
+  const [hovered, setHovered] = useState<{ groupIdx: number; status: string } | null>(null);
 
   const rows = tasks.map(t => ({
-      name: t.name ?? 'No team',
-      ongoing: t.ongoing,
-      under_review: t.under_review,
-      completed: t.completed,
-    }));
+    name: t.name ?? 'No team',
+    ongoing: t.ongoing,
+    under_review: t.under_review,
+    completed: t.completed,
+  }));
   return (
     <div className="w-full flex flex-col items-center justify-center py-2">
       <h2 className="font-semibold text-gray-800 text-lg mb-4">Task Metrics</h2>
@@ -67,41 +67,40 @@ export default function TasksMetric({ tasks }: metricProps) {
             <div key={group.name} className="flex flex-col items-center">
               <span className="mb-2 text-base font-semibold">{group.name}</span>
 
-              {/* Stacked vertical bar */}
-              <div className="relative flex flex-col-reverse h-36 w-10 rounded-lg bg-white border border-blue-100 shadow-md">
-                {STACK_ORDER.map((status) => {
-                  const value = group[status as keyof typeof group] as number;
-                  const pct = (value / total) * 100;
-                  return (
-                    <div
-                      key={status}
-                      style={{
-                        background: STATUS_COLORS[status],
-                        height: `${pct}%`,
-                        transition: 'opacity 150ms ease',
-                        opacity:
-                          hovered &&
-                          hovered.groupIdx === groupIdx &&
-                          hovered.status !== status
-                            ? 0.6
-                            : 1,
-                        cursor: 'pointer',
-                        position: 'relative',
-                      }}
-                      onMouseEnter={() => setHovered({ groupIdx, status })}
-                      onMouseLeave={() => setHovered(null)}
-                      aria-label={`${STATUS_LABELS[status]}: ${value}`}
-                    >
-                      {hovered &&
-                        hovered.groupIdx === groupIdx &&
-                        hovered.status === status && (
-                          <div className="absolute left-1/2 -top-7 -translate-x-1/2 bg-white text-blue-700 px-2 py-1 rounded shadow text-xs z-10 whitespace-nowrap border border-blue-200">
-                            {STATUS_LABELS[status]}: {value}
-                          </div>
-                        )}
-                    </div>
-                  );
-                })}
+              <div className="relative h-36 w-10"> 
+                <div className="absolute inset-0 rounded-lg bg-white border border-blue-100 shadow-md overflow-hidden flex flex-col-reverse">
+                  {STACK_ORDER.map((status) => {
+                    const value = group[status as keyof typeof group] as number;
+                    const pct = (value / total) * 100;
+                    return (
+                      <div
+                        key={status}
+                        style={{
+                          background: STATUS_COLORS[status],
+                          height: `${pct}%`,
+                          transition: 'opacity 150ms ease',
+                          opacity:
+                            hovered &&
+                            hovered.groupIdx === groupIdx &&
+                            hovered.status !== status
+                              ? 0.6
+                              : 1,
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={() => setHovered({ groupIdx, status })}
+                        onMouseLeave={() => setHovered(null)}
+                        aria-label={`${STATUS_LABELS[status]}: ${value}`}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Tooltip rendered outside the clipped inner container so it can overflow and remain visible */}
+                {hovered && hovered.groupIdx === groupIdx && (
+                  <div className="absolute left-1/2 -top-7 -translate-x-1/2 bg-white text-blue-700 px-2 py-1 rounded shadow text-xs z-20 whitespace-nowrap border border-blue-200">
+                    {STATUS_LABELS[hovered.status]}: {(group as any)[hovered.status]}
+                  </div>
+                )}
               </div>
 
               {/* Total */}
