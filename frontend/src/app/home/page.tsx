@@ -19,7 +19,8 @@ import ProductivityMetric from '@/components/features/reports/productivityMetric
 import TasksMetric from '@/components/features/reports/tasksMetric';
 import Card from '@/components/layout/Cards';
 // UseTasks hook
-import { useTasks } from '@/lib/hooks/useTasks';
+import { useMetrics } from '@/lib/hooks/useMetrics';
+import { on } from 'events';
 
 // ========================= Local Types (can be moved to types file) =========================
 type TimelineRow = { type: 'project' | 'task' | 'subtask'; item?: TimelineItem; projectName?: string };
@@ -137,7 +138,7 @@ function TimelineView() {
   }, [token, user]);
 
   //For Metrics
-  const { tasks, loading: tasksLoading, fetchTeamTasks } = useTasks();
+  const { metricTasks, fetchTasksForMetrics, loading: metricsLoading } = useMetrics();
   const [teamStats, setTeamStats] = useState<
     { name: string; ongoing: number; under_review: number; completed: number; overdue: number }[]
   >([]);
@@ -154,13 +155,10 @@ function TimelineView() {
       }[] = [];
 
       for (const team of teams) {
-        // Fetch tasks for this team
-        await fetchTeamTasks(team.id);
-
+        // Fetch tasks for this team and use the returned tasks directly
+        const tasks = await fetchTasksForMetrics(selectedDepartmentId, team.id) ?? [];
         // Filter non-deleted valid tasks
-        const validTasks = tasks.filter(
-          (t) => t.projectId && !t.isDeleted
-        );
+        const validTasks = (tasks as any[]).filter((t) => t.projectId && !t.isDeleted);
 
         // Count by status
         const ongoing = validTasks.filter((t) => t.status === 'ongoing').length;
@@ -174,22 +172,20 @@ function TimelineView() {
           }
           return false;
         }).length;
-
         results.push({
           departmentName: currentDepartmentName,
           name: team.name,
           ongoing,
           under_review,
           completed,
-          overdue
+          overdue,
         });
       }
-
       setTeamStats(results);
     };
 
     if (teams.length) loadTasks();
-  }, [teams, fetchTeamTasks]);
+  }, [teams]);
 
   // Default selections from user
   useEffect(() => {
@@ -296,7 +292,7 @@ function TimelineView() {
     }
   };
 
-  if (loading || tasksLoading) {
+  if (loading || metricsLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-gray-500">Loading timeline...</div>
