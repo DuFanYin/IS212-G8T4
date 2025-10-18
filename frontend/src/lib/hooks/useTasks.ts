@@ -28,6 +28,24 @@ export const useTasks = () => {
     }
   }, [user?.token]);
 
+  const fetchTeamTasks = useCallback(async (teamId: string) => {
+    if (!user?.token) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await taskService.getTasksByTeam(user.token, teamId);
+      if (response.status === 'success') {
+        setTasks(response.data);
+      } else {
+        setError(response.message || 'Failed to fetch team tasks');
+      }
+    } catch (err) {
+      setError('Error fetching team tasks');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.token]);
+
   const createTask = async (taskData: CreateTaskRequest) => {
     if (!user?.token) throw new Error('No authentication token');
     
@@ -123,6 +141,7 @@ export const useTasks = () => {
     loading,
     error,
     fetchTasks,
+    fetchTeamTasks,
     createTask,
     updateTask,
     assignTask,

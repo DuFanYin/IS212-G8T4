@@ -1,46 +1,97 @@
 'use client';
 
-const teams = [
-  { name: 'Alpha', completed: 18, overdue: 2, totalTasks: 25 },
-  { name: 'Beta', completed: 12, overdue: 4, totalTasks: 20 },
-  { name: 'Gamma', completed: 20, overdue: 1, totalTasks: 22 },
-  { name: 'Delta', completed: 8, overdue: 3, totalTasks: 15 },
-];
-
-function getProductivityIndex(completed: number, overdue: number, totalTasks: number) {
-  if (totalTasks === 0) return 0;
-  return Math.max(0, ((completed - overdue) / totalTasks));
+interface metricProps {
+  tasks: Array<{
+    departmentName?: string;
+    name: string | null;
+    ongoing: number;
+    under_review: number;
+    completed: number;
+    overdue: number;
+  }>;
 }
 
-export default function ProductivityIndex() {
+function getProductivityIndex(tasks) {
+  const totalTasks = tasks.reduce((sum, t) => sum + t.ongoing + t.under_review + t.completed + t.overdue, 0);
+  const completedTasks = tasks.reduce((sum, t) => sum + t.completed, 0);
+  const overdueTasks = tasks.reduce((sum, t) => sum + t.overdue, 0);
+
+  if (totalTasks === 0) return 0;
+  return Math.max(0, ((completedTasks - overdueTasks) / totalTasks));
+}
+
+export default function ProductivityIndex({tasks}: metricProps) {
+  const index = getProductivityIndex(tasks);
+  const percent = Math.min(index, 1); 
+  const size = 120;
+  const strokeWidth = 14;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - percent);
+
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-8 relative">
-      <h2 className="text-2xl font-semibold mb-6">Team Productivity Index</h2>
-      <div className="space-y-6">
-        {teams.map((team) => {
-          const index = getProductivityIndex(team.completed, team.overdue, team.totalTasks);
-          return (
-            <div key={team.name} className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">{team.name}</span>
-              </div>
-              <div className="w-full h-4 bg-gray-200 rounded overflow-hidden">
-                <div
-                  className="h-4 rounded flex items-center justify-center relative"
-                  style={{
-                    width: `${Math.min(index * 100, 100)}%`,
-                    background: index > 0.7 ? '#34d399' : index > 0.4 ? '#fbbf24' : '#f87171',
-                    transition: 'width 0.5s',
-                  }}
-                >
-                  <span className="text-xs font-semibold text-white w-full absolute left-0 right-0 flex justify-end items-center pr-4">
-                    {index.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+    <div className="w-full flex flex-col items-center justify-center py-2">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">Team Productivity Index</h2>
+      <div className="flex flex-col items-center justify-center">
+        <span className="mb-2 text-base font-medium text-gray-700">{tasks[0].departmentName || "Personal"}</span>
+        <svg
+          className="mb-2 block mx-auto drop-shadow-lg"
+          viewBox={`0 0 ${size} ${size}`}
+          width={size}
+          height={size}
+        >
+          <defs>
+            <linearGradient id="pi-gradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="100%" stopColor="#f59e42" />
+            </linearGradient>
+            <radialGradient id="pi-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="60%" stopColor="#fffbe8" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#fffbe8" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          {/* Soft inner glow */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius - 8}
+            fill="url(#pi-glow)"
+          />
+          {/* Background circle */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#f3f4f6"
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          {/* Gradient progress arc */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="url(#pi-gradient)"
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className="transition-all duration-700"
+          />
+          {/* Centered number */}
+          <text
+            x="50%"
+            y="50%"
+            textAnchor="middle"
+            dominantBaseline="central"
+            className="font-bold"
+            fill="#f59e42"
+            fontSize="1.1rem"
+          >
+            {(index * 10).toFixed(1)}/10
+          </text>
+        </svg>
       </div>
     </div>
   );
