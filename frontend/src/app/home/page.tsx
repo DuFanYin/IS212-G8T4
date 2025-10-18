@@ -20,7 +20,6 @@ import TasksMetric from '@/components/features/reports/tasksMetric';
 import Card from '@/components/layout/Cards';
 // UseTasks hook
 import { useMetrics } from '@/lib/hooks/useMetrics';
-import { on } from 'events';
 
 // ========================= Local Types (can be moved to types file) =========================
 type TimelineRow = { type: 'project' | 'task' | 'subtask'; item?: TimelineItem; projectName?: string };
@@ -115,7 +114,6 @@ function TimelineView() {
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  
 
   const token = user?.token;
 
@@ -137,55 +135,6 @@ function TimelineView() {
     load();
   }, [token, user]);
 
-  //For Metrics
-  const { metricTasks, fetchTasksForMetrics, loading: metricsLoading } = useMetrics();
-  const [teamStats, setTeamStats] = useState<
-    { name: string; ongoing: number; under_review: number; completed: number; overdue: number }[]
-  >([]);
-
-  useEffect(() => {
-    const loadTasks = async () => {
-      const results: {
-        departmentName?: string;
-        name: string;
-        ongoing: number;
-        under_review: number;
-        completed: number;
-        overdue: number;
-      }[] = [];
-
-      for (const team of teams) {
-        // Fetch tasks for this team and use the returned tasks directly
-        const tasks = await fetchTasksForMetrics(selectedDepartmentId, team.id) ?? [];
-        // Filter non-deleted valid tasks
-        const validTasks = (tasks as any[]).filter((t) => t.projectId && !t.isDeleted);
-
-        // Count by status
-        const ongoing = validTasks.filter((t) => t.status === 'ongoing').length;
-        const under_review = validTasks.filter((t) => t.status === 'under_review').length;
-        const completed = validTasks.filter((t) => t.status === 'completed').length;
-        const overdue = validTasks.filter((t) => {
-          if (t.dueDate) {
-            const due = new Date(t.dueDate);
-            const now = new Date();
-            return t.status !== 'completed' && due < now;
-          }
-          return false;
-        }).length;
-        results.push({
-          departmentName: currentDepartmentName,
-          name: team.name,
-          ongoing,
-          under_review,
-          completed,
-          overdue,
-        });
-      }
-      setTeamStats(results);
-    };
-
-    if (teams.length) loadTasks();
-  }, [teams]);
 
   // Default selections from user
   useEffect(() => {
@@ -267,6 +216,9 @@ function TimelineView() {
   const currentDepartmentName = useMemo(() => {
     return departments.find(d => d.id === (selectedDepartmentId ?? ''))?.name ?? user?.departmentName ?? 'No department';
   }, [departments, selectedDepartmentId, user?.departmentName]);
+
+  //For Metrics
+  const { teamStats, loading: metricsLoading } = useMetrics({ teams, departments, currentTeamName });
 
   const toggleTaskExpansion = (taskId: string) => setExpandedTasks(prev => toggleSet(prev, taskId));
   const toggleProjectExpansion = (projectName: string) => setExpandedProjects(prev => toggleSet(prev, projectName));

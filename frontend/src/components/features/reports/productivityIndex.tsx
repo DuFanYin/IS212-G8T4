@@ -2,7 +2,7 @@
 
 interface metricProps {
   tasks: Array<{
-    departmentName?: string;
+    titleName?: string;
     name: string | null;
     ongoing: number;
     under_review: number;
@@ -31,9 +31,8 @@ export default function ProductivityIndex({tasks}: metricProps) {
 
   return (
     <div className="w-full flex flex-col items-center justify-center py-2">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Team Productivity Index</h2>
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">{tasks[0]?.titleName} Productivity Index</h2>
       <div className="flex flex-col items-center justify-center">
-        <span className="mb-2 text-base font-medium text-gray-700">{tasks[0].departmentName || "Personal"}</span>
         <svg
           className="mb-2 block mx-auto drop-shadow-lg"
           viewBox={`0 0 ${size} ${size}`}
