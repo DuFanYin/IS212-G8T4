@@ -57,7 +57,7 @@ __tests__/
 ```
 
 
-## All Test Files and Cases (135)
+## All Test Files and Cases (353)
 
 ### Authentication & Security Tests
 
@@ -263,6 +263,265 @@ __tests__/
   - should log create/update/assign/status changes for tasks
   - should return activity entry IDs on task responses where applicable
 
+### Unit Tests
+
+#### Domain Model Tests
+
+- unit/domain/ActivityLog.test.js (8)
+  - ActivityLog › should create activity log with valid data
+  - ActivityLog › should handle missing required fields
+  - ActivityLog › should validate action types
+  - ActivityLog › should format timestamps correctly
+  - ActivityLog › should handle null/undefined values gracefully
+  - ActivityLog › should serialize to JSON correctly
+  - ActivityLog › should validate resource types
+  - ActivityLog › should handle empty details object
+
+- unit/domain/Project.test.js (12)
+  - Project › should create project with valid data
+  - Project › should handle missing required fields
+  - Project › should validate project name
+  - Project › should handle optional fields
+  - Project › should validate deadline format
+  - Project › should handle collaborators array
+  - Project › should check ownership permissions
+  - Project › should check modification permissions
+  - Project › should check access permissions
+  - Project › should serialize to DTO correctly
+  - Project › should handle archived status
+  - Project › should validate department membership
+
+- unit/domain/Subtask.test.js (10)
+  - Subtask › should create subtask with valid data
+  - Subtask › should handle missing required fields
+  - Subtask › should validate parent task reference
+  - Subtask › should handle status transitions
+  - Subtask › should check edit permissions
+  - Subtask › should check completion permissions
+  - Subtask › should serialize to DTO correctly
+  - Subtask › should handle soft deletion
+  - Subtask › should validate due dates
+  - Subtask › should handle priority levels
+
+- unit/domain/Task.test.js (15)
+  - Task › should create task with valid data
+  - Task › should handle missing required fields
+  - Task › should validate task title
+  - Task › should handle optional fields
+  - Task › should validate due date format
+  - Task › should handle collaborators array
+  - Task › should check edit permissions
+  - Task › should check assignment permissions
+  - Task › should check completion permissions
+  - Task › should check attachment permissions
+  - Task › should serialize to DTO correctly
+  - Task › should handle soft deletion
+  - Task › should validate priority levels
+  - Task › should handle project associations
+  - Task › should check visibility permissions
+
+- unit/domain/User.test.js (18)
+  - User › should create user with valid data
+  - User › should handle missing required fields
+  - User › should validate email format
+  - User › should validate role types
+  - User › should check task assignment permissions
+  - User › should check task visibility permissions
+  - User › should check department access permissions
+  - User › should check team access permissions
+  - User › should serialize to DTO correctly
+  - User › should serialize to profile DTO correctly
+  - User › should serialize to safe DTO correctly
+  - User › should handle role hierarchy
+  - User › should validate department membership
+  - User › should validate team membership
+  - User › should handle password validation
+  - User › should check collaboration permissions
+  - User › should handle soft deletion
+  - User › should validate user status
+
+#### Repository Tests
+
+- unit/repositories/ActivityLogRepository.test.js (12)
+  - ActivityLogRepository › should create activity log successfully
+  - ActivityLogRepository › should find activity logs by user
+  - ActivityLogRepository › should find activity logs by resource
+  - ActivityLogRepository › should find all activity logs
+  - ActivityLogRepository › should handle creation errors
+  - ActivityLogRepository › should handle query errors
+  - ActivityLogRepository › should validate required fields
+  - ActivityLogRepository › should handle pagination
+  - ActivityLogRepository › should filter by action type
+  - ActivityLogRepository › should sort by timestamp
+  - ActivityLogRepository › should handle empty results
+  - ActivityLogRepository › should validate resource references
+
+- unit/repositories/DepartmentRepository.test.js (8)
+  - DepartmentRepository › should find department by ID
+  - DepartmentRepository › should find all departments
+  - DepartmentRepository › should handle non-existent department
+  - DepartmentRepository › should validate department data
+  - DepartmentRepository › should handle query errors
+  - DepartmentRepository › should return department with teams
+  - DepartmentRepository › should handle empty results
+  - DepartmentRepository › should validate department structure
+
+- unit/repositories/ProjectRepository.test.js (15)
+  - ProjectRepository › should create project successfully
+  - ProjectRepository › should find project by ID
+  - ProjectRepository › should find projects by owner
+  - ProjectRepository › should find projects by collaborator
+  - ProjectRepository › should find projects by department
+  - ProjectRepository › should find active projects
+  - ProjectRepository › should find all projects
+  - ProjectRepository › should update project successfully
+  - ProjectRepository › should add collaborators
+  - ProjectRepository › should remove collaborators
+  - ProjectRepository › should handle creation errors
+  - ProjectRepository › should handle update errors
+  - ProjectRepository › should validate project data
+  - ProjectRepository › should handle non-existent project
+  - ProjectRepository › should validate collaborator operations
+
+- unit/repositories/TeamRepository.test.js (10)
+  - TeamRepository › should find team by ID
+  - TeamRepository › should find teams by department
+  - TeamRepository › should find all teams
+  - TeamRepository › should handle non-existent team
+  - TeamRepository › should validate team data
+  - TeamRepository › should handle query errors
+  - TeamRepository › should return team with members
+  - TeamRepository › should handle empty results
+  - TeamRepository › should validate team structure
+  - TeamRepository › should handle department relationships
+
+- unit/repositories/UserRepository.test.js (20)
+  - UserRepository › should create user successfully
+  - UserRepository › should find user by ID
+  - UserRepository › should find user by email
+  - UserRepository › should find users by department
+  - UserRepository › should find users by team
+  - UserRepository › should find all users
+  - UserRepository › should update user successfully
+  - UserRepository › should update password hash
+  - UserRepository › should set reset token
+  - UserRepository › should clear reset token
+  - UserRepository › should find user by reset token
+  - UserRepository › should handle creation errors
+  - UserRepository › should handle update errors
+  - UserRepository › should handle query errors
+  - UserRepository › should validate user data
+  - UserRepository › should handle non-existent user
+  - UserRepository › should validate email uniqueness
+  - UserRepository › should handle password operations
+  - UserRepository › should validate reset token operations
+  - UserRepository › should handle soft deletion
+
+#### Service Tests
+
+- unit/services/activityLogService.test.js (12)
+  - ActivityLogService › logActivity › should log activity successfully
+  - ActivityLogService › logActivity › should throw error when repository fails
+  - ActivityLogService › getUserActivityLogs › should get user activity logs successfully
+  - ActivityLogService › getUserActivityLogs › should get user activity logs with filters
+  - ActivityLogService › getUserActivityLogs › should throw error when repository fails
+  - ActivityLogService › getResourceActivityLogs › should get resource activity logs successfully
+  - ActivityLogService › getResourceActivityLogs › should throw error when repository fails
+  - ActivityLogService › getAllActivityLogs › should get all activity logs successfully
+  - ActivityLogService › getAllActivityLogs › should get all activity logs with filters
+  - ActivityLogService › getAllActivityLogs › should throw error when repository fails
+  - ActivityLogService › should handle activity log creation
+  - ActivityLogService › should validate activity log data
+
+- unit/services/projectService.test.js (20)
+  - ProjectService › getProjectProgress › should get project progress for authorized user
+  - ProjectService › getProjectProgress › should throw error when user not found
+  - ProjectService › getProjectProgress › should throw error when not authorized
+  - ProjectService › buildEnrichedProjectDTO › should build enriched DTO with owner and collaborator names
+  - ProjectService › buildEnrichedProjectDTO › should handle errors gracefully when fetching names
+  - ProjectService › validateCollaborators › should validate collaborators successfully
+  - ProjectService › validateCollaborators › should throw error when collaborator not found
+  - ProjectService › validateCollaborators › should throw error when department mismatch
+  - ProjectService › validateDepartmentMembership › should validate same department
+  - ProjectService › validateDepartmentMembership › should throw error for different departments
+  - ProjectService › validateDepartmentMembership › should handle null department IDs
+  - ProjectService › isVisibleToUser › should return true when project is accessible
+  - ProjectService › isVisibleToUser › should return false when error occurs
+  - ProjectService › getProjectsByOwner › should get projects by owner successfully
+  - ProjectService › getProjectsByOwner › should throw error when repository fails
+  - ProjectService › getProjectsByDepartment › should get projects by department successfully
+  - ProjectService › getProjectsByDepartment › should throw error when repository fails
+  - ProjectService › getProjectById › should get project by id successfully
+  - ProjectService › getProjectById › should throw error when project not found
+  - ProjectService › getProjectById › should throw error when repository fails
+
+- unit/services/taskService.test.js (24)
+  - TaskService › validatePriority › should validate priority successfully
+  - TaskService › validatePriority › should throw error when priority is undefined
+  - TaskService › validatePriority › should throw error when priority is null
+  - TaskService › validatePriority › should throw error when priority is out of range
+  - TaskService › validatePriority › should throw error when priority is not a number
+  - TaskService › mapPopulatedTaskDocToDTO › should map populated task document to DTO
+  - TaskService › buildEnrichedTaskDTO › should build enriched DTO successfully
+  - TaskService › buildEnrichedTaskDTO › should handle errors gracefully and return fallback DTO
+  - TaskService › isVisibleToUser › should return true for HR/SM users
+  - TaskService › isVisibleToUser › should return false when task not found
+  - TaskService › isVisibleToUser › should return false when user not found
+  - TaskService › isVisibleToUser › should return false when error occurs
+  - TaskService › getTasksByAssignee › should get tasks by assignee successfully
+  - TaskService › getTasksByAssignee › should throw error when repository fails
+  - TaskService › getTasksByCreator › should get tasks by creator successfully
+  - TaskService › getTasksByCreator › should throw error when repository fails
+  - TaskService › getTasksByCollaborator › should get tasks by collaborator successfully
+  - TaskService › getTasksByCollaborator › should throw error when repository fails
+  - TaskService › getById › should get task by id successfully
+  - TaskService › getById › should throw error when task not found
+  - TaskService › getById › should throw error when repository fails
+  - TaskService › setTaskProjects › should set task projects successfully
+  - TaskService › setTaskProjects › should throw error when task not found
+  - TaskService › setTaskProjects › should throw error when not authorized
+
+- unit/services/userService.test.js (4)
+  - UserService › should handle user retrieval operations
+  - UserService › should handle user creation and updates
+  - UserService › should handle reset token operations
+  - UserService › should handle error cases
+
+#### Controller Tests
+
+- unit/controllers/authController.test.js (15)
+  - AuthController › login › should login successfully with valid credentials
+  - AuthController › login › should return error when email is missing
+  - AuthController › login › should return error when password is missing
+  - AuthController › login › should return error for invalid email format
+  - AuthController › login › should return error when user not found
+  - AuthController › login › should return error when password is invalid
+  - AuthController › login › should handle server errors
+  - AuthController › requestPasswordReset › should request password reset successfully
+  - AuthController › requestPasswordReset › should return error when user not found
+  - AuthController › requestPasswordReset › should handle server errors
+  - AuthController › resetPassword › should reset password successfully
+  - AuthController › resetPassword › should return error when user not found
+  - AuthController › resetPassword › should return error when token is invalid
+  - AuthController › resetPassword › should handle server errors
+  - AuthController › should validate authentication flows
+
+- unit/controllers/userController.test.js (14)
+  - UserController › getProfile › should get user profile successfully
+  - UserController › getProfile › should return error when user not found
+  - UserController › getProfile › should handle service errors
+  - UserController › getTeamMembers › should get team members for HR/SM users
+  - UserController › getTeamMembers › should get team members for director users
+  - UserController › getTeamMembers › should get team members for manager users
+  - UserController › getTeamMembers › should return error when user not found
+  - UserController › getTeamMembers › should return error when insufficient permissions
+  - UserController › getTeamMembers › should handle service errors
+  - UserController › getDepartmentMembers › should get department members successfully
+  - UserController › getDepartmentMembers › should use user department when no departmentId provided
+  - UserController › getDepartmentMembers › should return error when user not found
+  - UserController › getDepartmentMembers › should return error when insufficient permissions
+  - UserController › getDepartmentMembers › should handle service errors
+
 
 
 ## Test Philosophy
@@ -275,8 +534,8 @@ Tests focus on **core business requirements** with balanced coverage:
 - **Data Validation**: Input validation for required fields and business rules
 - **Error Handling**: Graceful handling of common error scenarios
 
-### Balanced Test Coverage (135 total tests)
-The suite covers authentication, users, organization, tasks (including grouping and attachments), subtasks, projects, and activity logs.
+### Balanced Test Coverage (353 total tests)
+The suite covers authentication, users, organization, tasks (including grouping and attachments), subtasks, projects, activity logs, domain models, repositories, services, and controllers with comprehensive unit and integration testing.
 
 ### What We Test
 - ✅ Core business functionality and user workflows
@@ -284,6 +543,12 @@ The suite covers authentication, users, organization, tasks (including grouping 
 - ✅ Data validation and required field handling
 - ✅ Authentication and security measures
 - ✅ Error scenarios and edge cases that matter
+- ✅ Domain model validation and business logic
+- ✅ Repository data access patterns
+- ✅ Service layer business rules
+- ✅ Controller request/response handling
+- ✅ Unit testing for isolated component behavior
+- ✅ Integration testing for end-to-end workflows
 
 ### What We Don't Test
 - ❌ Every possible input combination
