@@ -2,79 +2,113 @@
 
 import { useState } from 'react';
 
-const data = [
-    { department: 'Alpha', ongoing: 5, under_review: 2, completed: 8 },
-    { department: 'Beta', ongoing: 3, under_review: 4, completed: 6 },
-    { department: 'Gamma', ongoing: 7, under_review: 1, completed: 5 },
-    { department: 'Delta', ongoing: 20, under_review: 8, completed: 4 },
-];
-
-// Map status keys to professional labels
+// Professional labels & colors
 const STATUS_LABELS: Record<string, string> = {
-    ongoing: 'On-going',
-    under_review: 'Under Review',
-    completed: 'Completed',
+  ongoing: 'On-going',
+  under_review: 'Under Review',
+  completed: 'Completed',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-    ongoing: '#2563eb',        // blue-600
-    under_review: '#f59e42',   // amber-500
-    completed: '#22c55e',      // green-500
+  ongoing: '#2563eb',      
+  under_review: '#f59e42', 
+  completed: '#22c55e',   
 };
 
-export default function TasksMetric() {
-    const [hovered, setHovered] = useState<{ deptIdx: number; status: string } | null>(null);
+// Order from bottom to top (stacked)
+const STACK_ORDER: Array<keyof typeof STATUS_LABELS> = [
+  'ongoing',
+  'under_review',
+  'completed',
+];
 
-    return (
-        <section className="bg-white rounded-lg shadow p-6 mb-8 relative">
-            <h2 className="text-2xl font-semibold mb-4">Task Metrics</h2>
-            <div className="absolute top-6 right-6 flex gap-6 z-10">
-                {Object.entries(STATUS_COLORS).map(([status, color]) => (
-                    <div key={status} className="flex items-center gap-2">
-                        <span style={{ background: color }} className="inline-block w-4 h-4 rounded"></span>
-                        <span className="text-sm text-gray-600 whitespace-nowrap">{STATUS_LABELS[status]}</span>
-                    </div>
-                ))}
+interface metricProps {
+  tasks: Array<{
+    name: string | null;
+    ongoing: number;
+    under_review: number;
+    completed: number;
+    overdue: number;
+  }>;
+}
+
+export default function TasksMetric({ tasks }: metricProps) {
+  const [hovered, setHovered] = useState<{ groupIdx: number; status: string } | null>(null);
+
+  const rows = tasks.map(t => ({
+    name: t.name ?? 'No team',
+    ongoing: t.ongoing,
+    under_review: t.under_review,
+    completed: t.completed,
+  }));
+  return (
+    <div className="w-full flex flex-col items-center justify-center py-2">
+      <h2 className="font-semibold text-gray-800 text-lg mb-4">Task Metrics</h2>
+      <div className="flex justify-center w-full">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-white px-4 py-2 rounded-full shadow-md border border-slate-100 max-w-full justify-center">
+          {Object.entries(STATUS_COLORS).map(([status, color]) => (
+            <div key={status} className="flex items-center gap-2">
+              <span
+                style={{ background: color }}
+                className="w-2 h-2 rounded-full"
+                aria-hidden
+              />
+              <span className="text-xs text-gray-700 font-medium">{STATUS_LABELS[status]}</span>
             </div>
-            <div className="flex justify-center gap-10">
-                {data.map((dept, deptIdx) => {
-                    const total = dept.ongoing + dept.under_review + dept.completed;
+          ))}
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="mt-6 flex items-end justify-center gap-8 w-full">
+        {rows.map((group, groupIdx) => {
+          const total = group.ongoing + group.under_review + group.completed || 1;
+          return (
+            <div key={group.name} className="flex flex-col items-center">
+              <span className="mb-2 text-base font-semibold">{group.name}</span>
+
+              <div className="relative h-36 w-10"> 
+                <div className="absolute inset-0 rounded-lg bg-white border border-blue-100 shadow-md overflow-hidden flex flex-col-reverse">
+                  {STACK_ORDER.map((status) => {
+                    const value = group[status as keyof typeof group] as number;
+                    const pct = (value / total) * 100;
                     return (
-                        <div key={dept.department} className="flex flex-col items-center">
-                            <span className="mb-2 font-medium text-gray-700">{dept.department}</span>
-                            <div className="relative flex flex-col-reverse h-40 w-10 border border-gray-200 rounded bg-gray-50">
-                                {['completed', 'under_review', 'ongoing'].map(status => {
-                                    const value = dept[status as keyof typeof dept];
-                                    const height = total > 0 ? (value / total) * 160 : 0;
-                                    return (
-                                        <div
-                                            key={status}
-                                            style={{
-                                                background: STATUS_COLORS[status],
-                                                height: height,
-                                                width: '100%',
-                                                opacity: hovered && hovered.deptIdx === deptIdx && hovered.status !== status ? 0.6 : 1,
-                                                cursor: 'pointer',
-                                                position: 'relative',
-                                                transition: 'opacity 0.2s',
-                                            }}
-                                            onMouseEnter={() => setHovered({ deptIdx, status })}
-                                            onMouseLeave={() => setHovered(null)}
-                                        >
-                                            {hovered && hovered.deptIdx === deptIdx && hovered.status === status && (
-                                                <div className="absolute left-1/2 -top-8 -translate-x-1/2 bg-white text-gray-800 px-3 py-1 rounded shadow text-xs z-10 min-w-[120px] flex items-center justify-center whitespace-nowrap">
-                                                    {STATUS_LABELS[status]}: {value}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <span className="mt-2 text-xs text-gray-500">Total: {total}</span>
-                        </div>
+                      <div
+                        key={status}
+                        style={{
+                          background: STATUS_COLORS[status],
+                          height: `${pct}%`,
+                          transition: 'opacity 150ms ease',
+                          opacity:
+                            hovered &&
+                            hovered.groupIdx === groupIdx &&
+                            hovered.status !== status
+                              ? 0.6
+                              : 1,
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={() => setHovered({ groupIdx, status })}
+                        onMouseLeave={() => setHovered(null)}
+                        aria-label={`${STATUS_LABELS[status]}: ${value}`}
+                      />
                     );
-                })}
+                  })}
+                </div>
+
+                {/* Tooltip rendered outside the clipped inner container so it can overflow and remain visible */}
+                {hovered && hovered.groupIdx === groupIdx && (
+                  <div className="absolute left-1/2 -top-7 -translate-x-1/2 bg-white text-blue-700 px-2 py-1 rounded shadow text-xs z-20 whitespace-nowrap border border-blue-200">
+                    {STATUS_LABELS[hovered.status]}: {(group as any)[hovered.status]}
+                  </div>
+                )}
+              </div>
+
+              {/* Total */}
+              <span className="mt-2 text-xs text-gray-500">Total: {total}</span>
             </div>
-        </section>
-    );
+          );
+        })}
+      </div>
+    </div>
+  );
 }
