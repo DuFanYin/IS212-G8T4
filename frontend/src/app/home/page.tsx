@@ -218,7 +218,7 @@ function TimelineView() {
   }, [departments, selectedDepartmentId, user?.departmentName]);
 
   //For Metrics
-  const { teamStats, loading: metricsLoading } = useMetrics({ teams, departments, selectedDepartmentId, selectedTeamId, currentTeamName, currentDepartmentName });
+  const { teamStats, loading: metricsLoading } = useMetrics({ teams, departments, currentTeamName });
 
   const toggleTaskExpansion = (taskId: string) => setExpandedTasks(prev => toggleSet(prev, taskId));
   const toggleProjectExpansion = (projectName: string) => setExpandedProjects(prev => toggleSet(prev, projectName));

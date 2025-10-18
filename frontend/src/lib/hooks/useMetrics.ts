@@ -13,10 +13,7 @@ interface MetricFetchParams {
 interface UseMetricsParams {
   teams: Team[];
   departments: Array<{ id: string; name: string }>;
-  selectedDepartmentId: string | null;
-  selectedTeamId: string | null;
-  currentTeamName: string | null;
-  currentDepartmentName: string | null;
+  currentTeamName?: string;
 }
 
 type StatusBucket = {
@@ -33,7 +30,7 @@ type Row = {
 
 export function useMetrics(params: UseMetricsParams) {
     const { user } = useUser();
-    const { teams, departments, selectedDepartmentId, selectedTeamId, currentTeamName, currentDepartmentName } = params;
+    const { teams, departments, currentTeamName} = params;
     const [teamStats, setTeamStats] = useState<Row[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -62,18 +59,15 @@ export function useMetrics(params: UseMetricsParams) {
         async (params: MetricFetchParams): Promise<Task[]> => {
         const { selectedDepartmentId, selectedTeamId, teams } = params;
         if (!user?.token) return [];
-        setLoading(true);
-        try {
-            const resp = await getVisibleTasks(user.token, selectedDepartmentId, selectedTeamId, teams ?? []);
-            if (resp.status !== 'success') throw new Error(resp.message || 'Failed to fetch tasks');
-            const tasks = (resp.data ?? []) as Task[];
-            return tasks;
-        } catch (err) {
-            console.error('Error fetching tasks for metrics:', err);
-            return [];
-        } finally {
-            setLoading(false);
-        }
+            try {
+                const resp = await getVisibleTasks(user.token, selectedDepartmentId, selectedTeamId, teams ?? []);
+                if (resp.status !== 'success') throw new Error(resp.message || 'Failed to fetch tasks');
+                const tasks = (resp.data ?? []) as Task[];
+                return tasks;
+            } catch (err) {
+                console.error('Error fetching tasks for metrics:', err);
+                return [];
+            } 
         },
         [user?.token]
     );
@@ -104,32 +98,27 @@ export function useMetrics(params: UseMetricsParams) {
                     const valid = rawTasks.filter((t) => t.projectId && !t.isDeleted);
                     const buckets = countStatuses(valid);
                     return {
-                        departmentName: dept.name,
+                        departmentName: "Company",
                         name: dept.name,
                         ...buckets,
                     };
                 })
             );
             } else if (role === 'manager') {
-                const team = { id: selectedTeamId, name: currentTeamName };
-                if (team) {
-                    const rawTasks = await fetchTasksForMetrics({
-                        selectedDepartmentId: null,
-                        selectedTeamId: team.id,
-                        teams,
-                    });
-                    const valid = rawTasks.filter((t) => t.projectId && !t.isDeleted);
-                    const buckets = countStatuses(valid);
-                    results = [
-                        {
-                            departmentName: team.name,
-                            name: team.name,
-                            ...buckets,
-                        },
-                    ];
-            } else {
-                results = [];
-            }
+                const rawTasks = await fetchTasksForMetrics({
+                    selectedDepartmentId: null,
+                    selectedTeamId: user?.teamId || null,
+                    teams,
+                });
+                const valid = rawTasks.filter((t) => t.projectId && !t.isDeleted);
+                const buckets = countStatuses(valid);
+                results = [
+                    {
+                        departmentName: 'Team',
+                        name: currentTeamName || 'Team',
+                        ...buckets,
+                    },
+                ];
             } else if (role === 'staff') {
                 // Personal aggregation
                 const rawTasks = await fetchTasksForMetrics({
@@ -147,7 +136,7 @@ export function useMetrics(params: UseMetricsParams) {
                     },
                 ];
             } else {
-                // Fallback: aggregate by teams
+                // Aggregate by teams (for Director)
                 results = await Promise.all(
                     teams.map(async (team) => {
                     const rawTasks = await fetchTasksForMetrics({
@@ -158,7 +147,7 @@ export function useMetrics(params: UseMetricsParams) {
                     const valid = rawTasks.filter((t) => t.projectId && !t.isDeleted);
                     const buckets = countStatuses(valid);
                     return {
-                        departmentName: team.name,
+                        departmentName: "Department",
                         name: team.name,
                         ...buckets,
                     };
@@ -175,7 +164,6 @@ export function useMetrics(params: UseMetricsParams) {
             }
         };
 
-    // Only run when we actually have inputs to aggregate
     loadTasks();
 
     return () => {
@@ -186,6 +174,6 @@ export function useMetrics(params: UseMetricsParams) {
   return {
     teamStats,
     loading,
-    fetchTasksForMetrics, // exposed for manual refreshes or scoped fetches
+    fetchTasksForMetrics,
   };
 }
