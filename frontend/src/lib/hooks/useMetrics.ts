@@ -98,7 +98,7 @@ export function useMetrics(params: UseMetricsParams) {
                     const valid = rawTasks.filter((t) => t.projectId && !t.isDeleted);
                     const buckets = countStatuses(valid);
                     return {
-                        departmentName: "Company",
+                        titleName: "Company",
                         name: dept.name,
                         ...buckets,
                     };
@@ -114,7 +114,7 @@ export function useMetrics(params: UseMetricsParams) {
                 const buckets = countStatuses(valid);
                 results = [
                     {
-                        departmentName: 'Team',
+                        titleName: 'Team',
                         name: currentTeamName || 'Team',
                         ...buckets,
                     },
@@ -130,7 +130,7 @@ export function useMetrics(params: UseMetricsParams) {
                 const buckets = countStatuses(valid);
                 results = [
                     {
-                        departmentName: 'Personal',
+                        titleName: 'Personal',
                         name: user?.name ?? 'Personal',
                         ...buckets,
                     },
@@ -147,7 +147,7 @@ export function useMetrics(params: UseMetricsParams) {
                     const valid = rawTasks.filter((t) => t.projectId && !t.isDeleted);
                     const buckets = countStatuses(valid);
                     return {
-                        departmentName: "Department",
+                        titleName: "Department",
                         name: team.name,
                         ...buckets,
                     };
