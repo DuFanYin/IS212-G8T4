@@ -6,21 +6,49 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canViewTeam, canViewDepartment } from '@/lib/utils/access';
 import Dropdown from './Dropdown';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
-
 
 export default function Header() {
   const { user, logout }: { user: User | null; logout: () => void } = useUser();
   const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Temporary dummy notifications
-  const notifications = [
-    { id: 1, text: 'Task "Design UI" deadline changed from Oct 15 → Oct 20' },
-    { id: 2, text: 'Task "API Integration" is overdue!' },
-    { id: 3, text: 'Reminder: Task "Testing" due tomorrow' },
-  ];
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNoti, setLoadingNoti] = useState(true);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.warn('⚠️ No token found in localStorage');
+          return;
+        }
+
+        const res = await fetch('http://localhost:3000/api/notifications', {
+          method: 'POST', 
+          headers: {
+            'Content-Type': 'application/json', 
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userId: user?.id }),
+        });
+
+        const data = await res.json();
+        console.log('📬 Notifications from backend:', data);
+        setNotifications(data.data || []);
+      } catch (err) {
+        console.error('❌ Failed to fetch notifications:', err);
+      } finally {
+        setLoadingNoti(false);
+      }
+    };
+
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
 
   const isActive = (path: string) => {
     return pathname === path ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900';
@@ -39,10 +67,7 @@ export default function Header() {
             </Link>
             {user && (
               <nav className="hidden md:flex space-x-6">
-                <Link
-                  href="/home"
-                  className={`${isActive('/home')} flex items-center px-1 py-2 text-sm font-medium`}
-                >
+                <Link href="/home" className={`${isActive('/home')} flex items-center px-1 py-2 text-sm font-medium`}>
                   Dashboard
                 </Link>
                 <Link
@@ -59,16 +84,12 @@ export default function Header() {
                     Organization
                   </Link>
                 )}
-                <Dropdown
-                  label="Report"
-                  options={['Personal', 'Team', 'Department', 'Company']}
-                />
+                <Dropdown label="Report" options={['Personal', 'Team', 'Department', 'Company']} />
               </nav>
             )}
           </div>
           {user && (
             <div className="flex items-center space-x-4 relative">
-              
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 rounded-full hover:bg-gray-100"
@@ -82,9 +103,7 @@ export default function Header() {
               <Link href="/users" className="text-sm text-gray-600 hover:text-gray-900 underline">
                 {user.name}
               </Link>
-              <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
-                {user.role}
-              </span>
+              <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">{user.role}</span>
               <button
                 onClick={logout}
                 className="px-3 py-1.5 bg-gray-100 text-sm text-gray-700 rounded hover:bg-gray-200"
@@ -96,22 +115,25 @@ export default function Header() {
         </div>
       </div>
 
-            {showNotifications && (
-              <div className="fixed top-16 right-20 z-50 w-80 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
-                <div className="p-3 text-sm font-medium text-gray-700 border-b">Notifications</div>
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                  >
-                    {n.text}
-                  </div>
-                ))}
-                {notifications.length === 0 && (
-                  <div className="p-4 text-sm text-gray-500 text-center">No notifications</div>
-                )}
+      {showNotifications && (
+        <div className="fixed top-16 right-20 z-50 w-80 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+          <div className="p-3 text-sm font-medium text-gray-700 border-b">Notifications</div>
+          {loadingNoti ? (
+            <div className="p-4 text-sm text-gray-500 text-center">Loading...</div>
+          ) : notifications.length === 0 ? (
+            <div className="p-4 text-sm text-gray-500 text-center">No notifications</div>
+          ) : (
+            notifications.map((n) => (
+              <div
+                key={n._id || n.id}
+                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+              >
+                {n.message}
               </div>
-            )}
+            ))
+          )}
+        </div>
+      )}
     </header>
   );
 }

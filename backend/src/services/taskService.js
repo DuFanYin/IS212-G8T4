@@ -8,6 +8,8 @@ const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
 const ActivityLogRepository = require('../repositories/ActivityLogRepository');
+const notificationService = require('./notificationService');
+
 
 class TaskService {
   constructor(taskRepository) {
@@ -168,6 +170,7 @@ class TaskService {
       if (!taskDoc) throw new Error('Task not found');
 
       const task = new Task(taskDoc);
+      const oldDueDate = task.dueDate;
       const userRepository = new UserRepository();
       const userDoc = await userRepository.findById(userId);
       const user = new User(userDoc);
@@ -266,6 +269,40 @@ class TaskService {
 
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
+      
+      // console.log("========== Due Date Change Check ==========");
+      // console.log("Old Due Date:", oldDueDate);
+      // console.log("New Due Date:", updateData.dueDate);
+
+      // if (oldDueDate && updateData.dueDate) {
+      //   console.log("Old ISO:", new Date(oldDueDate).toISOString());
+      //   console.log("New ISO:", new Date(updateData.dueDate).toISOString());
+      // }
+      // console.log("============================================");
+
+
+      // Notify collaborators if dueDate changed
+      if (
+        updateData.dueDate &&
+        oldDueDate &&
+        new Date(updateData.dueDate).toISOString() !== new Date(oldDueDate).toISOString()
+      ) {
+        const collaborators = updatedTask.collaborators || [];
+        
+        console.log("🔔 Triggering notifications for collaborators...");
+        console.log("Collaborator IDs:", collaborators);
+
+        for (const collaboratorId of collaborators) {
+          // console.log(`→ Sending notification to userId: ${collaboratorId}`);
+
+          await notificationService.createNotification({
+            userId: collaboratorId?.toString?.(),
+            message: `Task "${updatedTask.title}" deadline changed from ${new Date(oldDueDate).toDateString()} → ${new Date(updateData.dueDate).toDateString()}`,
+            link: `/tasks/${updatedTask.id}`,
+            type: 'deadline-change',
+          });
+        }
+      }
 
       //Logging
       const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousTaskDoc, updatedTaskDoc, userId);
