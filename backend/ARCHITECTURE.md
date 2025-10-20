@@ -92,6 +92,7 @@ src/
 - `POST   /api/projects/`                           - Create new project
 - `GET    /api/projects/`                           - Get active projects
 - `GET    /api/projects/departments/:departmentId`  - Get projects by department
+- `GET    /api/projects/:projectId/progress`        - Get project progress (manager/owner only)
 - `PUT    /api/projects/:projectId/archive`         - Archive/unarchive project
 - `PUT    /api/projects/:projectId`                 - Update project
 - `PUT    /api/projects/:projectId/collaborators`   - Add collaborator
@@ -104,12 +105,13 @@ src/
 - `GET    /api/tasks/project/:projectId`            - Get tasks by project
 - `GET    /api/tasks/team/:teamId`                  - Get tasks by team (manager of team, director+, HR/SM)
 - `GET    /api/tasks/department/:departmentId`      - Get tasks by department (director+, HR/SM)
-- `GET    /api/tasks/unassigned`                   - Get all unassigned tasks
+- `GET    /api/tasks/unassigned`                    - Get all unassigned tasks
 - `GET    /api/tasks/:id`                           - Get task by ID (with visibility check)
 - `PUT    /api/tasks/:id`                           - Update task
 - `PATCH  /api/tasks/:id/assign`                    - Assign task to user
 - `PATCH  /api/tasks/:id/status`                    - Update task status
-- `POST   /api/tasks/:id/attachments`              - Add attachment to task
+- `PATCH  /api/tasks/:id/projects`                  - Set task projects
+- `POST   /api/tasks/:id/attachments`               - Add attachment to task
 - `DELETE /api/tasks/:id/attachments/:attachmentId` - Remove attachment from task
 - `DELETE /api/tasks/:id`                           - Archive (soft delete) task
 
