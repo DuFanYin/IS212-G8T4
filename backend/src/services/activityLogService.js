@@ -5,76 +5,75 @@ class ActivityLogService {
   constructor(activityLogRepository) {
     this.activityLogRepository = activityLogRepository;
   }
-
+  
   /**
-   * Log user activity (generic)
-   * @param {Object} params
-   * @param {string} params.action - Action performed
-   * @param {string} params.resourceId - Associated resource (task or project)
-   * @param {Object} [params.before] - Optional state before change
-   * @param {Object} [params.after] - Optional state after change
-   * @param {string} params.userId - Acting user
-   * @param {string} [params.resourceType="task"] - Resource type (task, project, etc.)
+   * Log user activity
+   * @param {string} userId - User ID
+   * @param {string} action - Action performed
+   * @param {Object} details - Additional details
+   * @param {string} resourceType - Type of resource (task, project, etc.)
+   * @param {string} resourceId - Resource ID
    */
-  async logActivity({ action, resourceId, before, after, userId, resourceType = 'task' }) {
+
+  async logActivity(action, resourceId, before, after, userId) {
     try {
       const activityLog = await this.activityLogRepository.create({
-        resourceType,
-        resourceId,
+        taskId: resourceId,
         userId,
         action,
         details: { before, after }
       });
+
       return new ActivityLog(activityLog);
     } catch (error) {
-      throw new Error(`Error logging activity: ${error.message}`);
+      throw new Error(`Error in logging: ${error.message}`);
     }
   }
 
   /**
-   * Get activity logs for a specific user
-   * @param {string} userId
-   * @param {Object} [filters]
+   * Get activity logs for a user
+   * @param {string} userId - User ID
+   * @param {Object} filters - Optional filters
    */
   async getUserActivityLogs(userId, filters = {}) {
     try {
-      const docs = await this.activityLogRepository.findByUser(userId, filters);
-      return docs.map(doc => new ActivityLog(doc));
+      const activityDocs = await this.activityLogRepository.findByUser(userId, filters);
+      return activityDocs.map(doc => new ActivityLog(doc));
     } catch (error) {
-      throw new Error(`Error fetching user activity logs: ${error.message}`);
+      throw new Error(error?.message || 'Error fetching user activity logs');
     }
   }
 
   /**
-   * Get activity logs for a specific resource
-   * @param {string} resourceType
-   * @param {string} resourceId
+   * Get activity logs for a resource
+   * @param {string} resourceType - Resource type
+   * @param {string} resourceId - Resource ID
    */
   async getResourceActivityLogs(resourceType, resourceId) {
     try {
-      const docs = await this.activityLogRepository.findByResource(resourceType, resourceId);
-      return docs.map(doc => new ActivityLog(doc));
+      const activityDocs = await this.activityLogRepository.findByResource(resourceType, resourceId);
+      return activityDocs.map(doc => new ActivityLog(doc));
     } catch (error) {
-      throw new Error(`Error fetching resource activity logs: ${error.message}`);
+      throw new Error(error?.message || 'Error fetching resource activity logs');
     }
   }
 
   /**
-   * Get all activity logs (optionally filtered)
-   * @param {Object} [filters]
+   * Get all activity logs with filters
+   * @param {Object} filters - Filters to apply
    */
   async getAllActivityLogs(filters = {}) {
     try {
-      const docs = await this.activityLogRepository.findAll(filters);
-      return docs.map(doc => new ActivityLog(doc));
+      const activityDocs = await this.activityLogRepository.findAll(filters);
+      return activityDocs.map(doc => new ActivityLog(doc));
     } catch (error) {
-      throw new Error(`Error fetching activity logs: ${error.message}`);
+      throw new Error(error?.message || 'Error fetching activity logs');
     }
   }
 }
 
-// ✅ Create singleton instance (required for Jest + dependency consistency)
+// Create singleton instance
 const activityLogRepository = new ActivityLogRepository();
 const activityLogService = new ActivityLogService(activityLogRepository);
 
-module.exports = activityLogService;
+module.exports = activityLogService

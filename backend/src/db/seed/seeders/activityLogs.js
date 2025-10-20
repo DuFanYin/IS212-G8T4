@@ -35,9 +35,7 @@ module.exports = async function seedActivityLogs(count, { users = [], tasks = []
       docs.push({
         userId: creator._id,
         taskId: t._id,
-        projectId: t.projectId, // Add projectId if available
         action: 'created',
-        resourceType: 'task',
         details: {
           title: t.title,
           priority: t.priority,
@@ -51,9 +49,7 @@ module.exports = async function seedActivityLogs(count, { users = [], tasks = []
       docs.push({
         userId: manager._id,
         taskId: t._id,
-        projectId: t.projectId,
         action: 'assigned',
-        resourceType: 'task',
         details: {
           from: t.assigneeId || null,
           to: staff._id,
@@ -68,9 +64,7 @@ module.exports = async function seedActivityLogs(count, { users = [], tasks = []
       docs.push({
         userId: staff._id,
         taskId: t._id,
-        projectId: t.projectId,
         action: 'status_changed',
-        resourceType: 'task',
         details: { from: fromStatus, to: toStatus }
       });
     }
@@ -80,9 +74,7 @@ module.exports = async function seedActivityLogs(count, { users = [], tasks = []
       docs.push({
         userId: manager._id,
         taskId: t._id,
-        projectId: t.projectId,
         action: 'collaborator_added',
-        resourceType: 'task',
         details: { collaboratorId: staff._id }
       });
     }
@@ -91,9 +83,7 @@ module.exports = async function seedActivityLogs(count, { users = [], tasks = []
     docs.push({
       userId: (staff || manager || anyUser)?._id,
       taskId: t._id,
-      projectId: t.projectId,
       action: 'comment_added',
-      resourceType: 'task',
       details: { message: `Progress update for ${t.title}` }
     });
   }

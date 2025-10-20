@@ -13,10 +13,10 @@ class ProjectService {
     this.taskRepository = taskRepository;
   }
 
-  /**
- * Managers (or owners) can view aggregated progress for tasks in a project.
- * Returns: { total, unassigned, ongoing, under_review, completed, percent }
- */
+    /**
+   * Managers (or owners) can view aggregated progress for tasks in a project.
+   * Returns: { total, unassigned, ongoing, under_review, completed, percent }
+   */
   async getProjectProgress(projectId, userId) {
     // 1) Load project and requesting user
     const project = await this.getProjectDomainById(projectId);
@@ -51,7 +51,7 @@ class ProjectService {
         const ownerDoc = await this.userRepository.findById(dto.ownerId);
         ownerName = ownerDoc?.name;
       }
-    } catch { }
+    } catch {}
 
     let collaboratorNames = undefined;
     try {
@@ -61,11 +61,11 @@ class ProjectService {
           try {
             const doc = await this.userRepository.findById(id);
             if (doc?.name) names.push(doc.name);
-          } catch { }
+          } catch {}
         }
         collaboratorNames = names;
       }
-    } catch { }
+    } catch {}
 
     return { ...dto, ownerName, collaboratorNames };
   }
@@ -84,7 +84,7 @@ class ProjectService {
   }
 
   //Code Reviewed
-  async getAllProjects() {
+  async getAllProjects(){
     const docs = await this.projectRepository.findAllProjects();
     const populated = await ProjectModel.populate(docs, [
       { path: 'ownerId', select: 'name' },
@@ -252,7 +252,7 @@ class ProjectService {
     const project = await this.getProjectDomainById(projectId);
 
     await this.validateUser(project, userId);
-    if (project.isOwner(collaboratorId)) {
+    if(project.isOwner(collaboratorId)){
       throw new Error("Cannot remove project owner");
     }
 
@@ -263,52 +263,7 @@ class ProjectService {
     return new Project(updatedProjectDoc);
   }
 
-  /**
- * Assign or update a collaborator's role within a project.
- * Only the project owner may change roles.
- */
-  async assignRoleToCollaborator(projectId, collaboratorId, role, actingUserId) {
-    // 1️⃣ Fetch the project domain model
-    const project = await this.getProjectDomainById(projectId);
-
-    // 2️⃣ Ensure the acting user exists and is authorized
-    const actingUserDoc = await this.userRepository.findById(actingUserId);
-    if (!actingUserDoc) throw new Error('Acting user not found');
-
-    const actingUser = new User(actingUserDoc);
-    if (!project.isOwner(actingUser.id)) {
-      throw new Error('Only the project owner can assign or change roles');
-    }
-
-    // 3️⃣ Ensure the collaborator exists
-    const collaboratorDoc = await this.userRepository.findById(collaboratorId);
-    if (!collaboratorDoc) throw new Error('Collaborator not found');
-
-    // 4️⃣ Persist role assignment via repository
-    const updatedProject = await this.projectRepository.assignRole(
-      projectId,
-      collaboratorId,
-      role,
-      actingUserId
-    );
-
-    // 5️⃣ Log the role change (optional — if ActivityLogService is available)
-    try {
-      const ActivityLogService = require('./activityLogService');
-      await ActivityLogService.logActivity({
-        projectId,
-        action: `Assigned role '${role}' to collaborator ${collaboratorId}`,
-        performedBy: actingUserId,
-        timestamp: new Date()
-      });
-    } catch (err) {
-      console.warn('Activity logging failed:', err.message);
-    }
-
-    return new Project(updatedProject);
-  }
-
-  async validateUser(project, userId) {
+  async validateUser(project, userId){
     const userDoc = await this.userRepository.findById(userId);
     const user = new User(userDoc);
 
@@ -375,9 +330,9 @@ class ProjectService {
   }
 
   async getProjectById(projectId) {
-    try {
-      const doc = await this.projectRepository.findById(projectId);
-      if (!doc) throw new Error('Project not found');
+    try { 
+      const doc = await this.projectRepository.findById(projectId); 
+      if (!doc) throw new Error('Project not found'); 
       const populated = await ProjectModel.populate(doc, [
         { path: 'ownerId', select: 'name' },
         { path: 'collaborators', select: 'name' },
@@ -400,7 +355,7 @@ class ProjectService {
         createdAt: populated.createdAt,
         updatedAt: populated.updatedAt,
       };
-    } catch (error) {
+    } catch (error) { 
       throw new Error(error?.message || 'Error fetching project by id');
     }
   }

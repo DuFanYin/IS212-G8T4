@@ -98,33 +98,6 @@ const removeCollaborators = async (req, res) => {
   }
 };
 
-const assignRole = async (req, res) => {
-  const { projectId } = req.params;
-  const { collaboratorId, role } = req.body;
-  const userId = req.user.userId; // acting user (should be the project owner)
-
-  try {
-    // Call service
-    const updatedProject = await ProjectService.assignRoleToCollaborator(
-      projectId,
-      collaboratorId,
-      role,
-      userId
-    );
-
-    res.status(200).json({
-      status: "success",
-      message: "Role assigned successfully",
-      data: updatedProject.toDTO()
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: "error",
-      message: error.message
-    });
-  }
-};
-
 const getProjects = async (req, res) => {
   try{
     const userId = req.user.userId;
@@ -200,8 +173,6 @@ module.exports = {
   updateProject,
   addCollaborators,
   removeCollaborators,
-  assignRole,          
   setStatusProject,
   getProjectProgress
 };
-

@@ -60,34 +60,6 @@ class ProjectRepository {
     );
   }
 
-  async assignRole(projectId, collaboratorId, role, assignedBy) {
-    const project = await ProjectModel.findById(projectId);
-    if (!project) throw new Error('Project not found');
-  
-    // Ensure collaborators array uses the updated schema (with user, role, assignedBy)
-    const existing = project.collaborators.find(
-      c => c.user && c.user.toString() === collaboratorId
-    );
-  
-    if (existing) {
-      // Update existing collaborator’s role
-      existing.role = role;
-      existing.assignedBy = assignedBy;
-      existing.assignedAt = new Date();
-    } else {
-      // Add new collaborator with role metadata
-      project.collaborators.push({
-        user: collaboratorId,
-        role,
-        assignedBy,
-        assignedAt: new Date()
-      });
-    }
-  
-    await project.save();
-    return project;
-  }  
-
   async setHasTasks(id, hasTasks) {
     return ProjectModel.findByIdAndUpdate(id, { hasContainedTasks: hasTasks }, { new: true });
   }

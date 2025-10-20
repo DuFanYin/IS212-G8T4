@@ -1,10 +1,3 @@
-export interface Collaborator {
-  user: string;
-  role: 'viewer' | 'editor';
-  assignedBy?: string;
-  assignedAt?: string;
-}
-
 export interface Project {
   id?: string;
   _id?: string;
@@ -17,7 +10,7 @@ export interface Project {
   ownerId?: string;
   departmentId?: string;
   departmentName?: string;
-  collaborators?: Collaborator[] | string[]; // Support both old and new format
+  collaborators?: string[];
   isOverdue?: boolean;
   createdAt?: string;
   updatedAt?: string;

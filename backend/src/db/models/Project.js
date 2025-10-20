@@ -23,25 +23,9 @@ const projectSchema = new mongoose.Schema({
     ref: 'Department'
   },
   collaborators: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    role: {
-      type: String,
-      enum: ['viewer', 'editor'],
-      default: 'viewer'
-    },
-    assignedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    assignedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],    
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   isArchived: {
     type: Boolean,
     default: false
@@ -58,7 +42,7 @@ const projectSchema = new mongoose.Schema({
 projectSchema.index({ ownerId: 1 });
 projectSchema.index({ departmentId: 1 });
 projectSchema.index({ name: 'text' });
-projectSchema.index({ 'collaborators.user': 1 });
+projectSchema.index({ 'collaborators': 1 });
 projectSchema.index({ isArchived: 1 });
 
 const Project = mongoose.model('Project', projectSchema);

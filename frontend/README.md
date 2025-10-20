@@ -35,10 +35,8 @@ src/
 ├── components/                   # Reusable UI components
 │   ├── features/
 │   │   ├── ActivityLogList.tsx  # Activity log display
-│   │   ├── AssignRoleModal.tsx   # Role assignment modal
 │   │   ├── AttachmentList.tsx   # File attachment list
 │   │   ├── AttachmentUpload.tsx  # File upload component
-│   │   ├── ProjectProgress.tsx   # Project progress tracking
 │   │   ├── projects/
 │   │   │   └── ProjectItem.tsx  # Project display component
 │   │   ├── reports/
@@ -123,7 +121,6 @@ src/
 - ✅ `PUT /api/projects/:projectId/archive` - Archive/unarchive project
 - ✅ `PUT /api/projects/:projectId/collaborators` - Add collaborator
 - ✅ `DELETE /api/projects/:projectId/collaborators` - Remove collaborator
-- ✅ `POST /api/projects/:projectId/assign-role` - Assign role to collaborator
 - ✅ `GET /api/projects/:projectId/progress` - Get project progress
 
 ### **Task Services** (`src/lib/services/task.ts`)
@@ -183,10 +180,8 @@ src/
 - **Project Creation**: Create projects with collaborators
 - **Task Grouping**: Organize tasks within projects
 - **Collaboration**: Invite team members to projects
-- **Progress Tracking**: View project completion metrics with visual progress bars
-- **Role Assignment**: Assign viewer/editor roles to collaborators (owner-only)
-- **Activity Logging**: Track all project activities and changes
-- **Real-time Updates**: Live progress tracking and collaborator management
+- **Progress Tracking**: View project completion metrics
+- **Role Assignment**: Assign viewer/editor roles to collaborators
 
 ### **User Management**
 - **Profile Management**: View and update user profiles
@@ -199,11 +194,10 @@ src/
 - **Hierarchical Access**: Role-based organization visibility
 
 ### **Reporting & Analytics**
-- **Activity Logs**: Track all system activities with filtering and real-time updates
+- **Activity Logs**: Track all system activities with filtering
 - **Productivity Metrics**: Calculate and display productivity indices
 - **Task Metrics**: Comprehensive task statistics and reporting
 - **Department Reports**: Department-level analytics and insights
-- **Project Analytics**: Detailed project progress tracking and collaborator activity
 
 ## 🛠️ Technology Stack
 
@@ -248,8 +242,8 @@ pnpm dev
 
 ## 📊 API Coverage Summary
 
-**Total Backend Routes**: 36  
-**Frontend Implemented**: 36  
+**Total Backend Routes**: 35  
+**Frontend Implemented**: 35  
 **Coverage**: 100% ✅
 
 All backend API endpoints are properly integrated into the frontend with:
@@ -258,4 +252,3 @@ All backend API endpoints are properly integrated into the frontend with:
 - ✅ Authentication token management
 - ✅ Role-based access control
 - ✅ Real-time data updates
-- ✅ Role assignment and activity logging features
