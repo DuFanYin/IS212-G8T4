@@ -167,6 +167,48 @@ class TaskRepository {
     };
   }
 
+  async aggregateTeamStats(teamId) {
+    const mongoose = require('mongoose');
+    const { User } = require('../db/models');
+  
+    const teamUsers = await User.find({ teamId }).select('_id');
+    const userIds = (teamUsers || []).map(u => u._id);
+  
+    if (!userIds.length) return null;
+  
+    const rows = await TaskModel.aggregate([
+      {
+        $match: {
+          isDeleted: false,
+          $or: [
+            { createdBy: { $in: userIds } },
+            { assigneeId: { $in: userIds } },
+            { collaborators: { $in: userIds } }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: '$assigneeId',
+          totalTasks: { $sum: 1 },
+          completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+          ongoing: { $sum: { $cond: [{ $eq: ['$status', 'ongoing'] }, 1, 0] } },
+          overdue: {
+            $sum: {
+              $cond: [
+                { $and: [{ $lt: ['$deadline', new Date()] }, { $ne: ['$status', 'completed'] }] },
+                1,
+                0
+              ]
+            }
+          },
+          avgCompletionTime: { $avg: '$completionTime' }
+        }
+      }
+    ]);
+  
+    return rows;
+  }  
   
 }
 

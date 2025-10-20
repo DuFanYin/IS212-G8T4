@@ -57,6 +57,11 @@ class UserRepository {
   async findAll() {
     return UserModel.find({}).select('-passwordHash');
   }
+
+  async findTeamMembersByManager(managerId) {
+    return UserModel.find({ managerId }).select('-passwordHash');
+  }
 }
+
 
 module.exports = UserRepository;

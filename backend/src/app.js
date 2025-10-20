@@ -18,6 +18,7 @@ const subtaskRoutes = require('./routes/subtaskRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const organizationRoutes = require('./routes/organizationRoutes');
 const activityLogRoutes = require('./routes/activityLogRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -27,6 +28,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/logs', activityLogRoutes);
 app.use('/api/tasks', subtaskRoutes); // Mount subtask routes under tasks
 app.use('/api/organization', organizationRoutes);
+app.use('/api/reports', reportRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
