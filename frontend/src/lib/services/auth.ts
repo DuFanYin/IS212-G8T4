@@ -78,6 +78,30 @@ export const authService = {
       console.error('Failed to parse JSON:', text);
       throw new Error(`Invalid JSON response: ${text.substring(0, 100)}...`);
     }
+  },
+
+  registerWithInvitation: async (data: {
+    token: string;
+    name: string;
+    password: string;
+  }): Promise<AuthResponse> => {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      console.error('Failed to parse JSON:', text);
+      throw new Error(`Invalid JSON response: ${text.substring(0, 100)}...`);
+    }
   }
 };
 

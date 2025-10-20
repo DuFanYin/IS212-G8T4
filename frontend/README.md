@@ -12,14 +12,16 @@ src/
 │   ├── login/
 │   │   ├── page.tsx             # Login page
 │   │   └── reset-password/
-│   │       └── page.tsx         # Password reset
+│   │       └── page.tsx         # Password reset page (email-based)
+│   ├── register/
+│   │   └── page.tsx             # Public registration page (invitation-based)
 │   ├── orgnisation/
 │   │   └── page.tsx             # Organization management
 │   ├── projects-tasks/          # Combined projects and tasks interface
 │   │   ├── page.tsx             # Main projects-tasks page
 │   │   ├── project/
 │   │   │   └── [id]/
-│   │   │       └── page.tsx     # Individual project view
+│   │   │       └── page.tsx     # Individual project view with role assignment
 │   │   └── task/
 │   │       └── [id]/
 │   │           └── page.tsx     # Individual task view
@@ -27,7 +29,7 @@ src/
 │   │   └── department/
 │   │       └── page.tsx        # Department reports
 │   ├── users/
-│   │   └── page.tsx             # User management
+│   │   └── page.tsx             # User management (with HR bulk invitations)
 │   ├── layout.tsx               # Root layout with providers
 │   ├── page.tsx                 # Landing page
 │   ├── favicon.ico              # App favicon
@@ -35,10 +37,10 @@ src/
 ├── components/                   # Reusable UI components
 │   ├── features/
 │   │   ├── ActivityLogList.tsx  # Activity log display
-│   │   ├── AssignRoleModal.tsx   # Role assignment modal
+│   │   ├── AssignRoleModal.tsx  # Role assignment modal for projects
 │   │   ├── AttachmentList.tsx   # File attachment list
-│   │   ├── AttachmentUpload.tsx  # File upload component
-│   │   ├── ProjectProgress.tsx   # Project progress tracking
+│   │   ├── AttachmentUpload.tsx # File upload component
+│   │   ├── ProjectProgress.tsx  # Project progress tracking component
 │   │   ├── projects/
 │   │   │   └── ProjectItem.tsx  # Project display component
 │   │   ├── reports/
@@ -83,13 +85,13 @@ src/
 │   │   ├── auth.ts              # Authentication API calls
 │   │   ├── config.ts            # API configuration
 │   │   ├── organization.ts      # Organization API calls
-│   │   ├── project.ts           # Project API calls
+│   │   ├── project.ts           # Project API calls (with role assignment)
 │   │   ├── subtask.ts           # Subtask API calls
 │   │   ├── task.ts              # Task API calls
-│   │   └── user.ts              # User API calls
+│   │   └── user.ts              # User API calls (with HR user creation)
 │   ├── types/                   # TypeScript type definitions
 │   │   ├── activityLog.ts       # Activity log types
-│   │   ├── project.ts           # Project types
+│   │   ├── project.ts           # Project types (with Collaborator interface)
 │   │   ├── subtask.ts           # Subtask types
 │   │   ├── task.ts              # Task types
 │   │   └── user.ts              # User types
@@ -107,13 +109,15 @@ src/
 
 ### **Authentication Services** (`src/lib/services/auth.ts`)
 - ✅ `POST /api/auth/login` - User login
-- ✅ `POST /api/auth/request-reset` - Request password reset  
+- ✅ `POST /api/auth/register` - User registration with invitation token
+- ✅ `POST /api/auth/request-reset` - Request password reset (sends email)
 - ✅ `POST /api/auth/reset-password` - Reset password
 - ✅ `GET /api/users/profile` - Get user profile (via auth service)
 
 ### **User Services** (`src/lib/services/user.ts`)
 - ✅ `GET /api/users/team-members` - Get team members
 - ✅ `GET /api/users/department-members/:departmentId?` - Get department members
+- ✅ `POST /api/users/invite` - Send bulk invitations (HR only)
 
 ### **Project Services** (`src/lib/services/project.ts`)
 - ✅ `GET /api/projects/` - Get all projects
@@ -162,9 +166,12 @@ src/
 
 ### **Authentication & Authorization**
 - **Secure Login**: JWT-based authentication with role-based access
-- **Password Reset**: Email-based password recovery system
+- **Email-Based Password Reset**: Password reset through email links (no token exposure)
+- **Invitation-Based Registration**: HR sends invitation emails, users register via secure links
 - **Session Management**: Automatic session timeout and inactivity tracking
 - **Role-Based Access**: Staff, Manager, Director, HR, Senior Management roles
+- **HR Bulk Invitations**: HR can send invitation emails to multiple users at once
+- **Automatic Invitations**: Registration links sent to invited users via email
 
 ### **Task Management**
 - **Task Creation**: Create tasks with title, description, due date, and assignments
@@ -192,6 +199,8 @@ src/
 - **Profile Management**: View and update user profiles
 - **Team Management**: View team members (role-based visibility)
 - **Department Management**: View department members (Director+ only)
+- **HR Bulk Invitations**: HR can send invitation emails to multiple users at once
+- **Public Registration**: Invited users can create accounts via secure registration links
 
 ### **Organization Management**
 - **Department Overview**: View all departments (SM only)
@@ -248,8 +257,8 @@ pnpm dev
 
 ## 📊 API Coverage Summary
 
-**Total Backend Routes**: 36  
-**Frontend Implemented**: 36  
+**Total Backend Routes**: 37  
+**Frontend Implemented**: 37  
 **Coverage**: 100% ✅
 
 All backend API endpoints are properly integrated into the frontend with:
@@ -259,3 +268,4 @@ All backend API endpoints are properly integrated into the frontend with:
 - ✅ Role-based access control
 - ✅ Real-time data updates
 - ✅ Role assignment and activity logging features
+- ✅ Email-based password reset and bulk invitation system
