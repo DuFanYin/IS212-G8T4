@@ -20,13 +20,14 @@ describe('ProjectService.assignRoleToCollaborator', () => {
 
   it('should assign a role when acting user is the owner', async () => {
     const mockProject = { id: mockProjectId, isOwner: jest.fn().mockReturnValue(true) };
-    const mockUser = { id: mockOwnerId };
+    const mockUser = { _id: mockOwnerId, id: mockOwnerId };
+    const mockCollaborator = { _id: mockCollaboratorId, id: mockCollaboratorId };
 
     ProjectService.getProjectDomainById = jest.fn().mockResolvedValue(mockProject);
-    UserRepository.prototype.findById = jest.fn()
+    ProjectService.userRepository.findById = jest.fn()
       .mockResolvedValueOnce(mockUser) // acting user
-      .mockResolvedValueOnce({ id: mockCollaboratorId }); // collaborator
-    ProjectRepository.prototype.assignRole = jest.fn().mockResolvedValue({ collaborators: [{ user: mockCollaboratorId, role: 'editor' }] });
+      .mockResolvedValueOnce(mockCollaborator); // collaborator
+    ProjectService.projectRepository.assignRole = jest.fn().mockResolvedValue({ collaborators: [{ user: mockCollaboratorId, role: 'editor' }] });
     ActivityLogService.logActivity.mockResolvedValue(true);
 
     const result = await ProjectService.assignRoleToCollaborator(
@@ -36,15 +37,17 @@ describe('ProjectService.assignRoleToCollaborator', () => {
       mockOwnerId
     );
 
-    expect(ProjectRepository.prototype.assignRole).toHaveBeenCalledWith(mockProjectId, mockCollaboratorId, 'editor', mockOwnerId);
+    expect(ProjectService.projectRepository.assignRole).toHaveBeenCalledWith(mockProjectId, mockCollaboratorId, 'editor', mockOwnerId);
     expect(ActivityLogService.logActivity).toHaveBeenCalled();
     expect(result.collaborators[0].role).toBe('editor');
   });
 
   it('should throw error if non-owner tries to assign role', async () => {
     const mockProject = { id: mockProjectId, isOwner: jest.fn().mockReturnValue(false) };
+    const mockUser = { _id: mockOwnerId, id: mockOwnerId };
+    
     ProjectService.getProjectDomainById = jest.fn().mockResolvedValue(mockProject);
-    UserRepository.prototype.findById = jest.fn().mockResolvedValue({ id: mockOwnerId });
+    ProjectService.userRepository.findById = jest.fn().mockResolvedValue(mockUser);
 
     await expect(
       ProjectService.assignRoleToCollaborator(mockProjectId, mockCollaboratorId, 'viewer', mockOwnerId)

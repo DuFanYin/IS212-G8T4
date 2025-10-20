@@ -3,13 +3,28 @@ const app = require('../../../src/app');
 const ProjectModel = require('../../../src/db/models/Project');
 const UserModel = require('../../../src/db/models/User');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 describe('POST /projects/:projectId/assign-role', () => {
   let token, owner, collaborator, project;
 
   beforeAll(async () => {
-    owner = await UserModel.create({ name: 'Owner', email: 'owner@test.com' });
-    collaborator = await UserModel.create({ name: 'Collab', email: 'collab@test.com' });
+    owner = await UserModel.create({ 
+      name: 'Owner', 
+      email: 'owner@test.com',
+      departmentId: new mongoose.Types.ObjectId(),
+      teamId: new mongoose.Types.ObjectId(),
+      passwordHash: 'testhash',
+      role: 'manager'
+    });
+    collaborator = await UserModel.create({ 
+      name: 'Collab', 
+      email: 'collab@test.com',
+      departmentId: new mongoose.Types.ObjectId(),
+      teamId: new mongoose.Types.ObjectId(),
+      passwordHash: 'testhash',
+      role: 'staff'
+    });
 
     project = await ProjectModel.create({
       name: 'Sprint 3 Project',
@@ -17,8 +32,12 @@ describe('POST /projects/:projectId/assign-role', () => {
       collaborators: [{ user: collaborator._id, role: 'viewer' }]
     });
 
-    // assume you have auth token util or middleware mock
-    token = `Bearer ${owner._id}`;
+    // Create a proper JWT token
+    token = jwt.sign(
+      { userId: owner._id, email: owner.email },
+      process.env.JWT_SECRET || 'test-secret',
+      { expiresIn: '1h' }
+    );
   });
 
   afterAll(async () => {
@@ -29,8 +48,8 @@ describe('POST /projects/:projectId/assign-role', () => {
 
   it('should allow owner to assign a new role', async () => {
     const res = await request(app)
-      .post(`/projects/${project._id}/assign-role`)
-      .set('Authorization', token)
+      .post(`/api/projects/${project._id}/assign-role`)
+      .set('Authorization', `Bearer ${token}`)
       .send({ collaboratorId: collaborator._id, role: 'editor' });
 
     expect(res.status).toBe(200);
@@ -39,9 +58,16 @@ describe('POST /projects/:projectId/assign-role', () => {
   });
 
   it('should prevent non-owner from assigning roles', async () => {
+    // Create a token for the collaborator (non-owner)
+    const collaboratorToken = jwt.sign(
+      { userId: collaborator._id, email: collaborator.email },
+      process.env.JWT_SECRET || 'test-secret',
+      { expiresIn: '1h' }
+    );
+
     const res = await request(app)
-      .post(`/projects/${project._id}/assign-role`)
-      .set('Authorization', `Bearer ${collaborator._id}`)
+      .post(`/api/projects/${project._id}/assign-role`)
+      .set('Authorization', `Bearer ${collaboratorToken}`)
       .send({ collaboratorId: collaborator._id, role: 'editor' });
 
     expect(res.status).toBe(400);

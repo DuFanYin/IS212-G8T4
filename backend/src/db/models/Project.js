@@ -58,7 +58,7 @@ const projectSchema = new mongoose.Schema({
 projectSchema.index({ ownerId: 1 });
 projectSchema.index({ departmentId: 1 });
 projectSchema.index({ name: 'text' });
-projectSchema.index({ 'collaborators': 1 });
+projectSchema.index({ 'collaborators.user': 1 });
 projectSchema.index({ isArchived: 1 });
 
 const Project = mongoose.model('Project', projectSchema);
