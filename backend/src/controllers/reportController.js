@@ -17,6 +17,11 @@ const generateTeamReport = async (req, res) => {
       ...(endDate && { endDate }),
     };
 
+    // 🪶 Default filter handling
+    if (Object.keys(filters).length === 0) {
+      filters.status = 'all'; // frontend can interpret as "no filters applied"
+    }
+
     const report = await ReportService.generateTeamReport(teamId, managerId, filters);
 
     res.status(200).json({ status: 'success', data: report });
@@ -41,6 +46,11 @@ const exportTeamReportPDF = async (req, res) => {
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
     };
+
+    // 🪶 Default filter handling
+    if (Object.keys(filters).length === 0) {
+      filters.status = 'all';
+    }
 
     const pdfBuffer = await ReportService.exportTeamReportPDF(teamId, managerId, filters);
 
