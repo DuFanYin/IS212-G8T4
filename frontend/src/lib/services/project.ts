@@ -63,6 +63,20 @@ export const projectService = {
       headers: { Authorization: `Bearer ${token}` }
     });
     return res.json();
+  },
+  // NEW: assign role to collaborator
+  assignRole: async (
+    token: string,
+    projectId: string,
+    collaboratorId: string,
+    role: 'viewer' | 'editor'
+  ): Promise<ProjectResponse> => {
+    const res = await fetch(`${API_URL}/projects/${projectId}/assign-role`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ collaboratorId, role })
+    });
+    return res.json();
   }
 };
 

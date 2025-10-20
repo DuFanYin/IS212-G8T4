@@ -11,6 +11,9 @@ import { taskService } from '@/lib/services/task';
 import { formatDate } from '@/lib/utils/formatDate';
 import { storage } from '@/lib/utils/storage';
 import { UserSelector } from '@/components/features/users/UserSelector';
+import AssignRoleModal from '@/components/features/AssignRoleModal';
+import ActivityLogList from '@/components/features/ActivityLogList';
+import type { Collaborator } from '@/lib/types/project';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -23,6 +26,7 @@ export default function ProjectDetailPage() {
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const token = storage.getToken();
   const [progress, setProgress] = useState<{ total: number; unassigned: number; ongoing: number; under_review: number; completed: number; percent: number } | null>(null);
+  const [selectedCollaboratorForRole, setSelectedCollaboratorForRole] = useState<Collaborator | null>(null);
 
   useEffect(() => {
     const projectId = params?.id as string | undefined;
@@ -164,10 +168,41 @@ export default function ProjectDetailPage() {
               {(project.collaboratorNames?.length ?? 0) === 0 ? (
                 <div className="text-gray-500 mb-3">0 collaborators</div>
               ) : (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {project.collaboratorNames!.map((c) => (
-                    <span key={c} className="px-2 py-1 rounded bg-gray-100 text-gray-800">{c}</span>
-                  ))}
+                <div className="space-y-2 mb-3">
+                  {Array.isArray(project.collaborators) && project.collaborators.length > 0 ? (
+                    // New format with roles
+                    project.collaborators.map((collab, index) => {
+                      const collaborator = typeof collab === 'string' ? { user: collab, role: 'viewer' as const } : collab;
+                      const collaboratorName = project.collaboratorNames?.[index] || collaborator.user;
+                      return (
+                        <div key={collaborator.user} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{collaboratorName}</span>
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              collaborator.role === 'editor' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {collaborator.role}
+                            </span>
+                          </div>
+                          {user && project.ownerId === user.id && (
+                            <button
+                              onClick={() => setSelectedCollaboratorForRole(collaborator)}
+                              className="text-xs text-blue-600 hover:text-blue-800"
+                            >
+                              Change Role
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    // Old format without roles
+                    project.collaboratorNames!.map((c) => (
+                      <span key={c} className="px-2 py-1 rounded bg-gray-100 text-gray-800">{c}</span>
+                    ))
+                  )}
                 </div>
               )}
               <div className="flex items-center gap-3">
@@ -278,8 +313,38 @@ export default function ProjectDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Activity Log Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Project Activity</h2>
+            <ActivityLogList
+              taskId={(project.id || project._id) as string}
+              token={user.token || ''}
+              onError={(error) => console.error('Activity log error:', error)}
+            />
+          </div>
         </div>
       </main>
+
+      {/* Role Assignment Modal */}
+      {selectedCollaboratorForRole && (
+        <AssignRoleModal
+          isOpen={!!selectedCollaboratorForRole}
+          onClose={() => setSelectedCollaboratorForRole(null)}
+          projectId={(project.id || project._id) as string}
+          collaborator={selectedCollaboratorForRole}
+          onSuccess={() => {
+            // Refresh project data
+            const projectId = params?.id as string;
+            if (user?.token && projectId) {
+              projectService.getProjects(user.token).then(res => {
+                const updatedProject = res.data?.find(p => (p.id || p._id) === projectId);
+                if (updatedProject) setProject(updatedProject);
+              });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
