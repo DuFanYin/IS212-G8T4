@@ -36,6 +36,7 @@ class TaskService {
       isDeleted: taskDoc.isDeleted,
       createdAt: taskDoc.createdAt,
       updatedAt: taskDoc.updatedAt,
+      recurringInterval: taskDoc.recurringInterval
     };
   }
 
@@ -671,18 +672,18 @@ class TaskService {
         
         // If recurring, create next occurrence
         if(task.recurringInterval && task.recurringInterval > 0){
-          this.createTask({
-            title: task.title,
-            description: task.description,
-            dueDate: task.dueDate + task.recurringInterval,
-            status: 'unassigned',
-            priority: task.priority,
-            createdBy: task.createdBy,
-            assigneeId: null,
-            projectId: task.projectId,
-            collaborators: task.collaborators,
-            recurringInterval: task.recurringInterval,
-          }, userId);
+          const nextOccurrence = this.createTask({
+              title: task.title,
+              description: task.description,
+              dueDate: task.dueDate + task.recurringInterval,
+              status: 'unassigned',
+              priority: task.priority,
+              createdBy: task.createdBy,
+              assigneeId: null,
+              projectId: task.projectId,
+              collaborators: task.collaborators,
+              recurringInterval: task.recurringInterval,
+            }, userId);
         }
       }
 
