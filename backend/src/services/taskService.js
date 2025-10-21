@@ -672,10 +672,11 @@ class TaskService {
         
         // If recurring, create next occurrence
         if(task.recurringInterval && task.recurringInterval > 0){
-          const nextOccurrence = this.createTask({
+          const nextDueDate = new Date(new Date(task.dueDate).getTime() + task.recurringInterval * 24 * 60 * 60 * 1000);
+          this.createTask({
               title: task.title,
               description: task.description,
-              dueDate: task.dueDate + task.recurringInterval,
+              dueDate: nextDueDate,
               status: 'unassigned',
               priority: task.priority,
               createdBy: task.createdBy,
