@@ -128,7 +128,8 @@ class Task {
       isOverdue: this.isOverdue(),
       hasAttachments: this.hasAttachments(),
       createdAt: this.createdAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      recurringInterval: this.recurringInterval
     };
   }
 }
