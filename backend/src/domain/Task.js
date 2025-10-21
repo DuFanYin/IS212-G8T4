@@ -15,6 +15,8 @@ class Task {
     this.isDeleted = data.isDeleted || false;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
+    this.isRecurring = data.isRecurring || false;
+    this.recurringInterval = data.recurringInterval || null;
   }
 
   // Required status checks based on requirements

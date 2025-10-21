@@ -134,6 +134,13 @@ class TaskService {
         }
       }
 
+      //Check if recurring task has interval set
+      if(taskData.isRecurring){
+        if(!taskData.recurringInterval || typeof taskData.recurringInterval !== 'number' || taskData.recurringInterval <= 0){
+          throw new Error('Recurring tasks must have a valid recurring interval in days');  
+        }
+      }
+
       // Set creator as collaborator
       if (!taskData.collaborators) taskData.collaborators = [];
       if (!taskData.collaborators.includes(userId)) {
@@ -210,6 +217,13 @@ class TaskService {
         const now = new Date();
         if (dueDate < now) {
           throw new Error('Due date cannot be in the past');
+        }
+      }
+
+      //Check if recurring task has interval set
+      if(updateData.isRecurring){
+        if(!updateData.recurringInterval || typeof updateData.recurringInterval !== 'number' || updateData.recurringInterval <= 0){
+          throw new Error('Recurring tasks must have a valid recurring interval in days');
         }
       }
 
@@ -657,6 +671,22 @@ class TaskService {
         const hasIncomplete = (subtasks || []).some((st) => st && st.status !== 'completed' && st.isDeleted !== true);
         if (hasIncomplete) {
           throw new Error('All subtasks must be completed before completing this task');
+        }
+        
+        // If recurring, create next occurrence
+        if(task.isRecurring){
+          this.createTask({
+            title: task.title,
+            description: task.description,
+            dueDate: task.dueDate + task.recurringInterval,
+            status: 'unassigned',
+            priority: task.priority,
+            createdBy: task.createdBy,
+            assigneeId: null,
+            projectId: task.projectId,
+            collaborators: task.collaborators,
+            isRecurring: true
+          }, userId);
         }
       }
 
