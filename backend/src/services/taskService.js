@@ -135,10 +135,8 @@ class TaskService {
       }
 
       //Check if recurring task has interval set
-      if(taskData.isRecurring){
-        if(!taskData.recurringInterval || typeof taskData.recurringInterval !== 'number' || taskData.recurringInterval <= 0){
-          throw new Error('Recurring tasks must have a valid recurring interval in days');  
-        }
+      if(taskData.recurringInterval && taskData.recurringInterval <= 0){
+        throw new Error('Recurring tasks must have a valid recurring interval in days');  
       }
 
       // Set creator as collaborator
@@ -221,10 +219,8 @@ class TaskService {
       }
 
       //Check if recurring task has interval set
-      if(updateData.isRecurring){
-        if(!updateData.recurringInterval || typeof updateData.recurringInterval !== 'number' || updateData.recurringInterval <= 0){
-          throw new Error('Recurring tasks must have a valid recurring interval in days');
-        }
+      if(updateData.recurringInterval && updateData.recurringInterval <= 0){
+        throw new Error('Recurring tasks must have a valid recurring interval in days');
       }
 
       // Handle assignment changes
@@ -674,7 +670,7 @@ class TaskService {
         }
         
         // If recurring, create next occurrence
-        if(task.isRecurring){
+        if(task.recurringInterval && task.recurringInterval > 0){
           this.createTask({
             title: task.title,
             description: task.description,
@@ -685,7 +681,7 @@ class TaskService {
             assigneeId: null,
             projectId: task.projectId,
             collaborators: task.collaborators,
-            isRecurring: true
+            recurringInterval: task.recurringInterval,
           }, userId);
         }
       }
