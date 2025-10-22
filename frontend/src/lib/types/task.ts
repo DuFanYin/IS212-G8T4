@@ -23,6 +23,7 @@ export interface Task {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  recurringInterval?: number;
 }
 
 export interface TaskAttachment {
@@ -41,6 +42,7 @@ export interface CreateTaskRequest {
   assigneeId?: string;
   projectId?: string;
   collaborators?: string[];
+  recurringInterval?: number;
 }
 
 export interface UpdateTaskRequest {
@@ -49,6 +51,7 @@ export interface UpdateTaskRequest {
   dueDate?: string;
   priority?: number;
   collaborators?: string[];
+  recurringInterval?: number;
 }
 
 export interface AssignTaskRequest {

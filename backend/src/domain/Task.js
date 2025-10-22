@@ -15,6 +15,7 @@ class Task {
     this.isDeleted = data.isDeleted || false;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
+    this.recurringInterval = data.recurringInterval || null;
   }
 
   // Required status checks based on requirements
@@ -127,7 +128,8 @@ class Task {
       isOverdue: this.isOverdue(),
       hasAttachments: this.hasAttachments(),
       createdAt: this.createdAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      recurringInterval: this.recurringInterval
     };
   }
 }
