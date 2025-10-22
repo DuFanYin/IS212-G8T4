@@ -20,6 +20,9 @@ import TasksMetric from '@/components/features/reports/tasksMetric';
 import Card from '@/components/layout/Cards';
 // UseTasks hook
 import { useMetrics } from '@/lib/hooks/useMetrics';
+// Report PDF
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // ========================= Local Types (can be moved to types file) =========================
 type TimelineRow = { type: 'project' | 'task' | 'subtask'; item?: TimelineItem; projectName?: string };
@@ -122,7 +125,7 @@ function TimelineView() {
     if (!token) return;
     const load = async () => {
       try {
-        
+
         const res = await loadOrgSelectors({ token, user });
         setDepartments(res.departments as Department[]);
         setTeams(res.teams as Team[]);
@@ -244,6 +247,97 @@ function TimelineView() {
     }
   };
 
+  const handleExportReport = async () => {
+    try {
+      const element = document.getElementById('report-section');
+      if (!element) {
+        alert('Report section not found.');
+        return;
+      }
+
+      // 1️⃣ Clone node and expand it
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.style.position = 'absolute';
+      clone.style.left = '0';
+      clone.style.top = '0';
+      clone.style.width = `${element.scrollWidth}px`;
+      clone.style.height = `${element.scrollHeight}px`;
+      clone.style.overflow = 'visible';
+      clone.style.background = '#ffffff';
+
+      // Remove export button etc.
+      clone.querySelectorAll('button, input, .no-print').forEach(el => {
+        (el as HTMLElement).style.display = 'none';
+      });
+
+      // 2️⃣ Render it offscreen
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'fixed';
+      wrapper.style.left = '-9999px';
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      await document.fonts.ready;
+      await new Promise(r => setTimeout(r, 500));
+
+      clone.querySelectorAll('span, button, p, div').forEach(el => {
+        const elem = el as HTMLElement;
+        if (elem.textContent?.trim()) {
+          elem.style.color = '#000';
+          elem.style.opacity = '1';
+        }
+      });
+
+      // Force all transforms and transitions off to ensure text renders
+      clone.querySelectorAll('*').forEach(el => {
+        const style = window.getComputedStyle(el);
+        const elem = el as HTMLElement;
+        if (style.transform !== 'none') elem.style.transform = 'none';
+        elem.style.transition = 'none';
+        elem.style.willChange = 'auto';
+      });
+
+      // 3️⃣ Capture clone instead of visible element
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        windowWidth: clone.scrollWidth,
+        windowHeight: clone.scrollHeight,
+      });
+
+      // 4️⃣ Clean up
+      document.body.removeChild(wrapper);
+
+      // 5️⃣ Convert to multi-page PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save(`Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err) {
+      console.error('Error exporting PDF:', err);
+    }
+  };
+
   if (loading || metricsLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -275,7 +369,7 @@ function TimelineView() {
                 </h1>
                 <p className="text-sm text-gray-500">Visualize your tasks and subtasks with interactive timeline view</p>
               </div>
-              
+
               <div className="flex flex-col gap-3 w-full lg:w-auto">
                 {/* Row 1: selectors + buttons */}
                 <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
@@ -324,42 +418,56 @@ function TimelineView() {
             <p className="text-gray-500">No items match your current filter criteria.</p>
           </div>
         ) : (
-            <div className="p-6 overflow-x-auto">
-              <div className="flex w-full">
-              <TimelineRows
-                rows={rows}
-                rowHeights={rowHeights}
-                rowOffsets={rowOffsets}
-                totalHeight={totalHeight}
-                itemsCount={itemsCount}
-                expandedProjects={expandedProjects}
-                onToggleProject={toggleProjectExpansion}
-                expandedTasks={expandedTasks}
-                onToggleTask={toggleTaskExpansion}
-                timelineItems={timelineItems}
-                handleClick={handleClick}
-              />
-              <TimelineGrid
-                rows={rows}
-                rowHeights={rowHeights}
-                rowOffsets={rowOffsets}
-                totalHeight={totalHeight}
-                dateHeaderLabels={dateHeaderLabels}
-                todayLinePosition={todayLinePosition}
-                verticalGridLines={verticalGridLines}
-                projectSpans={projectSpans}
-                timelineBounds={timelineBounds}
-                handleClick={handleClick}
-              />
+          <>
+            <div id="report-section">
+              <div className="p-6 overflow-x-auto">
+                <div className="flex w-full">
+                  <TimelineRows
+                    rows={rows}
+                    rowHeights={rowHeights}
+                    rowOffsets={rowOffsets}
+                    totalHeight={totalHeight}
+                    itemsCount={itemsCount}
+                    expandedProjects={expandedProjects}
+                    onToggleProject={toggleProjectExpansion}
+                    expandedTasks={expandedTasks}
+                    onToggleTask={toggleTaskExpansion}
+                    timelineItems={timelineItems}
+                    handleClick={handleClick}
+                  />
+                  <TimelineGrid
+                    rows={rows}
+                    rowHeights={rowHeights}
+                    rowOffsets={rowOffsets}
+                    totalHeight={totalHeight}
+                    dateHeaderLabels={dateHeaderLabels}
+                    todayLinePosition={todayLinePosition}
+                    verticalGridLines={verticalGridLines}
+                    projectSpans={projectSpans}
+                    timelineBounds={timelineBounds}
+                    handleClick={handleClick}
+                  />
+                </div>
+              </div>
+
+              <Card>
+                <TasksMetric tasks={teamStats} />
+                <ProductivityMetric tasks={teamStats} />
+                <ProductivityIndex tasks={teamStats} />
+              </Card>
             </div>
-          </div>
+
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={handleExportReport}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Export Report PDF
+              </button>
+            </div>
+          </>
         )}
       </div>
-      <Card>
-        <TasksMetric tasks={teamStats} />
-        <ProductivityMetric tasks={teamStats} />
-        <ProductivityIndex tasks={teamStats}/>
-      </Card>
-      </div>
+    </div>
   );
 }
