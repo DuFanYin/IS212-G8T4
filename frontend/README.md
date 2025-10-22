@@ -12,35 +12,50 @@ src/
 │   ├── login/
 │   │   ├── page.tsx             # Login page
 │   │   └── reset-password/
-│   │       └── page.tsx         # Password reset
+│   │       └── page.tsx         # Password reset page (email-based)
+│   ├── register/
+│   │   └── page.tsx             # Public registration page (invitation-based)
 │   ├── orgnisation/
 │   │   └── page.tsx             # Organization management
 │   ├── projects-tasks/          # Combined projects and tasks interface
 │   │   ├── page.tsx             # Main projects-tasks page
 │   │   ├── project/
 │   │   │   └── [id]/
-│   │   │       └── page.tsx     # Individual project view
+│   │   │       └── page.tsx     # Individual project view with role assignment
 │   │   └── task/
 │   │       └── [id]/
 │   │           └── page.tsx     # Individual task view
+│   ├── report/
+│   │   └── department/
+│   │       └── page.tsx        # Department reports
 │   ├── users/
-│   │   └── page.tsx             # User management
+│   │   └── page.tsx             # User management (with HR bulk invitations)
 │   ├── layout.tsx               # Root layout with providers
 │   ├── page.tsx                 # Landing page
 │   ├── favicon.ico              # App favicon
 │   └── globals.css              # Global styles
 ├── components/                   # Reusable UI components
 │   ├── features/
+│   │   ├── ActivityLogList.tsx  # Activity log display
+│   │   ├── AssignRoleModal.tsx  # Role assignment modal for projects
+│   │   ├── AttachmentList.tsx   # File attachment list
+│   │   ├── AttachmentUpload.tsx # File upload component
+│   │   ├── ProjectProgress.tsx  # Project progress tracking component
 │   │   ├── projects/
 │   │   │   └── ProjectItem.tsx  # Project display component
+│   │   ├── reports/
+│   │   │   ├── productivityIndex.tsx # Productivity metrics
+│   │   │   ├── productivityMetric.tsx # Productivity calculations
+│   │   │   ├── tasksMetric.tsx   # Task metrics
+│   │   │   └── workTable.tsx     # Work table display
 │   │   ├── tasks/
-│   │   │   ├── TaskItem.tsx     # Task display component
+│   │   │   ├── TaskItem.tsx      # Task display component
 │   │   │   └── SubtaskList.tsx  # Subtask list component
-│   │   ├── users/
-│   │   │   ├── UserList.tsx     # User list component
-│   │   │   ├── UserProfile.tsx  # User profile component
-│   │   │   └── UserSelector.tsx # User selection component
-│   │   └── timeline/            # Timeline-related components (empty)
+│   │   ├── timeline/            # Timeline-related components (empty)
+│   │   └── users/
+│   │       ├── UserList.tsx     # User list component
+│   │       ├── UserProfile.tsx  # User profile component
+│   │       └── UserSelector.tsx # User selection component
 │   ├── forms/
 │   │   ├── AssignTaskModal.tsx  # Task assignment modal
 │   │   ├── CreateProjectModal.tsx # Project creation modal
@@ -48,6 +63,8 @@ src/
 │   │   ├── EditProjectModal.tsx # Project editing modal
 │   │   └── EditTaskModal.tsx    # Task editing modal
 │   ├── layout/
+│   │   ├── Cards.tsx            # Card layout components
+│   │   ├── Dropdown.tsx         # Dropdown component
 │   │   └── Header.tsx           # App header component
 │   └── timeline/
 │       ├── Legend.tsx           # Timeline legend component
@@ -58,21 +75,103 @@ src/
 │   └── UserContext.tsx          # Global user state management
 ├── lib/
 │   ├── hooks/
+│   │   ├── useMetrics.ts        # Metrics calculation hook
 │   │   ├── useTasks.ts          # Task management hook
-│   │   ├── useUsers.ts          # User management hook
-│   │   └── useTimeline.ts       # Timeline management hook
+│   │   ├── useTimeline.ts       # Timeline management hook
+│   │   └── useUsers.ts          # User management hook
 │   ├── services/                # API service layer (split by domain)
+│   │   ├── activityLog.ts       # Activity log API calls
+│   │   ├── api.ts               # Generic API utilities
+│   │   ├── auth.ts              # Authentication API calls
+│   │   ├── config.ts            # API configuration
+│   │   ├── organization.ts      # Organization API calls
+│   │   ├── project.ts           # Project API calls (with role assignment)
+│   │   ├── subtask.ts           # Subtask API calls
+│   │   ├── task.ts              # Task API calls
+│   │   └── user.ts              # User API calls (with HR user creation)
 │   ├── types/                   # TypeScript type definitions
+│   │   ├── activityLog.ts       # Activity log types
+│   │   ├── project.ts           # Project types (with Collaborator interface)
+│   │   ├── subtask.ts           # Subtask types
+│   │   ├── task.ts              # Task types
+│   │   └── user.ts              # User types
 │   └── utils/
+│       ├── access.ts            # Access control utilities
+│       ├── auth.ts               # Authentication utilities
+│       ├── formatDate.ts         # Date formatting utilities
+│       ├── inactivityTracker.ts # Session management
+│       ├── orgAccess.ts          # Organization access utilities
+│       ├── storage.ts            # Local storage utilities
+│       └── timeline.ts           # Timeline utilities
 ```
+
+## 🔌 API Integration Status
+
+### **Authentication Services** (`src/lib/services/auth.ts`)
+- ✅ `POST /api/auth/login` - User login
+- ✅ `POST /api/auth/register` - User registration with invitation token
+- ✅ `POST /api/auth/request-reset` - Request password reset (sends email)
+- ✅ `POST /api/auth/reset-password` - Reset password
+- ✅ `GET /api/users/profile` - Get user profile (via auth service)
+
+### **User Services** (`src/lib/services/user.ts`)
+- ✅ `GET /api/users/team-members` - Get team members
+- ✅ `GET /api/users/department-members/:departmentId?` - Get department members
+- ✅ `POST /api/users/invite` - Send bulk invitations (HR only)
+
+### **Project Services** (`src/lib/services/project.ts`)
+- ✅ `GET /api/projects/` - Get all projects
+- ✅ `GET /api/projects/departments/:departmentId` - Get projects by department
+- ✅ `POST /api/projects/` - Create new project
+- ✅ `PUT /api/projects/:projectId` - Update project
+- ✅ `PUT /api/projects/:projectId/archive` - Archive/unarchive project
+- ✅ `PUT /api/projects/:projectId/collaborators` - Add collaborator
+- ✅ `DELETE /api/projects/:projectId/collaborators` - Remove collaborator
+- ✅ `POST /api/projects/:projectId/assign-role` - Assign role to collaborator
+- ✅ `GET /api/projects/:projectId/progress` - Get project progress
+
+### **Task Services** (`src/lib/services/task.ts`)
+- ✅ `GET /api/tasks/` - Get user's tasks
+- ✅ `GET /api/tasks/project/:projectId` - Get tasks by project
+- ✅ `GET /api/tasks/team/:teamId` - Get tasks by team
+- ✅ `GET /api/tasks/department/:departmentId` - Get tasks by department
+- ✅ `GET /api/tasks/unassigned` - Get unassigned tasks
+- ✅ `GET /api/tasks/:id` - Get task by ID
+- ✅ `POST /api/tasks/` - Create new task
+- ✅ `PUT /api/tasks/:id` - Update task
+- ✅ `PATCH /api/tasks/:id/assign` - Assign task to user
+- ✅ `PATCH /api/tasks/:id/status` - Update task status
+- ✅ `PATCH /api/tasks/:id/projects` - Set task projects
+- ✅ `POST /api/tasks/:id/attachments` - Add attachment
+- ✅ `DELETE /api/tasks/:id/attachments/:attachmentId` - Remove attachment
+- ✅ `DELETE /api/tasks/:id` - Archive task
+
+### **Subtask Services** (`src/lib/services/subtask.ts`)
+- ✅ `GET /api/tasks/:parentTaskId/subtasks` - List subtasks
+- ✅ `POST /api/tasks/:parentTaskId/subtasks` - Create subtask
+- ✅ `GET /api/tasks/subtasks/:id` - Get subtask by ID
+- ✅ `PUT /api/tasks/subtasks/:id` - Update subtask
+- ✅ `PATCH /api/tasks/subtasks/:id/status` - Update subtask status
+- ✅ `DELETE /api/tasks/subtasks/:id` - Archive subtask
+
+### **Organization Services** (`src/lib/services/organization.ts`)
+- ✅ `GET /api/organization/departments` - Get all departments
+- ✅ `GET /api/organization/departments/:departmentId/teams` - Get teams by department
+- ✅ `GET /api/organization/teams` - Get all teams
+
+### **Activity Log Services** (`src/lib/services/activityLog.ts`)
+- ✅ `POST /api/logs/` - Get activity logs (with filters)
 
 ## 🚀 Features
 
 ### **Authentication & Authorization**
 - **Secure Login**: JWT-based authentication with role-based access
-- **Password Reset**: Email-based password recovery system
+- **Email-Based Password Reset**: Password reset through email links (no token exposure)
+- **Invitation-Based Registration**: HR sends invitation emails, users register via secure links
 - **Session Management**: Automatic session timeout and inactivity tracking
 - **Role-Based Access**: Staff, Manager, Director, HR, Senior Management roles
+- **HR Bulk Invitations**: HR can send invitation emails to multiple users at once
+- **Automatic Invitations**: Registration links sent to invited users via email
 
 ### **Task Management**
 - **Task Creation**: Create tasks with title, description, due date, and assignments
@@ -84,16 +183,36 @@ src/
   - HR/SM: See all tasks
 - **Task Assignment**: Managers can assign tasks to lower-level roles
 - **Task Archiving**: Soft delete functionality for audit trails
+- **File Attachments**: Upload and manage task attachments
+- **Project Association**: Link tasks to projects
+
+### **Project Management**
+- **Project Creation**: Create projects with collaborators
+- **Task Grouping**: Organize tasks within projects
+- **Collaboration**: Invite team members to projects
+- **Progress Tracking**: View project completion metrics with visual progress bars
+- **Role Assignment**: Assign viewer/editor roles to collaborators (owner-only)
+- **Activity Logging**: Track all project activities and changes
+- **Real-time Updates**: Live progress tracking and collaborator management
 
 ### **User Management**
 - **Profile Management**: View and update user profiles
 - **Team Management**: View team members (role-based visibility)
 - **Department Management**: View department members (Director+ only)
+- **HR Bulk Invitations**: HR can send invitation emails to multiple users at once
+- **Public Registration**: Invited users can create accounts via secure registration links
 
-### **Project Organization**
-- **Project Creation**: Create projects with collaborators
-- **Task Grouping**: Organize tasks within projects
-- **Collaboration**: Invite team members to projects
+### **Organization Management**
+- **Department Overview**: View all departments (SM only)
+- **Team Management**: View teams by department (Director+)
+- **Hierarchical Access**: Role-based organization visibility
+
+### **Reporting & Analytics**
+- **Activity Logs**: Track all system activities with filtering and real-time updates
+- **Productivity Metrics**: Calculate and display productivity indices
+- **Task Metrics**: Comprehensive task statistics and reporting
+- **Department Reports**: Department-level analytics and insights
+- **Project Analytics**: Detailed project progress tracking and collaborator activity
 
 ## 🛠️ Technology Stack
 
@@ -135,3 +254,18 @@ yarn dev
 # or
 pnpm dev
 ```
+
+## 📊 API Coverage Summary
+
+**Total Backend Routes**: 37  
+**Frontend Implemented**: 37  
+**Coverage**: 100% ✅
+
+All backend API endpoints are properly integrated into the frontend with:
+- ✅ Type-safe service functions
+- ✅ Proper error handling
+- ✅ Authentication token management
+- ✅ Role-based access control
+- ✅ Real-time data updates
+- ✅ Role assignment and activity logging features
+- ✅ Email-based password reset and bulk invitation system

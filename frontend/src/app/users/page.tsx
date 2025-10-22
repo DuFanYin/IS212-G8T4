@@ -1,14 +1,142 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
-// Removed UserList and UserSelector usage from this page per requirements
-// Removed unused imports after removing user list & assignment UI
+import { userService } from '@/lib/services/user';
+import { storage } from '@/lib/utils/storage';
+import { organizationService, type Department, type Team } from '@/lib/services/organization';
 
 export default function UsersPage() {
   const { user } = useUser();
-  // const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  // const token = storage.getToken();
+  const [showInvitationForm, setShowInvitationForm] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: 'error' as 'error' | 'success' });
+  
+  const [formData, setFormData] = useState({
+    emails: '',
+    role: 'staff',
+    teamId: '',
+    departmentId: ''
+  });
+
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  // Load departments and teams when component mounts
+  React.useEffect(() => {
+    const loadOrganizationData = async () => {
+      if (!user?.token) return;
+      
+      try {
+        const [deptRes, teamRes] = await Promise.all([
+          organizationService.getAllDepartments(user.token),
+          organizationService.getAllTeams(user.token)
+        ]);
+        
+        if (deptRes.status === 'success') {
+          setDepartments(deptRes.data || []);
+        }
+        if (teamRes.status === 'success') {
+          setTeams(teamRes.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to load organization data:', error);
+      }
+    };
+
+    loadOrganizationData();
+  }, [user?.token]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const departmentId = e.target.value;
+    setSelectedDepartment(departmentId);
+    setFormData(prev => ({ ...prev, departmentId, teamId: '' }));
+  };
+
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (!formData.emails.trim()) {
+      newErrors.emails = 'Email list is required';
+    } else {
+      // Parse emails and validate each one
+      const emailList = formData.emails.split(/[,\n]/).map(email => email.trim()).filter(email => email);
+      if (emailList.length === 0) {
+        newErrors.emails = 'Please enter at least one email address';
+      } else {
+        const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+        const invalidEmails = emailList.filter(email => !emailRegex.test(email));
+        if (invalidEmails.length > 0) {
+          newErrors.emails = `Invalid email addresses: ${invalidEmails.join(', ')}`;
+        }
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    setIsLoading(true);
+    setMessage({ text: '', type: 'error' });
+    
+    try {
+      const token = storage.getToken();
+      if (!token) throw new Error('No authentication token');
+      
+      // Parse emails from the textarea
+      const emailList = formData.emails.split(/[,\n]/).map(email => email.trim()).filter(email => email);
+      
+      const invitationData = {
+        emails: emailList,
+        role: formData.role,
+        teamId: formData.teamId || undefined,
+        departmentId: formData.departmentId || undefined
+      };
+      
+      const res = await userService.sendBulkInvitations(token, invitationData);
+      
+      if (res.status === 'success') {
+        setMessage({ 
+          text: res.message, 
+          type: 'success' 
+        });
+        setFormData({
+          emails: '',
+          role: 'staff',
+          teamId: '',
+          departmentId: ''
+        });
+        setSelectedDepartment('');
+        setTimeout(() => setShowInvitationForm(false), 3000);
+      } else {
+        setMessage({ text: res.message || 'Failed to send invitations', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Invitation sending error:', error);
+      setMessage({ text: 'Failed to send invitations. Please try again.', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredTeams = teams.filter(team => team.departmentId === selectedDepartment);
 
   if (!user) {
     return (
@@ -29,6 +157,127 @@ export default function UsersPage() {
           <h1 className="text-2xl font-semibold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Role-based visibility and actions based on your permissions.</p>
         </div>
+
+        {/* HR Invitation Section */}
+        {user.role === 'hr' && (
+          <section>
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-gray-900">Send User Invitations</h2>
+                <button
+                  onClick={() => setShowInvitationForm(!showInvitationForm)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  {showInvitationForm ? 'Cancel' : 'Send Invitations'}
+                </button>
+              </div>
+              
+              {showInvitationForm && (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {message.text && (
+                    <div className={`p-3 rounded text-sm ${
+                      message.type === 'error' 
+                        ? 'bg-red-50 text-red-700' 
+                        : 'bg-green-50 text-green-700'
+                    }`}>
+                      {message.text}
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Addresses *
+                      </label>
+                      <textarea
+                        name="emails"
+                        value={formData.emails}
+                        onChange={handleInputChange}
+                        className={`w-full p-2 border rounded h-24 ${errors.emails ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="Enter email addresses separated by commas or new lines&#10;Example:&#10;user1@example.com&#10;user2@example.com&#10;user3@example.com"
+                      />
+                      {errors.emails && <p className="text-sm text-red-600 mt-1">{errors.emails}</p>}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Role
+                      </label>
+                      <select
+                        name="role"
+                        value={formData.role}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border border-gray-300 rounded"
+                      >
+                        <option value="staff">Staff</option>
+                        <option value="manager">Manager</option>
+                        <option value="director">Director</option>
+                        <option value="hr">HR</option>
+                        <option value="sm">Senior Management</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Department
+                      </label>
+                      <select
+                        value={selectedDepartment}
+                        onChange={handleDepartmentChange}
+                        className="w-full p-2 border border-gray-300 rounded"
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(dept => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Team
+                      </label>
+                      <select
+                        name="teamId"
+                        value={formData.teamId}
+                        onChange={handleInputChange}
+                        disabled={!selectedDepartment}
+                        className="w-full p-2 border border-gray-300 rounded disabled:bg-gray-100"
+                      >
+                        <option value="">Select Team</option>
+                        {filteredTeams.map(team => (
+                          <option key={team.id} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowInvitationForm(false)}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                      disabled={isLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {isLoading ? 'Sending...' : 'Send Invitations'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Profile card (top) */}
         <section>

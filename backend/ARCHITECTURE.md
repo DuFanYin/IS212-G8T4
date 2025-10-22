@@ -28,7 +28,8 @@ src/
 │   ├── subtaskService.js
 │   ├── activityLogService.js
 │   ├── authService.js
-│   └── organizationService.js
+│   ├── organizationService.js
+│   └── emailService.js
 ├── controllers/              # HTTP request handling
 │   ├── authController.js
 │   ├── userController.js
@@ -80,11 +81,13 @@ src/
 - `GET    /api/users/profile`                       - Get current user profile
 - `GET    /api/users/team-members`                  - Get team members (role-based visibility)
 - `GET    /api/users/department-members/:departmentId?` - Get department members (Director+ only)
+- `POST   /api/users/invite`                         - Send bulk invitations (HR only)
 
 ### **Auth Routes** (`src/routes/authRoutes.js`)
 
 - `POST   /api/auth/login`                          - User login
-- `POST   /api/auth/request-reset`                  - Request password reset
+- `POST   /api/auth/register`                       - User registration with invitation token
+- `POST   /api/auth/request-reset`                  - Request password reset (sends email)
 - `POST   /api/auth/reset-password`                 - Reset password
 
 ### **Project Routes** (`src/routes/projectRoutes.js`)
@@ -92,6 +95,7 @@ src/
 - `POST   /api/projects/`                           - Create new project
 - `GET    /api/projects/`                           - Get active projects
 - `GET    /api/projects/departments/:departmentId`  - Get projects by department
+- `GET    /api/projects/:projectId/progress`        - Get project progress (manager/owner only)
 - `PUT    /api/projects/:projectId/archive`         - Archive/unarchive project
 - `PUT    /api/projects/:projectId`                 - Update project
 - `PUT    /api/projects/:projectId/collaborators`   - Add collaborator
@@ -104,12 +108,13 @@ src/
 - `GET    /api/tasks/project/:projectId`            - Get tasks by project
 - `GET    /api/tasks/team/:teamId`                  - Get tasks by team (manager of team, director+, HR/SM)
 - `GET    /api/tasks/department/:departmentId`      - Get tasks by department (director+, HR/SM)
-- `GET    /api/tasks/unassigned`                   - Get all unassigned tasks
+- `GET    /api/tasks/unassigned`                    - Get all unassigned tasks
 - `GET    /api/tasks/:id`                           - Get task by ID (with visibility check)
 - `PUT    /api/tasks/:id`                           - Update task
 - `PATCH  /api/tasks/:id/assign`                    - Assign task to user
 - `PATCH  /api/tasks/:id/status`                    - Update task status
-- `POST   /api/tasks/:id/attachments`              - Add attachment to task
+- `PATCH  /api/tasks/:id/projects`                  - Set task projects
+- `POST   /api/tasks/:id/attachments`               - Add attachment to task
 - `DELETE /api/tasks/:id/attachments/:attachmentId` - Remove attachment from task
 - `DELETE /api/tasks/:id`                           - Archive (soft delete) task
 
@@ -229,6 +234,13 @@ src/
 - Department operations: `getAllDepartments()`, `getDepartmentById()`
 - Team operations: `getAllTeams()`, `getTeamsByDepartment()`, `getTeamById()`
 - Statistics: Aggregates team and user counts for departments and teams
+
+### **EmailService** (`src/services/emailService.js`)
+**Purpose:** Email communication service using Gmail SMTP
+**Methods:**
+- `sendPasswordResetEmail(email, resetToken)` - Sends password reset email with reset link
+- `sendInvitationEmail(email, invitationToken, role)` - Sends invitation email with registration link
+**Configuration:** Uses Gmail SMTP with credentials from environment variables
 
 
 
@@ -391,7 +403,7 @@ src/storage/
 **Benefit**: Domain logic can be reused across different contexts
 - **Before**: Business logic tied to specific API endpoints
 - **After**: Domain methods can be used in APIs, background jobs, CLI tools
-- **Example**: `user.canAssignTasks()` works in web UI, mobile app, and admin tools
+- **Example**: `user.canAssignTasks()` works in web UI, mobile app, and management tools
 - **Impact**: Reduced development time, consistent behavior across platforms
 
 #### 8. **Error Handling & Validation** ⚠️
