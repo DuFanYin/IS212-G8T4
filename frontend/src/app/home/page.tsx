@@ -258,43 +258,34 @@ function TimelineView() {
       // 1️⃣ Clone node and expand it
       const clone = element.cloneNode(true) as HTMLElement;
       clone.style.position = 'absolute';
-      clone.style.left = '0';
-      clone.style.top = '0';
       clone.style.width = `${element.scrollWidth}px`;
       clone.style.height = `${element.scrollHeight}px`;
       clone.style.overflow = 'visible';
       clone.style.background = '#ffffff';
 
-      // Remove export button etc.
-      clone.querySelectorAll('button, input, .no-print').forEach(el => {
-        (el as HTMLElement).style.display = 'none';
-      });
-
-      // 2️⃣ Render it offscreen
+      // Render it offscreen
       const wrapper = document.createElement('div');
       wrapper.style.position = 'fixed';
-      wrapper.style.left = '-9999px';
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
 
       await document.fonts.ready;
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 1000));
 
-      clone.querySelectorAll('span, button, p, div').forEach(el => {
+      // Project Button
+      clone.querySelectorAll('button[aria-label="Collapse project"]').forEach(el => {
         const elem = el as HTMLElement;
-        if (elem.textContent?.trim()) {
-          elem.style.color = '#000';
-          elem.style.opacity = '1';
-        }
+        elem.style.color = '#000';
+        elem.style.opacity = '1';
+        elem.style.overflow = 'visible';
       });
 
-      // Force all transforms and transitions off to ensure text renders
-      clone.querySelectorAll('*').forEach(el => {
-        const style = window.getComputedStyle(el);
+      // Tasks Button
+      clone.querySelectorAll('button[title]').forEach(el => {
         const elem = el as HTMLElement;
-        if (style.transform !== 'none') elem.style.transform = 'none';
-        elem.style.transition = 'none';
-        elem.style.willChange = 'auto';
+        elem.style.color = '#000';
+        elem.style.opacity = '1';
+        elem.style.overflow = 'visible';
       });
 
       // 3️⃣ Capture clone instead of visible element
@@ -322,7 +313,29 @@ function TimelineView() {
       let heightLeft = imgHeight;
       let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      let header = "";
+      if (user?.role == "hr"){
+        header = "Individual Report"
+      }
+      else if (user?.role == "manager"){
+        header = "Team Report"
+      }
+      else if (user?.role == "director"){
+        header = "Department Report"
+      }
+      else{
+        header = "Individual Report"
+      }
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(18);
+      pdf.text(header, pdfWidth / 2, 15, { align: 'center' });
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.text(`Generated on: ${new Date().toLocaleString()}`, pdfWidth / 2, 22, { align: 'center' });
+
+      pdf.addImage(imgData, 'PNG', 0, 30, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
 
       while (heightLeft > 0) {
@@ -332,7 +345,7 @@ function TimelineView() {
         heightLeft -= pdfHeight;
       }
 
-      pdf.save(`Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+      pdf.save(`${header}_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Error exporting PDF:', err);
     }
