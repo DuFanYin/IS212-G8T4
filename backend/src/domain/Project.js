@@ -12,12 +12,24 @@ class Project {
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
 
-    this.addOwnerToCollaborators();
+    // Owner is now added in ProjectService.createProject()
+    // this.addOwnerToCollaborators();
   }
 
   addOwnerToCollaborators() {
-    if (!this.collaborators.includes(this.ownerId)) {
-      this.collaborators.push(this.ownerId);
+    const ownerIdStr = this.ownerId?.toString();
+    const containsOwner = Array.isArray(this.collaborators) && this.collaborators.some((c) => {
+      if (typeof c === 'object' && c && c.user) return c.user.toString() === ownerIdStr;
+      return c?.toString?.() === ownerIdStr;
+    });
+    if (!containsOwner && this.ownerId) {
+      // Add owner as collaborator in new format
+      this.collaborators.push({
+        user: this.ownerId,
+        role: 'editor', // Owner should be editor by default
+        assignedBy: this.ownerId,
+        assignedAt: new Date()
+      });
     }
   }
 
@@ -27,7 +39,11 @@ class Project {
   }
 
   isCollaborator(userId) {
-    return this.collaborators.some(collab => collab.toString() === userId.toString());
+    const uid = userId?.toString?.() || `${userId}`;
+    return this.collaborators.some((collab) => {
+      if (typeof collab === 'object' && collab && collab.user) return collab.user.toString() === uid;
+      return collab?.toString?.() === uid;
+    });
   }
 
   canBeAccessedBy(user) {
@@ -80,6 +96,7 @@ class Project {
       ownerId: this.ownerId,
       deadline: this.deadline,
       departmentId: this.departmentId,
+      // Keep collaborators in their current format for repository compatibility
       collaborators: this.collaborators,
       isArchived: this.isArchived,
       hasContainedTasks: this.hasContainedTasks,

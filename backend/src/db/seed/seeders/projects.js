@@ -35,13 +35,21 @@ module.exports = async function seedProjects(_count, { users, teams, departments
       }
     }
 
+    // Convert collaborators to new schema format
+    const collaboratorObjects = collaborators.map(collabId => ({
+      user: collabId,
+      role: 'viewer', // default role
+      assignedBy: owner._id,
+      assignedAt: new Date()
+    }));
+
     docs.push({
       name: `Project-${idx}`,
       description: `Seeded Project ${idx}`,
       ownerId: owner._id,
       departmentId: dept ? dept._id : undefined,
       deadline: new Date(Date.now() + (15 + i * 3) * 24 * 60 * 60 * 1000),
-      collaborators: [owner._id, ...collaborators].filter(Boolean).slice(0, 5),
+      collaborators: collaboratorObjects,
       hasContainedTasks: true,
     });
   }

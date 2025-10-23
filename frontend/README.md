@@ -51,7 +51,7 @@ src/
 │   │   ├── tasks/
 │   │   │   ├── TaskItem.tsx      # Task display component
 │   │   │   └── SubtaskList.tsx  # Subtask list component
-│   │   ├── timeline/            # Timeline-related components (empty)
+│   │   ├── timeline/            # Timeline-related components (empty directory)
 │   │   └── users/
 │   │       ├── UserList.tsx     # User list component
 │   │       ├── UserProfile.tsx  # User profile component
@@ -160,68 +160,8 @@ src/
 - ✅ `GET /api/organization/teams` - Get all teams
 
 ### **Activity Log Services** (`src/lib/services/activityLog.ts`)
-- ✅ `POST /api/logs/` - Get activity logs (with filters)
+- ✅ `GET /api/logs/` - Get activity logs (with filters)
 
-## 🚀 Features
-
-### **Authentication & Authorization**
-- **Secure Login**: JWT-based authentication with role-based access
-- **Email-Based Password Reset**: Password reset through email links (no token exposure)
-- **Invitation-Based Registration**: HR sends invitation emails, users register via secure links
-- **Session Management**: Automatic session timeout and inactivity tracking
-- **Role-Based Access**: Staff, Manager, Director, HR, Senior Management roles
-- **HR Bulk Invitations**: HR can send invitation emails to multiple users at once
-- **Automatic Invitations**: Registration links sent to invited users via email
-
-### **Task Management**
-- **Task Creation**: Create tasks with title, description, due date, and assignments
-- **Status Tracking**: Unassigned → Ongoing → Under Review → Completed workflow
-- **Role-Based Visibility**: 
-  - Staff: See own tasks and team tasks
-  - Managers: See team tasks and can assign to staff
-  - Directors: See department tasks
-  - HR/SM: See all tasks
-- **Task Assignment**: Managers can assign tasks to lower-level roles
-- **Task Archiving**: Soft delete functionality for audit trails
-- **File Attachments**: Upload and manage task attachments
-- **Project Association**: Link tasks to projects
-
-### **Project Management**
-- **Project Creation**: Create projects with collaborators
-- **Task Grouping**: Organize tasks within projects
-- **Collaboration**: Invite team members to projects
-- **Progress Tracking**: View project completion metrics with visual progress bars
-- **Role Assignment**: Assign viewer/editor roles to collaborators (owner-only)
-- **Activity Logging**: Track all project activities and changes
-- **Real-time Updates**: Live progress tracking and collaborator management
-
-### **User Management**
-- **Profile Management**: View and update user profiles
-- **Team Management**: View team members (role-based visibility)
-- **Department Management**: View department members (Director+ only)
-- **HR Bulk Invitations**: HR can send invitation emails to multiple users at once
-- **Public Registration**: Invited users can create accounts via secure registration links
-
-### **Organization Management**
-- **Department Overview**: View all departments (SM only)
-- **Team Management**: View teams by department (Director+)
-- **Hierarchical Access**: Role-based organization visibility
-
-### **Reporting & Analytics**
-- **Activity Logs**: Track all system activities with filtering and real-time updates
-- **Productivity Metrics**: Calculate and display productivity indices
-- **Task Metrics**: Comprehensive task statistics and reporting
-- **Department Reports**: Department-level analytics and insights
-- **Project Analytics**: Detailed project progress tracking and collaborator activity
-
-## 🛠️ Technology Stack
-
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: React Context + Custom Hooks
-- **API Integration**: Fetch API with typed responses
-- **Authentication**: JWT tokens with automatic refresh
 
 ### Testing
 - **Runner**: Vitest + jsdom
@@ -257,8 +197,8 @@ pnpm dev
 
 ## 📊 API Coverage Summary
 
-**Total Backend Routes**: 37  
-**Frontend Implemented**: 37  
+**Total Backend Routes**: 36  
+**Frontend Implemented**: 36  
 **Coverage**: 100% ✅
 
 All backend API endpoints are properly integrated into the frontend with:

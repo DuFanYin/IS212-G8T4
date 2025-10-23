@@ -277,9 +277,11 @@ function TimelineView() {
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
 
+      // Wait for fonts and ensure rendering
       await document.fonts.ready;
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => requestAnimationFrame(r));
 
+      // Ensure text is visible
       clone.querySelectorAll('span, button, p, div').forEach(el => {
         const elem = el as HTMLElement;
         if (elem.textContent?.trim()) {
@@ -290,9 +292,8 @@ function TimelineView() {
 
       // Force all transforms and transitions off to ensure text renders
       clone.querySelectorAll('*').forEach(el => {
-        const style = window.getComputedStyle(el);
         const elem = el as HTMLElement;
-        if (style.transform !== 'none') elem.style.transform = 'none';
+        elem.style.transform = 'none';
         elem.style.transition = 'none';
         elem.style.willChange = 'auto';
       });
@@ -308,7 +309,9 @@ function TimelineView() {
       });
 
       // 4️⃣ Clean up
-      document.body.removeChild(wrapper);
+      if (document.body.contains(wrapper)) {
+        document.body.removeChild(wrapper);
+      }
 
       // 5️⃣ Convert to multi-page PDF
       const imgData = canvas.toDataURL('image/png');
@@ -335,6 +338,7 @@ function TimelineView() {
       pdf.save(`Report_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Error exporting PDF:', err);
+      alert('Failed to export PDF. Please try again.');
     }
   };
 

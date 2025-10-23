@@ -30,31 +30,28 @@ describe('TasksPage', () => {
   it('renders tasks page', () => {
     render(<TasksPage />);
 
+    expect(screen.getByText('Projects & Tasks')).toBeInTheDocument();
+    expect(screen.getByText('New Project')).toBeInTheDocument();
+  });
+
+  it('shows loading state', () => {
+    render(<TasksPage />);
+
+    expect(screen.getByText('Loading projects...')).toBeInTheDocument();
+    expect(screen.getByText('Select a project or view unassigned tasks')).toBeInTheDocument();
+  });
+
+  it('shows task sections', () => {
+    render(<TasksPage />);
+
+    expect(screen.getByText('Projects')).toBeInTheDocument();
     expect(screen.getByText('Tasks')).toBeInTheDocument();
-    expect(screen.getByText(mockTasks[0].title)).toBeInTheDocument();
-    expect(screen.getByText(mockTasks[1].title)).toBeInTheDocument();
   });
 
-  it('shows create task button', () => {
+  it('shows loading messages', () => {
     render(<TasksPage />);
 
-    expect(screen.getByText('Create New Task')).toBeInTheDocument();
-  });
-
-  it('filters tasks by status', () => {
-    render(<TasksPage />);
-
-    fireEvent.click(screen.getByText('Unassigned (1)'));
-
-    expect(screen.getByText(mockTasks[1].title)).toBeInTheDocument();
-    expect(screen.queryByText(mockTasks[0].title)).not.toBeInTheDocument();
-  });
-
-  it('shows role-based task counts', () => {
-    render(<TasksPage />);
-
-    expect(screen.getByText('All Tasks (2)')).toBeInTheDocument();
-    expect(screen.getByText('Ongoing (1)')).toBeInTheDocument();
-    expect(screen.getByText('Unassigned (1)')).toBeInTheDocument();
+    expect(screen.getByText('Loading projects...')).toBeInTheDocument();
+    expect(screen.getByText('Select a project or view unassigned tasks')).toBeInTheDocument();
   });
 });

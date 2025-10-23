@@ -268,6 +268,7 @@ describe('Task Domain Class', () => {
         projectId: task.projectId,
         collaborators: task.collaborators,
         attachments: task.attachments,
+        recurringInterval: task.recurringInterval,
         isOverdue: task.isOverdue(),
         hasAttachments: task.hasAttachments(),
         createdAt: task.createdAt,

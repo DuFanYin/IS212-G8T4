@@ -100,6 +100,7 @@ src/
 - `PUT    /api/projects/:projectId`                 - Update project
 - `PUT    /api/projects/:projectId/collaborators`   - Add collaborator
 - `DELETE /api/projects/:projectId/collaborators`   - Remove collaborator
+- `POST   /api/projects/:projectId/assign-role`     - Assign role to collaborator (owner only)
 
 ### **Task Routes** (`src/routes/taskRoutes.js`)
 
@@ -155,13 +156,13 @@ src/
 - Basic CRUD: `findById()`, `findActiveTasks()`, `create()`, `updateById()`
 - Assignment operations: `assignTask()`, `updateStatus()`, `addCollaborator()`
 - Query methods: `findTasksByAssignee()`, `findTasksByCreator()`, `findTasksByProject()`, `findTasksByCollaborator()`, `findTasksByTeam()`, `findTasksByDepartment()`, `findUnassignedTasks()`
-- Attachment operations: `addAttachment()`, `removeAttachment()`
+- Multi-project support: `setProjects()`, `countByStatusForProject()`
 - Soft delete: `softDelete()`
 
 ### **ProjectRepository** (`src/repositories/ProjectRepository.js`)
 **Methods:**
 - Basic CRUD: `findById()`, `findActiveProjects()`, `findAllProjects()`, `create()`, `updateById()`
-- Collaboration: `addCollaborators()`, `removeCollaborators()`
+- Collaboration: `addCollaborators()`, `removeCollaborators()`, `assignRole()`
 - Query methods: `findProjectsByOwner()`, `findProjectsByDepartment()`, `findProjectsByCollaborator()`
 - Task tracking: `setHasTasks()`
 
@@ -199,7 +200,7 @@ src/
 ### **ProjectService** (`src/services/projectService.js`)
 **Methods:**
 - Basic operations: `createProject()`, `getActiveProjects()`, `getAllProjects()`, `getProjectById()`, `updateProject()`
-- Collaboration: `addCollaborator()`, `removeCollaborator()`, `validateCollaborators()`, `validateDepartmentMembership()`
+- Collaboration: `addCollaborator()`, `removeCollaborator()`, `assignRoleToCollaborator()`, `validateCollaborators()`, `validateDepartmentMembership()`
 - Visibility: `isVisibleToUser()`
 - Queries: `getProjectsByOwner()`, `getProjectsByDepartment()`, `getVisibleProjectsForUser()`
 - Internal: `getProjectDomainById()` - Fetches domain Project instance for permission checks
@@ -209,6 +210,7 @@ src/
 **Methods:**
 - Core operations: `createTask()`, `updateTask()`, `assignTask()`, `updateTaskStatus()`, `softDeleteTask()`
 - Attachment operations: `addAttachment()`, `removeAttachment()`
+- Recurring tasks: Automatic task recreation when recurring tasks are completed
 - Visibility: `isVisibleToUser()`
 - Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByTeam()`, `getTasksByDepartment()`, `getTasksByCollaborator()`, `getUnassignedTasks()`, `getById()`
 - Utilities: `mapPopulatedTaskDocToDTO()`, `buildEnrichedTaskDTO()` - Handle data transformation and name resolution
@@ -252,20 +254,34 @@ src/
 - `authenticate()` - Validates JWT tokens and attaches user info to request
 - Role-based access control for protected routes
 
-### **AttachmentMiddleware** (`src/middleware/attachmentMiddleware.js`)
-**Purpose:** File upload handling for task attachments
-**Features:**
-- Multer-based file upload with disk storage
-- File type validation (PDF, DOCX, XLSX only)
-- File size limits (5MB maximum)
-- Dynamic folder creation per task ID
-- Unique filename generation with timestamps
+## Project Collaborator Role System
+
+### **Role Assignment Feature**
+The project collaborator system supports per-project role assignment with backward compatibility:
+
+**Schema Evolution:**
+- **Legacy format:** `collaborators: [ObjectId]` - Simple array of user IDs
+- **New format:** `collaborators: [{user: ObjectId, role: String, assignedBy: ObjectId, assignedAt: Date}]` - Detailed subdocuments
+
+**Supported Roles:**
+- `viewer` - Read-only access to project
+- `editor` - Can modify project details and tasks
+
+**Backward Compatibility:**
+- Existing projects with `ObjectId[]` collaborators continue to work
+- First role assignment automatically converts legacy format to new subdocument format
+- All repository methods handle both formats transparently
+
+**Authorization:**
+- Only project owners can assign/change collaborator roles
+- Role assignment is logged via ActivityLogService
+- Domain layer methods (`isCollaborator()`, `addOwnerToCollaborators()`) work with both formats
 
 ## File Storage System
 
 ### **Storage Structure**
 ```
-src/storage/
+backend/src/storage/
 ├── <taskId>/
 │   ├── <timestamp>-<random>.pdf
 │   ├── <timestamp>-<random>.docx
@@ -284,6 +300,14 @@ src/storage/
 }
 ```
 
+### **Attachment Middleware** (`src/middleware/attachmentMiddleware.js`)
+**Features:**
+- Multer-based file upload with disk storage
+- File type validation (PDF, DOCX, XLSX only)
+- File size limits (5MB maximum)
+- Dynamic folder creation per task ID
+- Unique filename generation with timestamps
+
 ## Current Domain Classes (Pure Business Logic)
 
 ### **User Domain** (`src/domain/User.js`)
@@ -300,6 +324,7 @@ src/storage/
 - Collaboration: `isCollaborator()`
 - Business logic: `updateStatus()`, `assignTo()`, `addCollaborator()`
 - Attachment operations: `addAttachment()`, `removeAttachment()`, `hasAttachments()`
+- Recurring tasks: `recurringInterval` property for automatic task recreation
 - Utilities: `hasAttachments()`
 - DTOs: `toDTO()`
 
@@ -309,6 +334,7 @@ src/storage/
 - Business logic: `addCollaborator()`, `setHasTasks()`, `addOwnerToCollaborators()`
 - Utilities: `isOverdue()`, `hasTasks()`
 - DTOs: `toDTO()` (includes `createdAt`, `updatedAt` timestamps)
+- **Collaborator roles:** Supports both legacy `ObjectId[]` and new `{user, role, assignedBy, assignedAt}` subdocument format
 
 ### **Subtask Domain** (`src/domain/Subtask.js`)
 **Methods:**
@@ -321,99 +347,3 @@ src/storage/
 **Methods:**
 - Time utilities: `isRecent()`, `isToday()`, `isThisWeek()`
 - DTOs: `toDTO()`, `toSafeDTO()`
-
-##
-### Architecture Pattern
-
-1. **Separation of Concerns**
-   - **Domain**: Pure business logic, no database dependencies
-   - **Repositories**: Data access only, no business logic
-   - **Services**: Orchestrate domain + repositories, handle transactions
-   - **Models**: Schema definitions only, no behavior
-
-2. **Domain Classes (Pure Business Logic)**
-   ```js
-   // Example: User domain entity
-   const user = new User(userDoc);
-   if (user.isManager()) { /* ... */ }
-   if (user.canAccessProject(project)) { /* ... */ }
-   ```
-
-3. **Repository Pattern (Data Access)**
-   ```js
-   // Example: UserRepository
-   const userRepo = new UserRepository();
-   const userDoc = await userRepo.findPublicById(id);
-   const user = new User(userDoc);
-   ```
-
-4. **Service Layer (Business Operations)**
-   ```js
-   // Example: UserService
-   const userService = new UserService(userRepository);
-   const user = await userService.getUserById(id);
-   // Returns domain entity, not raw document
-   ```
-
-### Key Improvements & Benefits of Layered Architecture
-
-#### 1. **Testability** 🧪
-**Benefit**: Domain classes can be unit tested without database dependencies
-- **Before**: Testing required database setup, complex mocking of Mongoose models
-- **After**: Pure business logic testing with simple object instantiation
-- **Example**: Testing `user.isManager()` requires only `new User({role: 'manager'})`
-- **Impact**: Faster test execution, easier CI/CD, more reliable test coverage
-
-#### 2. **Maintainability** 🔧
-**Benefit**: Business logic centralized in domain classes, not scattered across controllers
-- **Before**: Business rules duplicated in controllers, services, and validation layers
-- **After**: Single source of truth for business logic in domain entities
-- **Example**: Role hierarchy logic exists only in `User` domain class
-- **Impact**: Easier to modify business rules, reduced code duplication, clearer codebase
-
-#### 3. **Flexibility** 🔄
-**Benefit**: Easy to swap data sources without changing business logic
-- **Before**: Tightly coupled to MongoDB/Mongoose throughout the application
-- **After**: Repository pattern abstracts data access from business logic
-- **Example**: Switching from MongoDB to PostgreSQL only requires new repository implementations
-- **Impact**: Technology independence, easier migrations, future-proof architecture
-
-#### 4. **Consistency** 📏
-**Benefit**: All entities follow the same architectural patterns
-- **Before**: Inconsistent approaches across different features
-- **After**: Standardized patterns for all domain entities (User, Task, Project, etc.)
-- **Example**: All entities have `toDTO()` methods, permission checks, and business logic methods
-- **Impact**: Easier onboarding, predictable code structure, reduced cognitive load
-
-#### 5. **Separation of Concerns** 🎯
-**Benefit**: Clear boundaries between different responsibilities
-- **Domain Layer**: Pure business logic, no external dependencies
-- **Repository Layer**: Data access only, no business rules
-- **Service Layer**: Orchestration and transaction management
-- **Impact**: Easier debugging, clearer code organization, better team collaboration
-
-#### 6. **Scalability** 📈
-**Benefit**: Architecture supports growth and complexity
-- **Before**: Monolithic controllers handling everything
-- **After**: Modular layers that can be scaled independently
-- **Example**: Adding new features follows established patterns
-- **Impact**: Easier feature development, better performance optimization, team scalability
-
-#### 7. **Code Reusability** ♻️
-**Benefit**: Domain logic can be reused across different contexts
-- **Before**: Business logic tied to specific API endpoints
-- **After**: Domain methods can be used in APIs, background jobs, CLI tools
-- **Example**: `user.canAssignTasks()` works in web UI, mobile app, and management tools
-- **Impact**: Reduced development time, consistent behavior across platforms
-
-#### 8. **Error Handling & Validation** ⚠️
-**Benefit**: Centralized validation and error handling
-- **Before**: Validation scattered across controllers and middleware
-- **After**: Business rules enforced at domain level with clear error messages
-- **Example**: Task assignment validation happens in `Task.canBeAssignedBy()`
-#### 9. **Developer Experience** 👨‍💻
-**Benefit**: Cleaner, more intuitive code for developers
-- **Before**: Complex controller logic mixing HTTP concerns with business rules
-- **After**: Clear separation makes code self-documenting and easier to understand
-- **Example**: `if (user.canAssignTasks() && task.canBeAssignedBy(user))` is self-explanatory
-- **Impact**: Faster development, fewer bugs, better code reviews

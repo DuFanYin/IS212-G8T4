@@ -3,11 +3,13 @@ jest.mock('../../../src/db/models');
 jest.mock('jsonwebtoken');
 jest.mock('bcryptjs');
 jest.mock('crypto');
+jest.mock('../../../src/services/emailService');
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { User } = require('../../../src/db/models');
+const EmailService = require('../../../src/services/emailService');
 
 describe('AuthController', () => {
   let authController;
@@ -185,6 +187,12 @@ describe('AuthController', () => {
       User.findOne.mockResolvedValue(mockUser);
       crypto.randomBytes.mockReturnValue({ toString: jest.fn().mockReturnValue('reset-token') });
       bcrypt.hash.mockResolvedValue('hashed-reset-token');
+      
+      // Mock EmailService
+      const mockEmailService = {
+        sendPasswordResetEmail: jest.fn().mockResolvedValue(true)
+      };
+      EmailService.mockImplementation(() => mockEmailService);
 
       await authController.requestPasswordReset(mockReq, mockRes);
 
@@ -194,7 +202,7 @@ describe('AuthController', () => {
       expect(mockUser.save).toHaveBeenCalled();
       expect(mockRes.json).toHaveBeenCalledWith({
         status: 'success',
-        data: { resetToken: 'reset-token' }
+        message: 'Password reset email sent successfully'
       });
     });
 
@@ -246,8 +254,9 @@ describe('AuthController', () => {
 
       await authController.resetPassword(mockReq, mockRes);
 
+      // Check that User.findOne was called with the correct structure, not exact timestamp
       expect(User.findOne).toHaveBeenCalledWith({
-        resetTokenExpiry: { $gt: Date.now() }
+        resetTokenExpiry: { $gt: expect.any(Number) }
       });
       expect(bcrypt.compare).toHaveBeenCalledWith('reset-token', 'hashed-reset-token');
       expect(bcrypt.hash).toHaveBeenCalledWith('newpassword123', 10);

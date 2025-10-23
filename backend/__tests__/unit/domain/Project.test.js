@@ -12,7 +12,7 @@ describe('Project Domain Class', () => {
       ownerId: '507f1f77bcf86cd799439012',
       deadline: new Date('2024-12-31T23:59:59Z'),
       departmentId: '507f1f77bcf86cd799439013',
-      collaborators: ['507f1f77bcf86cd799439014'],
+      collaborators: ['507f1f77bcf86cd799439012', '507f1f77bcf86cd799439014'], // Include owner
       isArchived: false,
       hasContainedTasks: true,
       createdAt: new Date('2024-01-01T00:00:00Z'),
@@ -50,18 +50,18 @@ describe('Project Domain Class', () => {
         ownerId: '507f1f77bcf86cd799439012'
       };
       const proj = new Project(minimalData);
-      expect(proj.collaborators).toContain(proj.ownerId); // Owner is automatically added
+      expect(proj.collaborators).toEqual([]); // Owner is now added in service layer
       expect(proj.isArchived).toBe(false);
       expect(proj.hasContainedTasks).toBe(false);
     });
 
-    it('should add owner to collaborators', () => {
+    it('should not automatically add owner to collaborators', () => {
       const dataWithoutOwnerInCollaborators = {
         ...projectData,
         collaborators: ['507f1f77bcf86cd799439014']
       };
       const proj = new Project(dataWithoutOwnerInCollaborators);
-      expect(proj.collaborators).toContain(proj.ownerId);
+      expect(proj.collaborators).toEqual(['507f1f77bcf86cd799439014']); // Owner is now added in service layer
     });
   });
 

@@ -4,7 +4,8 @@ const authMiddleware = require('../middleware/authMiddleware');
 const {
   createProject, getProjects, getProjectsByDepartment, updateProject,
   addCollaborators, removeCollaborators, setStatusProject,
-  getProjectProgress          // <-- import
+  getProjectProgress,
+  assignRole
 } = require('../controllers/projectController');
 
 router.post('/', authMiddleware, createProject);
@@ -15,6 +16,8 @@ router.get('/departments/:departmentId', authMiddleware, getProjectsByDepartment
 router.get('/:projectId/progress', authMiddleware, getProjectProgress);
 
 router.put('/:projectId/archive', authMiddleware, setStatusProject);
+// Assign role to collaborator (owner only)
+router.post('/:projectId/assign-role', authMiddleware, assignRole);
 router.put('/:projectId', authMiddleware, updateProject);
 router.put('/:projectId/collaborators', authMiddleware, addCollaborators);
 router.delete('/:projectId/collaborators', authMiddleware, removeCollaborators);

@@ -1,0 +1,153 @@
+@startuml C4_Backend_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Backend System Architecture - C4 Container Diagram
+
+Person(user, "User", "Frontend application users")
+Person(admin, "Admin", "System administrators")
+
+System_Boundary(backend, "IS212-G8T4 Backend System") {
+    
+    Container(express, "Express.js Server", "Node.js, Express", "Main application server handling HTTP requests")
+    
+    Container_Boundary(api_layer, "API Layer") {
+        Container(auth_routes, "Auth Routes", "Express Router", "Authentication endpoints (/api/auth)")
+        Container(user_routes, "User Routes", "Express Router", "User management endpoints (/api/users)")
+        Container(project_routes, "Project Routes", "Express Router", "Project management endpoints (/api/projects)")
+        Container(task_routes, "Task Routes", "Express Router", "Task management endpoints (/api/tasks)")
+        Container(subtask_routes, "Subtask Routes", "Express Router", "Subtask endpoints (/api/tasks)")
+        Container(org_routes, "Organization Routes", "Express Router", "Organization endpoints (/api/organization)")
+        Container(log_routes, "Activity Log Routes", "Express Router", "Activity logging endpoints (/api/logs)")
+    }
+    
+    Container_Boundary(middleware_layer, "Middleware Layer") {
+        Container(auth_middleware, "Auth Middleware", "JWT", "Token validation and user authentication")
+        Container(attachment_middleware, "Attachment Middleware", "Multer", "File upload handling and validation")
+    }
+    
+    Container_Boundary(controller_layer, "Controller Layer") {
+        Container(auth_controller, "Auth Controller", "JavaScript", "Authentication logic and validation")
+        Container(user_controller, "User Controller", "JavaScript", "User management operations")
+        Container(project_controller, "Project Controller", "JavaScript", "Project CRUD operations")
+        Container(task_controller, "Task Controller", "JavaScript", "Task management operations")
+        Container(subtask_controller, "Subtask Controller", "JavaScript", "Subtask operations")
+        Container(org_controller, "Organization Controller", "JavaScript", "Department/Team management")
+        Container(log_controller, "Activity Log Controller", "JavaScript", "Activity logging operations")
+    }
+    
+    Container_Boundary(service_layer, "Service Layer") {
+        Container(auth_service, "Auth Service", "JavaScript", "Authentication business logic")
+        Container(user_service, "User Service", "JavaScript", "User business logic and validation")
+        Container(project_service, "Project Service", "JavaScript", "Project business logic and permissions")
+        Container(task_service, "Task Service", "JavaScript", "Task business logic and workflow")
+        Container(subtask_service, "Subtask Service", "JavaScript", "Subtask business logic")
+        Container(org_service, "Organization Service", "JavaScript", "Department/Team business logic")
+        Container(log_service, "Activity Log Service", "JavaScript", "Activity logging business logic")
+        Container(email_service, "Email Service", "Nodemailer", "Email notifications and password reset")
+    }
+    
+    Container_Boundary(domain_layer, "Domain Layer") {
+        Container(user_domain, "User Domain", "JavaScript", "User entity and business rules")
+        Container(project_domain, "Project Domain", "JavaScript", "Project entity and business rules")
+        Container(task_domain, "Task Domain", "JavaScript", "Task entity and business rules")
+        Container(subtask_domain, "Subtask Domain", "JavaScript", "Subtask entity and business rules")
+    }
+    
+    Container_Boundary(repository_layer, "Repository Layer") {
+        Container(user_repo, "User Repository", "JavaScript", "User data access operations")
+        Container(project_repo, "Project Repository", "JavaScript", "Project data access operations")
+        Container(task_repo, "Task Repository", "JavaScript", "Task data access operations")
+        Container(subtask_repo, "Subtask Repository", "JavaScript", "Subtask data access operations")
+        Container(dept_repo, "Department Repository", "JavaScript", "Department data access operations")
+        Container(team_repo, "Team Repository", "JavaScript", "Team data access operations")
+        Container(log_repo, "Activity Log Repository", "JavaScript", "Activity log data access operations")
+    }
+    
+    Container_Boundary(data_layer, "Data Layer") {
+        Container(mongodb, "MongoDB Database", "MongoDB", "Primary database storing all application data")
+        Container(file_storage, "File Storage", "File System", "Local file storage for attachments")
+    }
+    
+    Container_Boundary(external_services, "External Services") {
+        Container(gmail, "Gmail SMTP", "SMTP", "Email service for notifications")
+    }
+}
+
+' User interactions
+user --> express : "HTTP Requests"
+admin --> express : "Admin Operations"
+
+' Express server routing
+express --> auth_routes : "Routes /api/auth/*"
+express --> user_routes : "Routes /api/users/*"
+express --> project_routes : "Routes /api/projects/*"
+express --> task_routes : "Routes /api/tasks/*"
+express --> subtask_routes : "Routes /api/tasks/*"
+express --> org_routes : "Routes /api/organization/*"
+express --> log_routes : "Routes /api/logs/*"
+
+' Route to controller flow
+auth_routes --> auth_controller : "Handles auth requests"
+user_routes --> user_controller : "Handles user requests"
+project_routes --> project_controller : "Handles project requests"
+task_routes --> task_controller : "Handles task requests"
+subtask_routes --> subtask_controller : "Handles subtask requests"
+org_routes --> org_controller : "Handles org requests"
+log_routes --> log_controller : "Handles log requests"
+
+' Middleware integration
+auth_routes --> auth_middleware : "Validates tokens"
+task_routes --> attachment_middleware : "Handles file uploads"
+
+' Controller to service flow
+auth_controller --> auth_service : "Business logic"
+user_controller --> user_service : "Business logic"
+project_controller --> project_service : "Business logic"
+task_controller --> task_service : "Business logic"
+subtask_controller --> subtask_service : "Business logic"
+org_controller --> org_service : "Business logic"
+log_controller --> log_service : "Business logic"
+
+' Service to domain flow
+auth_service --> user_domain : "Uses user domain"
+user_service --> user_domain : "Uses user domain"
+project_service --> project_domain : "Uses project domain"
+project_service --> user_domain : "Uses user domain"
+task_service --> task_domain : "Uses task domain"
+task_service --> user_domain : "Uses user domain"
+subtask_service --> subtask_domain : "Uses subtask domain"
+
+' Service to repository flow
+auth_service --> user_repo : "Data access"
+user_service --> user_repo : "Data access"
+project_service --> project_repo : "Data access"
+project_service --> user_repo : "Data access"
+task_service --> task_repo : "Data access"
+subtask_service --> subtask_repo : "Data access"
+org_service --> dept_repo : "Data access"
+org_service --> team_repo : "Data access"
+log_service --> log_repo : "Data access"
+
+' Repository to database flow
+user_repo --> mongodb : "CRUD operations"
+project_repo --> mongodb : "CRUD operations"
+task_repo --> mongodb : "CRUD operations"
+subtask_repo --> mongodb : "CRUD operations"
+dept_repo --> mongodb : "CRUD operations"
+team_repo --> mongodb : "CRUD operations"
+log_repo --> mongodb : "CRUD operations"
+
+' File storage
+attachment_middleware --> file_storage : "Stores attachments"
+
+' External service integration
+auth_service --> email_service : "Sends emails"
+email_service --> gmail : "SMTP connection"
+
+' Database models
+mongodb --> user_domain : "User Model"
+mongodb --> project_domain : "Project Model"
+mongodb --> task_domain : "Task Model"
+mongodb --> subtask_domain : "Subtask Model"
+
+@enduml

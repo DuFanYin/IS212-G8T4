@@ -57,7 +57,7 @@ __tests__/
 ```
 
 
-## All Test Files and Cases (353)
+## All Test Files and Cases (379)
 
 ### Authentication & Security Tests
 
@@ -481,11 +481,13 @@ __tests__/
   - TaskService › setTaskProjects › should throw error when task not found
   - TaskService › setTaskProjects › should throw error when not authorized
 
-- unit/services/userService.test.js (4)
-  - UserService › should handle user retrieval operations
-  - UserService › should handle user creation and updates
-  - UserService › should handle reset token operations
-  - UserService › should handle error cases
+- unit/services/organizationService.test.js (6)
+  - OrganizationService › getAllDepartments › should return departments with statistics
+  - OrganizationService › getAllDepartments › should handle errors when fetching departments
+  - OrganizationService › getTeamsByDepartment › should return teams with user counts
+  - OrganizationService › getTeamsByDepartment › should handle errors when fetching teams
+  - OrganizationService › getAllTeams › should return all teams with statistics
+  - OrganizationService › getAllTeams › should handle errors when fetching all teams
 
 #### Controller Tests
 
@@ -506,21 +508,39 @@ __tests__/
   - AuthController › resetPassword › should handle server errors
   - AuthController › should validate authentication flows
 
-- unit/controllers/userController.test.js (14)
-  - UserController › getProfile › should get user profile successfully
-  - UserController › getProfile › should return error when user not found
+- unit/controllers/userController.test.js (18)
+  - UserController › getProfile › should return user profile successfully
+  - UserController › getProfile › should return 404 when user not found
   - UserController › getProfile › should handle service errors
-  - UserController › getTeamMembers › should get team members for HR/SM users
-  - UserController › getTeamMembers › should get team members for director users
-  - UserController › getTeamMembers › should get team members for manager users
-  - UserController › getTeamMembers › should return error when user not found
-  - UserController › getTeamMembers › should return error when insufficient permissions
+  - UserController › getTeamMembers › should return team members for users with canAssignTasks permission
+  - UserController › getTeamMembers › should return all users for users with canSeeAllTasks permission
+  - UserController › getTeamMembers › should return 404 when current user not found
+  - UserController › getTeamMembers › should return 403 for users without sufficient permissions
   - UserController › getTeamMembers › should handle service errors
-  - UserController › getDepartmentMembers › should get department members successfully
-  - UserController › getDepartmentMembers › should use user department when no departmentId provided
-  - UserController › getDepartmentMembers › should return error when user not found
-  - UserController › getDepartmentMembers › should return error when insufficient permissions
-  - UserController › getDepartmentMembers › should handle service errors
+  - UserController › sendBulkInvitations › should send invitations successfully for HR users
+  - UserController › sendBulkInvitations › should return 404 when current user not found
+  - UserController › sendBulkInvitations › should return 403 for non-HR users
+  - UserController › sendBulkInvitations › should return 400 for invalid email array
+  - UserController › sendBulkInvitations › should return 400 for missing emails
+  - UserController › sendBulkInvitations › should return 400 for invalid email format
+  - UserController › sendBulkInvitations › should return 400 for invalid role
+  - UserController › sendBulkInvitations › should skip existing users
+  - UserController › sendBulkInvitations › should handle email sending failures
+  - UserController › sendBulkInvitations › should handle service errors
+
+- unit/controllers/organizationController.test.js (12)
+  - OrganizationController › getAllDepartments › should return departments for SM users
+  - OrganizationController › getAllDepartments › should return departments for HR users
+  - OrganizationController › getAllDepartments › should return 403 when user not found
+  - OrganizationController › getAllDepartments › should return 403 for insufficient permissions
+  - OrganizationController › getAllDepartments › should handle service errors
+  - OrganizationController › getTeamsByDepartment › should return teams for director accessing their own department
+  - OrganizationController › getTeamsByDepartment › should return 403 for director accessing different department
+  - OrganizationController › getTeamsByDepartment › should allow access for non-existent department
+  - OrganizationController › getTeamsByDepartment › should return teams for manager users
+  - OrganizationController › getTeamsByDepartment › should return teams for SM users
+  - OrganizationController › getTeamsByDepartment › should return teams for HR users
+  - OrganizationController › getTeamsByDepartment › should return 403 for staff users
 
 
 
@@ -534,8 +554,23 @@ Tests focus on **core business requirements** with balanced coverage:
 - **Data Validation**: Input validation for required fields and business rules
 - **Error Handling**: Graceful handling of common error scenarios
 
-### Balanced Test Coverage (353 total tests)
+### Balanced Test Coverage (379 total tests)
 The suite covers authentication, users, organization, tasks (including grouping and attachments), subtasks, projects, activity logs, domain models, repositories, services, and controllers with comprehensive unit and integration testing.
+
+## Test Status: ✅ All Tests Passing
+
+**Latest Test Results:**
+- **Total Test Suites**: 59 passed
+- **Total Tests**: 379 passed  
+- **Test Coverage**: Comprehensive integration and unit testing
+- **Status**: All backend tests are currently passing successfully
+
+### Recent Test Fixes Applied:
+- **Authentication Tests**: Fixed email service mocking in unit tests
+- **Integration Tests**: Updated expectations to handle email service failures gracefully
+- **Password Reset Tests**: Resolved timing issues in reset token validation
+- **Branch Coverage Improvement**: Added targeted unit tests for userController, organizationController, and organizationService
+- **Coverage Enhancement**: Improved overall branch coverage from ~55% to 64.43%
 
 ### What We Test
 - ✅ Core business functionality and user workflows
@@ -555,3 +590,45 @@ The suite covers authentication, users, organization, tasks (including grouping 
 - ❌ Implementation details and internal methods
 - ❌ Excessive edge cases that don't add business value
 - ❌ Simple wrapper functions or trivial operations
+
+## Running Tests
+
+### Prerequisites
+- Node.js and npm installed
+- MongoDB running (for integration tests)
+- Environment variables configured (see main README)
+
+### Test Commands
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test suites
+npm test -- --testPathPatterns="auth"
+npm test -- --testPathPatterns="tasks"
+npm test -- --testPathPatterns="projects"
+
+# Run integration tests only
+npm test -- --testPathPatterns="integration"
+
+# Run unit tests only
+npm test -- --testPathPatterns="unit"
+
+# Run tests in watch mode
+npm test -- --watch
+```
+
+### Coverage Results
+- **Statements**: 85.65%
+- **Branches**: 64.43% (improved from ~55%)
+- **Functions**: 88.75%
+- **Lines**: 86.76%
+
+### Test Environment
+- **Database**: Uses test database with seeded data
+- **Email Service**: Mocked in unit tests, may fail in integration tests (expected behavior)
+- **File Storage**: Uses temporary storage for attachment tests
+- **Authentication**: Uses test JWT secrets and mock users
