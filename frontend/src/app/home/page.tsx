@@ -314,16 +314,16 @@ function TimelineView() {
       let position = 0;
 
       let header = "";
-      if (user?.role == "hr"){
+      if (user?.role == "hr") {
         header = "Individual Report"
       }
-      else if (user?.role == "manager"){
+      else if (user?.role == "manager") {
         header = "Team Report"
       }
-      else if (user?.role == "director"){
+      else if (user?.role == "director") {
         header = "Department Report"
       }
-      else{
+      else {
         header = "Individual Report"
       }
 
@@ -414,7 +414,26 @@ function TimelineView() {
                   </div>
                 </div>
                 {/* Row 2: legend */}
-                <Legend />
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex-1 min-w-0">
+                    <Legend />
+                  </div>
+
+                  {/* Control button styled to look like a subtle icon button */}
+                  <div className="flex-shrink-0 ml-3">
+                    <button
+                      type="button"
+                      title="Timeline controls"
+                      aria-label="Open timeline controls"
+                      className="inline-flex items-center justify-center p-2 border border-gray-200 bg-white rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition"
+                      onClick={handleExportReport}
+                    >
+                      <svg className="w-4 h-4 text-gray-700" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 18">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 1v11m0 0 4-4m-4 4L4 8m11 4v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -468,15 +487,6 @@ function TimelineView() {
                 <ProductivityMetric tasks={teamStats} />
                 <ProductivityIndex tasks={teamStats} />
               </Card>
-            </div>
-
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={handleExportReport}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Export Report PDF
-              </button>
             </div>
           </>
         )}
