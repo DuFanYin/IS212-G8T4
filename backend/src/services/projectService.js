@@ -13,10 +13,10 @@ class ProjectService {
     this.taskRepository = taskRepository;
   }
 
-    /**
-   * Managers (or owners) can view aggregated progress for tasks in a project.
-   * Returns: { total, unassigned, ongoing, under_review, completed, percent }
-   */
+  /**
+ * Managers (or owners) can view aggregated progress for tasks in a project.
+ * Returns: { total, unassigned, ongoing, under_review, completed, percent }
+ */
   async getProjectProgress(projectId, userId) {
     // 1) Load project and requesting user
     const project = await this.getProjectDomainById(projectId);
@@ -51,7 +51,7 @@ class ProjectService {
         const ownerDoc = await this.userRepository.findById(dto.ownerId);
         ownerName = ownerDoc?.name;
       }
-    } catch {}
+    } catch { }
 
     let collaboratorNames = undefined;
     try {
@@ -61,11 +61,11 @@ class ProjectService {
           try {
             const doc = await this.userRepository.findById(id);
             if (doc?.name) names.push(doc.name);
-          } catch {}
+          } catch { }
         }
         collaboratorNames = names;
       }
-    } catch {}
+    } catch { }
 
     return { ...dto, ownerName, collaboratorNames };
   }
@@ -77,14 +77,39 @@ class ProjectService {
    */
   //Code Reviewed
   async createProject(projectData, userId) {
-    const project = new Project({ ...projectData, ownerId: userId });
+    // Convert collaborators to new format if they're in legacy format
+    let collaborators = projectData.collaborators || [];
+    if (Array.isArray(collaborators) && collaborators.length > 0 && typeof collaborators[0] === 'string') {
+      collaborators = collaborators.map(collabId => ({
+        user: collabId,
+        role: 'viewer',
+        assignedBy: userId,
+        assignedAt: new Date()
+      }));
+    }
+    
+    // Add owner as collaborator in new format
+    const ownerCollaborator = {
+      user: userId,
+      role: 'editor',
+      assignedBy: userId,
+      assignedAt: new Date()
+    };
+    
+    // Check if owner is already in collaborators
+    const ownerExists = collaborators.some(collab => collab.user.toString() === userId.toString());
+    if (!ownerExists) {
+      collaborators.push(ownerCollaborator);
+    }
+    
+    const project = new Project({ ...projectData, ownerId: userId, collaborators });
     await this.validateCollaborators(project.collaborators, project.departmentId);
     const createdDoc = await this.projectRepository.create(project);
     return new Project(createdDoc);
   }
 
   //Code Reviewed
-  async getAllProjects(){
+  async getAllProjects() {
     const docs = await this.projectRepository.findAllProjects();
     const populated = await ProjectModel.populate(docs, [
       { path: 'ownerId', select: 'name' },
@@ -252,7 +277,7 @@ class ProjectService {
     const project = await this.getProjectDomainById(projectId);
 
     await this.validateUser(project, userId);
-    if(project.isOwner(collaboratorId)){
+    if (project.isOwner(collaboratorId)) {
       throw new Error("Cannot remove project owner");
     }
 
@@ -263,7 +288,52 @@ class ProjectService {
     return new Project(updatedProjectDoc);
   }
 
-  async validateUser(project, userId){
+  /**
+ * Assign or update a collaborator's role within a project.
+ * Only the project owner may change roles.
+ */
+  async assignRoleToCollaborator(projectId, collaboratorId, role, actingUserId) {
+    // 1️⃣ Fetch the project domain model
+    const project = await this.getProjectDomainById(projectId);
+
+    // 2️⃣ Ensure the acting user exists and is authorized
+    const actingUserDoc = await this.userRepository.findById(actingUserId);
+    if (!actingUserDoc) throw new Error('Acting user not found');
+
+    const actingUser = new User(actingUserDoc);
+    if (!project.isOwner(actingUser.id)) {
+      throw new Error('Only the project owner can assign or change roles');
+    }
+
+    // 3️⃣ Ensure the collaborator exists
+    const collaboratorDoc = await this.userRepository.findById(collaboratorId);
+    if (!collaboratorDoc) throw new Error('Collaborator not found');
+
+    // 4️⃣ Persist role assignment via repository
+    const updatedProject = await this.projectRepository.assignRole(
+      projectId,
+      collaboratorId,
+      role,
+      actingUserId
+    );
+
+    // 5️⃣ Log the role change (optional — if ActivityLogService is available)
+    try {
+      const ActivityLogService = require('./activityLogService');
+      await ActivityLogService.logActivity({
+        projectId,
+        action: `Assigned role '${role}' to collaborator ${collaboratorId}`,
+        performedBy: actingUserId,
+        timestamp: new Date()
+      });
+    } catch (err) {
+      console.warn('Activity logging failed:', err.message);
+    }
+
+    return new Project(updatedProject);
+  }
+
+  async validateUser(project, userId) {
     const userDoc = await this.userRepository.findById(userId);
     const user = new User(userDoc);
 
@@ -274,12 +344,14 @@ class ProjectService {
 
   //Code Reviewed
   async validateCollaborators(collaborators, departmentId) {
-    for (const collaboratorId of collaborators) {
+    for (const collaborator of collaborators) {
+      // Handle both legacy string format and new object format
+      const collaboratorId = typeof collaborator === 'string' ? collaborator : collaborator.user;
       const collaboratorDoc = await this.userRepository.findById(collaboratorId);
       if (!collaboratorDoc) throw new Error(`Collaborator ${collaboratorId} not found`);
 
-      const collaborator = new User(collaboratorDoc);
-      this.validateDepartmentMembership(collaborator.departmentId, departmentId);
+      const collaboratorUser = new User(collaboratorDoc);
+      this.validateDepartmentMembership(collaboratorUser.departmentId, departmentId);
     }
   }
 
@@ -330,9 +402,9 @@ class ProjectService {
   }
 
   async getProjectById(projectId) {
-    try { 
-      const doc = await this.projectRepository.findById(projectId); 
-      if (!doc) throw new Error('Project not found'); 
+    try {
+      const doc = await this.projectRepository.findById(projectId);
+      if (!doc) throw new Error('Project not found');
       const populated = await ProjectModel.populate(doc, [
         { path: 'ownerId', select: 'name' },
         { path: 'collaborators', select: 'name' },
@@ -355,7 +427,7 @@ class ProjectService {
         createdAt: populated.createdAt,
         updatedAt: populated.updatedAt,
       };
-    } catch (error) { 
+    } catch (error) {
       throw new Error(error?.message || 'Error fetching project by id');
     }
   }

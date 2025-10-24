@@ -115,6 +115,17 @@ const seedDatabase = async () => {
       }]
     }, managerUser._id);
 
+    // Create a recurring task example
+    const recurringTask = await taskService.createTask({
+      title: 'Weekly Team Standup',
+      description: 'Conduct weekly team standup meeting to discuss progress and blockers',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      status: 'unassigned',
+      projectId: sampleProject.id,
+      collaborators: [managerUser._id, staffUser._id],
+      recurringInterval: 7 // Recur every 7 days
+    }, managerUser._id);
+
     const subtasks = await Promise.all([
       subtaskService.createSubtask(mainTask.id, {
         title: 'Design Hero Section',

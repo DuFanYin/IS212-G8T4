@@ -35,7 +35,8 @@ const taskSchema = new mongoose.Schema({
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     updatedAt: Date
   },
-  isDeleted: { type: Boolean, default: false }
+  isDeleted: { type: Boolean, default: false },
+  recurringInterval: { type: Number, default: null }
 }, { timestamps: true });
 
 // ---------- Indexes ----------

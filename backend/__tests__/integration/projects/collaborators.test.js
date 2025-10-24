@@ -30,8 +30,17 @@ describe('Project collaborators', () => {
       .send({ collaboratorId: managerUser._id });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.collaborators).toContain(project.ownerId.toString());
-    expect(res.body.data.collaborators).toContain(managerUser._id.toString());
+    // Check that owner is in collaborators (as editor)
+    const ownerInCollaborators = res.body.data.collaborators.some(collab => 
+      collab.user === project.ownerId.toString() && collab.role === 'editor'
+    );
+    expect(ownerInCollaborators).toBe(true);
+    
+    // Check that manager is in collaborators (as viewer)
+    const managerInCollaborators = res.body.data.collaborators.some(collab => 
+      collab.user === managerUser._id.toString() && collab.role === 'viewer'
+    );
+    expect(managerInCollaborators).toBe(true);
   });
 
   it('should not duplicate collaborators', async () => {
@@ -42,8 +51,10 @@ describe('Project collaborators', () => {
       .send({ collaboratorId: managerUser._id });
 
     expect(res.status).toBe(200);
-    const collabs = res.body.data.collaborators.filter(id => id === managerUser._id.toString());
-    expect(collabs.length).toBe(1);
+    const managerCollaborators = res.body.data.collaborators.filter(collab => 
+      collab.user === managerUser._id.toString()
+    );
+    expect(managerCollaborators.length).toBe(1);
   });
 
   it('should remove a collaborator successfully', async () => {
@@ -54,8 +65,17 @@ describe('Project collaborators', () => {
       .send({ collaboratorId: managerUser._id });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.collaborators).not.toContain(managerUser._id.toString());
-    expect(res.body.data.collaborators).toContain(staffUser._id.toString());
+    // Check that manager is not in collaborators anymore
+    const managerInCollaborators = res.body.data.collaborators.some(collab => 
+      collab.user === managerUser._id.toString()
+    );
+    expect(managerInCollaborators).toBe(false);
+    
+    // Check that owner is still in collaborators
+    const ownerInCollaborators = res.body.data.collaborators.some(collab => 
+      collab.user === staffUser._id.toString()
+    );
+    expect(ownerInCollaborators).toBe(true);
   });
 
   it('should not allow removing the project owner', async () => {

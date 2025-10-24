@@ -101,6 +101,9 @@ module.exports = async function seedTasks(_count, { users, projects }) {
         }
       }
 
+      // Add recurring interval for some tasks (roughly every 4th task)
+      const recurringInterval = (taskCounter % 4 === 0) ? pick([7, 14, 30]) : null;
+
       docs.push({
         title: `Task-${idx}`,
         description: `Seeded Task ${idx}`,
@@ -117,6 +120,7 @@ module.exports = async function seedTasks(_count, { users, projects }) {
         attachments: [],
         priority: ((taskCounter - 1) % 10) + 1,
         isDeleted: false,
+        recurringInterval: recurringInterval,
       });
       if (taskCounter >= TARGET) break outer;
     }

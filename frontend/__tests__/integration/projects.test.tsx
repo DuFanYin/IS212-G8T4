@@ -33,19 +33,19 @@ describe('ProjectsPage', () => {
     render(<ProjectsPage />);
 
     await screen.findByText('Proj');
-    const toggle = screen.getByRole('button', { name: 'Active' });
+    const toggle = screen.getByRole('button', { name: 'Active (1)' });
     fireEvent.click(toggle);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Archived' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Archived (0)' })).toBeInTheDocument();
     });
   });
 
-  it('fires collaborator add/remove actions', async () => {
+  it('renders project with correct information', async () => {
     render(<ProjectsPage />);
     await screen.findByText('Proj');
-    fireEvent.click(screen.getByText('Add Collaborator'));
-    fireEvent.click(screen.getByText('Remove Collaborator'));
+    expect(screen.getByText('Desc')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
   it('creates a new project via modal', async () => {

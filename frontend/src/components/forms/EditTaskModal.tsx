@@ -20,7 +20,8 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
         description: task.description,
         dueDate: task.dueDate,
         priority: task.priority,
-        collaborators: task.collaborators
+        collaborators: task.collaborators,
+        recurringInterval: task.recurringInterval === undefined ? undefined : task.recurringInterval
       });
     } else {
       setFormData({});
@@ -33,9 +34,13 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: name === 'priority' ? parseInt(value) || 5 : value 
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'priority'
+        ? parseInt(value) || 5
+        : name === 'recurringInterval'
+          ? value === '' ? undefined : parseInt(value)
+          : value
     }));
   };
 
@@ -49,7 +54,8 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
         ...(typeof formData.description === 'string' ? { description: formData.description } : {}),
         ...(formData.dueDate ? { dueDate: new Date(formData.dueDate).toISOString() } : {}),
         ...(typeof formData.priority === 'number' ? { priority: formData.priority } : {}),
-        ...(Array.isArray(formData.collaborators) ? { collaborators: formData.collaborators } : {})
+        ...(Array.isArray(formData.collaborators) ? { collaborators: formData.collaborators } : {}),
+        ...(typeof formData.recurringInterval === 'number' ? { recurringInterval: formData.recurringInterval } : {})
       };
       await onUpdate(payload);
       onClose();
@@ -109,7 +115,7 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="mb-6">
+          <div className="mb-4">
             <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
               Priority
             </label>
@@ -124,6 +130,20 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
                 <option key={num} value={num}>{num} {num === 1 ? '(Lowest)' : num === 10 ? '(Highest)' : ''}</option>
               ))}
             </select>
+          </div>
+          <div className="mb-6">
+            <label htmlFor="recurringInterval" className="block text-sm font-medium text-gray-700 mb-2">
+              Recurring Interval (days)
+            </label>
+            <input
+              id="recurringInterval"
+              type="number"
+              name="recurringInterval"
+              min={1}
+              value={formData.recurringInterval === undefined ? '' : formData.recurringInterval}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
           <div className="flex justify-end space-x-3">
             <button

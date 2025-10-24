@@ -36,6 +36,7 @@ class TaskService {
       isDeleted: taskDoc.isDeleted,
       createdAt: taskDoc.createdAt,
       updatedAt: taskDoc.updatedAt,
+      recurringInterval: taskDoc.recurringInterval
     };
   }
 
@@ -134,6 +135,11 @@ class TaskService {
         }
       }
 
+      //Check if recurring task has interval set
+      if(taskData.recurringInterval && taskData.recurringInterval <= 0){
+        throw new Error('Recurring tasks must have a valid recurring interval in days');  
+      }
+
       // Set creator as collaborator
       if (!taskData.collaborators) taskData.collaborators = [];
       if (!taskData.collaborators.includes(userId)) {
@@ -211,6 +217,11 @@ class TaskService {
         if (dueDate < now) {
           throw new Error('Due date cannot be in the past');
         }
+      }
+
+      //Check if recurring task has interval set
+      if(updateData.recurringInterval && updateData.recurringInterval <= 0){
+        throw new Error('Recurring tasks must have a valid recurring interval in days');
       }
 
       // Handle assignment changes
@@ -657,6 +668,23 @@ class TaskService {
         const hasIncomplete = (subtasks || []).some((st) => st && st.status !== 'completed' && st.isDeleted !== true);
         if (hasIncomplete) {
           throw new Error('All subtasks must be completed before completing this task');
+        }
+        
+        // If recurring, create next occurrence
+        if(task.recurringInterval && task.recurringInterval > 0){
+          const nextDueDate = new Date(new Date(task.dueDate).getTime() + task.recurringInterval * 24 * 60 * 60 * 1000);
+          this.createTask({
+              title: task.title,
+              description: task.description,
+              dueDate: nextDueDate,
+              status: 'unassigned',
+              priority: task.priority,
+              createdBy: task.createdBy,
+              assigneeId: null,
+              projectId: task.projectId,
+              collaborators: task.collaborators,
+              recurringInterval: task.recurringInterval,
+            }, userId);
         }
       }
 

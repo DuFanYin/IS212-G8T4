@@ -47,6 +47,7 @@ export default function TaskDetailPage() {
         ]);
 
         if (taskRes.status === 'success') {
+          console.log('Fetched task:', taskRes.data);
           setTask(taskRes.data);
         } else {
           setError(taskRes.message || 'Failed to load task');
@@ -142,6 +143,7 @@ export default function TaskDetailPage() {
               {task.projectName && <div><span className="font-medium">Project:</span> {task.projectName}</div>}
               <div><span className="font-medium">Created By:</span> {task.createdByName || '-'}</div>
               <div><span className="font-medium">Updated:</span> {new Date(task.updatedAt).toLocaleString()}</div>
+              {task.recurringInterval && <div><span className="font-medium">Task Recurrence:</span> {task.recurringInterval} days</div>}
             </div>
             <div className="mt-4 text-sm text-gray-700">
               <div className="font-medium mb-1">Collaborators ({task.collaboratorNames?.length ?? 0})</div>

@@ -47,7 +47,11 @@ describe('DELETE /api/projects/:projectId/collaborators', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('success');
-    expect(response.body.data.collaborators).not.toContain(managerUser._id.toString());
+    // Check that manager is not in collaborators anymore
+    const managerInCollaborators = response.body.data.collaborators.some(collab => 
+      collab.user === managerUser._id.toString()
+    );
+    expect(managerInCollaborators).toBe(false);
   });
 
   it('should require authentication', async () => {

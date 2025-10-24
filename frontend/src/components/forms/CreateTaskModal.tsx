@@ -15,7 +15,8 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
     priority: 5,
     assigneeId: '',
     projectId: '',
-    collaborators: []
+    collaborators: [],
+    recurringInterval: undefined
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
         description: formData.description || '',
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : '',
         priority: formData.priority || 5,
+        recurringInterval: formData.recurringInterval,
         // Only include optional IDs if they are non-empty strings
         ...(formData.assigneeId && formData.assigneeId.trim() !== '' ? { assigneeId: formData.assigneeId.trim() } : {}),
         ...(formData.projectId && formData.projectId.trim() !== '' ? { projectId: formData.projectId.trim() } : {}),
@@ -53,7 +55,8 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
         priority: 5,
         assigneeId: '',
         projectId: '',
-        collaborators: []
+        collaborators: [],
+        recurringInterval: undefined
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create task');
@@ -64,9 +67,13 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: CreateTaskRequest) => ({ 
-      ...prev, 
-      [name]: name === 'priority' ? parseInt(value) || 5 : value 
+    setFormData((prev: CreateTaskRequest) => ({
+      ...prev,
+      [name]:
+        name === 'priority' ? parseInt(value) || 5  :
+        name === 'recurringInterval'
+          ? value === '' ? undefined : parseInt(value)
+          : value
     }));
   };
 
@@ -172,7 +179,22 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          
+
+          <div className="mb-6">
+            <label htmlFor="recurringInterval" className="block text-sm font-medium text-gray-700 mb-2">
+              Recurring Interval (in days, optional)
+            </label>
+            <input
+              id="recurringInterval"
+              type="number"
+              name="recurringInterval"
+              value={formData.recurringInterval === undefined ? '' : formData.recurringInterval}
+              onChange={handleChange}
+              placeholder="Recurring interval in days"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           <div className="flex justify-end space-x-3">
             <button
               type="button"

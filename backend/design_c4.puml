@@ -1,0 +1,153 @@
+@startuml C4_Backend_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Backend System Architecture - C4 Component Diagram
+
+Person(user, "User", "Frontend application users")
+Person(admin, "Admin", "System administrators")
+
+System_Boundary(backend, "IS212-G8T4 Backend System") {
+    
+    Container(express, "Express.js Server", "Node.js, Express", "Main application server handling HTTP requests")
+    
+    Container_Boundary(api_layer, "API Layer") {
+        Component(auth_routes, "Auth Routes", "Express Router", "Authentication endpoints (/api/auth)")
+        Component(user_routes, "User Routes", "Express Router", "User management endpoints (/api/users)")
+        Component(project_routes, "Project Routes", "Express Router", "Project management endpoints (/api/projects)")
+        Component(task_routes, "Task Routes", "Express Router", "Task management endpoints (/api/tasks)")
+        Component(subtask_routes, "Subtask Routes", "Express Router", "Subtask endpoints (/api/tasks)")
+        Component(org_routes, "Organization Routes", "Express Router", "Organization endpoints (/api/organization)")
+        Component(log_routes, "Activity Log Routes", "Express Router", "Activity logging endpoints (/api/logs)")
+    }
+    
+    Container_Boundary(middleware_layer, "Middleware Layer") {
+        Component(auth_middleware, "Auth Middleware", "JWT", "Token validation and user authentication")
+        Component(attachment_middleware, "Attachment Middleware", "Multer", "File upload handling and validation")
+    }
+    
+    Container_Boundary(controller_layer, "Controller Layer") {
+        Component(auth_controller, "Auth Controller", "JavaScript", "Authentication logic and validation")
+        Component(user_controller, "User Controller", "JavaScript", "User management operations")
+        Component(project_controller, "Project Controller", "JavaScript", "Project CRUD operations")
+        Component(task_controller, "Task Controller", "JavaScript", "Task management operations")
+        Component(subtask_controller, "Subtask Controller", "JavaScript", "Subtask operations")
+        Component(org_controller, "Organization Controller", "JavaScript", "Department/Team management")
+        Component(log_controller, "Activity Log Controller", "JavaScript", "Activity logging operations")
+    }
+    
+    Container_Boundary(service_layer, "Service Layer") {
+        Component(auth_service, "Auth Service", "JavaScript", "Authentication business logic")
+        Component(user_service, "User Service", "JavaScript", "User business logic and validation")
+        Component(project_service, "Project Service", "JavaScript", "Project business logic and permissions")
+        Component(task_service, "Task Service", "JavaScript", "Task business logic and workflow")
+        Component(subtask_service, "Subtask Service", "JavaScript", "Subtask business logic")
+        Component(org_service, "Organization Service", "JavaScript", "Department/Team business logic")
+        Component(log_service, "Activity Log Service", "JavaScript", "Activity logging business logic")
+        Component(email_service, "Email Service", "Nodemailer", "Email notifications and password reset")
+    }
+    
+    Container_Boundary(domain_layer, "Domain Layer") {
+        Component(user_domain, "User Domain", "JavaScript", "User entity and business rules")
+        Component(project_domain, "Project Domain", "JavaScript", "Project entity and business rules")
+        Component(task_domain, "Task Domain", "JavaScript", "Task entity and business rules")
+        Component(subtask_domain, "Subtask Domain", "JavaScript", "Subtask entity and business rules")
+    }
+    
+    Container_Boundary(repository_layer, "Repository Layer") {
+        Component(user_repo, "User Repository", "JavaScript", "User data access operations")
+        Component(project_repo, "Project Repository", "JavaScript", "Project data access operations")
+        Component(task_repo, "Task Repository", "JavaScript", "Task data access operations")
+        Component(subtask_repo, "Subtask Repository", "JavaScript", "Subtask data access operations")
+        Component(dept_repo, "Department Repository", "JavaScript", "Department data access operations")
+        Component(team_repo, "Team Repository", "JavaScript", "Team data access operations")
+        Component(log_repo, "Activity Log Repository", "JavaScript", "Activity log data access operations")
+    }
+    
+    Container_Boundary(data_layer, "Data Layer") {
+        ComponentDb(mongodb, "MongoDB Database", "MongoDB", "Primary database storing all application data")
+        Component(file_storage, "File Storage", "File System", "Local file storage for attachments")
+    }
+    
+    Container_Boundary(external_services, "External Services") {
+        Component_Ext(gmail, "Gmail SMTP", "SMTP", "Email service for notifications")
+    }
+}
+
+' User interactions
+Rel(user, express, "Uses", "HTTPS")
+Rel(admin, express, "Uses", "HTTPS")
+
+' Express server routing
+Rel(express, auth_routes, "Routes to", "HTTP")
+Rel(express, user_routes, "Routes to", "HTTP")
+Rel(express, project_routes, "Routes to", "HTTP")
+Rel(express, task_routes, "Routes to", "HTTP")
+Rel(express, subtask_routes, "Routes to", "HTTP")
+Rel(express, org_routes, "Routes to", "HTTP")
+Rel(express, log_routes, "Routes to", "HTTP")
+
+' Route to controller flow
+Rel(auth_routes, auth_controller, "Calls", "HTTP")
+Rel(user_routes, user_controller, "Calls", "HTTP")
+Rel(project_routes, project_controller, "Calls", "HTTP")
+Rel(task_routes, task_controller, "Calls", "HTTP")
+Rel(subtask_routes, subtask_controller, "Calls", "HTTP")
+Rel(org_routes, org_controller, "Calls", "HTTP")
+Rel(log_routes, log_controller, "Calls", "HTTP")
+
+' Middleware integration
+Rel(auth_routes, auth_middleware, "Uses", "JWT")
+Rel(task_routes, attachment_middleware, "Uses", "Multer")
+
+' Controller to service flow
+Rel(auth_controller, auth_service, "Calls", "JavaScript")
+Rel(user_controller, user_service, "Calls", "JavaScript")
+Rel(project_controller, project_service, "Calls", "JavaScript")
+Rel(task_controller, task_service, "Calls", "JavaScript")
+Rel(subtask_controller, subtask_service, "Calls", "JavaScript")
+Rel(org_controller, org_service, "Calls", "JavaScript")
+Rel(log_controller, log_service, "Calls", "JavaScript")
+
+' Service to domain flow
+Rel(auth_service, user_domain, "Uses", "JavaScript")
+Rel(user_service, user_domain, "Uses", "JavaScript")
+Rel(project_service, project_domain, "Uses", "JavaScript")
+Rel(project_service, user_domain, "Uses", "JavaScript")
+Rel(task_service, task_domain, "Uses", "JavaScript")
+Rel(task_service, user_domain, "Uses", "JavaScript")
+Rel(subtask_service, subtask_domain, "Uses", "JavaScript")
+
+' Service to repository flow
+Rel(auth_service, user_repo, "Uses", "JavaScript")
+Rel(user_service, user_repo, "Uses", "JavaScript")
+Rel(project_service, project_repo, "Uses", "JavaScript")
+Rel(project_service, user_repo, "Uses", "JavaScript")
+Rel(task_service, task_repo, "Uses", "JavaScript")
+Rel(subtask_service, subtask_repo, "Uses", "JavaScript")
+Rel(org_service, dept_repo, "Uses", "JavaScript")
+Rel(org_service, team_repo, "Uses", "JavaScript")
+Rel(log_service, log_repo, "Uses", "JavaScript")
+
+' Repository to database flow
+Rel(user_repo, mongodb, "Reads from and writes to", "MongoDB")
+Rel(project_repo, mongodb, "Reads from and writes to", "MongoDB")
+Rel(task_repo, mongodb, "Reads from and writes to", "MongoDB")
+Rel(subtask_repo, mongodb, "Reads from and writes to", "MongoDB")
+Rel(dept_repo, mongodb, "Reads from and writes to", "MongoDB")
+Rel(team_repo, mongodb, "Reads from and writes to", "MongoDB")
+Rel(log_repo, mongodb, "Reads from and writes to", "MongoDB")
+
+' File storage
+Rel(attachment_middleware, file_storage, "Stores files in", "File System")
+
+' External service integration
+Rel(auth_service, email_service, "Uses", "JavaScript")
+Rel(email_service, gmail, "Sends emails via", "SMTP")
+
+' Database models
+Rel(mongodb, user_domain, "Maps to", "Mongoose Schema")
+Rel(mongodb, project_domain, "Maps to", "Mongoose Schema")
+Rel(mongodb, task_domain, "Maps to", "Mongoose Schema")
+Rel(mongodb, subtask_domain, "Maps to", "Mongoose Schema")
+
+@enduml
