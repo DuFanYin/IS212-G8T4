@@ -335,8 +335,12 @@ function TimelineView() {
       pdf.text(header, pdfWidth / 2, 15, { align: 'center' });
 
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      pdf.text(`Generated on: ${new Date().toLocaleString()}`, pdfWidth / 2, 22, { align: 'center' });
+      pdf.setFontSize(9);
+      pdf.text(`Date: ${new Date().toLocaleString()}`, pdfWidth - 10, 22, { align: 'right' });
+
+      pdf.setFontSize(9);
+      const generatedBy = user?.name ?? 'Unknown';
+      pdf.text(`By: ${generatedBy}`, pdfWidth - 10, 26, { align: 'right' });
 
       pdf.addImage(imgData, 'PNG', 0, 30, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
