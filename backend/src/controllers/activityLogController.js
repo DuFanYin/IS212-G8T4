@@ -2,16 +2,17 @@ const activityLogService = require('../services/activityLogService');
 
 const getActivityLogs = async (req, res) => {
   try{
-    const resourceId = req.body.resourceId;
+    // Support both query params (GET) and body params (POST)
+    const resourceId = req.query.resourceId || req.body.resourceId;
 
     const filters = {};
     if (resourceId) filters.taskId = resourceId;
 
-    const projects = await activityLogService.getAllActivityLogs(filters);
+    const activityLogs = await activityLogService.getAllActivityLogs(filters);
 
     res.json({
       status: "success",
-      data: projects,
+      data: activityLogs,
       message: "Activity Logs is successfully retrieved"
     });
   } catch (err) {

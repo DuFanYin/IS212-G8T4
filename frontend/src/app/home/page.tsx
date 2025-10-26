@@ -2,7 +2,6 @@
 
 import { useUser } from '@/contexts/UserContext';
 import type { User } from '@/lib/types/user';
-import { storage } from '@/lib/utils/storage';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 // Project selector removed; scope selector rendered inline here
 import { OrgSelectors } from '@/components/timeline/OrgSelectors';
