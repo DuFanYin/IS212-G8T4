@@ -121,6 +121,12 @@ SEED_COMMENTS=5 SEED_ACTIVITY_LOGS=5 \
 npm run seed
 ```
 
+### CI/CD Setup
+
+See [`.github/SETUP_GUIDE.md`](.github/SETUP_GUIDE.md) for setup instructions.
+
+The CI runs on every push/PR and tests backend, frontend, and build.
+
 ### Notable Backend Behaviors
 
 - Task DTOs include enriched fields: `projectName`, `assigneeName`, `createdByName`, `collaboratorNames`.

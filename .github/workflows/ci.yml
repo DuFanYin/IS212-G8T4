@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Set up environment variables
+        working-directory: ./backend
+        run: |
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test-secret-key-for-ci' }}" >> $GITHUB_ENV
+          echo "GMAIL=${{ secrets.GMAIL }}" >> $GITHUB_ENV
+          echo "GMAIL_PASSWORD=${{ secrets.GMAIL_PASSWORD }}" >> $GITHUB_ENV
+          if [ -n "${{ secrets.MONGO_URL }}" ]; then
+            echo "MONGO_URL=${{ secrets.MONGO_URL }}" >> $GITHUB_ENV
+          else
+            echo "::error::MONGO_URL secret is not set. Please configure it in GitHub repository settings."
+            exit 1
+          fi
+
+      - name: Run backend tests
+        working-directory: ./backend
+        run: npm test
+
+      - name: Generate backend test coverage
+        working-directory: ./backend
+        run: npm run test:coverage
+
+      - name: Check coverage reports
+        working-directory: ./backend
+        if: always()
+        run: |
+          if [ -d "./coverage" ]; then
+            echo "Coverage report generated successfully"
+            ls -la coverage/
+          else
+            echo "No coverage directory found"
+          fi
+
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test
+
+      - name: Generate frontend test coverage
+        working-directory: ./frontend
+        run: npm run test:coverage
+
+      - name: Check coverage reports
+        working-directory: ./frontend
+        if: always()
+        run: |
+          if [ -d "./coverage" ]; then
+            echo "Coverage report generated successfully"
+            ls -la coverage/
+          else
+            echo "No coverage directory found"
+          fi
+
+  build-check:
+    name: Build Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          NODE_ENV: production
+

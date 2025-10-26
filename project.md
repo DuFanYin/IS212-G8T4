@@ -84,3 +84,10 @@ Staff: see own tasks, teammates’ tasks, project tasks they’re in.
 Manager: see team tasks.
 Director: see department tasks.
 HR/SM: see all tasks/projects.
+
+MONGO_URL=mongodb+srv://hangzhengyang1010_db_user:p44ooEWAnB76OzX3@cluster0.dra7z8p.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+PORT=3000
+JWT_SECRET=a9372d93311b5f5b7955015cd095dfd8a36cd34e5cce9a343447a50488c3758fef3142386fd021a89cdf85aadf5dcd5d5e10a7be09bb903db6d5ae91c1739a08
+NODE_ENV=development
+GMAIL=hang.zhengyang1010@gmail.com
+GMAIL_PASSWORD=lhtcfbtpofsnibgh
