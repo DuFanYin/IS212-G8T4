@@ -13,6 +13,7 @@ type Notification = {
   _id?: string;
   id?: string;
   message: string;
+  link?: string;
 };
 
 export default function Header() {
@@ -141,13 +142,16 @@ export default function Header() {
           ) : notifications.length === 0 ? (
             <div className="p-4 text-sm text-gray-500 text-center">No notifications</div>
           ) : (
+
             notifications.map((n, index) => (
-              <div
+              <Link
                 key={n._id || n.id || `notif-${index}`}
-                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                href={n.link || '#'} // Use the link from the notification
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                onClick={() => setShowNotifications(false)} // This closes the dropdown on click
               >
                 {n.message}
-              </div>
+              </Link>
             ))
           )}
         </div>

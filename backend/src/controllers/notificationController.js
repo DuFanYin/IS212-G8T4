@@ -9,7 +9,7 @@ exports.createNotification = async (req, res) => {
       message,
       type,
       link,
-      read: false
+      read: false // Matches your 'Notification.js' model
     });
 
     console.log('✅ Backend: Notification created in DB:', newNotification);
@@ -33,7 +33,7 @@ exports.getNotificationsForUser = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    const notifications = await Notification.find({ userId: userId })
+    const notifications = await Notification.find({ userId: userId }) // Matches your 'Notification.js' model
       .sort({ createdAt: -1 });
 
     res.status(200).json({ status: 'success', data: notifications });
