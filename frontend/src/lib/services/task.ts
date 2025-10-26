@@ -2,12 +2,26 @@ import { CreateTaskRequest, UpdateTaskRequest, AssignTaskRequest, UpdateTaskStat
 import { API_URL } from './config';
 
 export const taskService = {
-  getUserTasks: async (token: string): Promise<TasksResponse> => {
-    const res = await fetch(`${API_URL}/tasks/`, { headers: { Authorization: `Bearer ${token}` } });
+  getUserTasks: async (token: string, filters?: { status?: string; sortBy?: string; order?: string }): Promise<TasksResponse> => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.order) params.append('order', filters.order);
+    
+    const queryString = params.toString();
+    const url = queryString ? `${API_URL}/tasks/?${queryString}` : `${API_URL}/tasks/`;
+    
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
-  getTasksByProject: async (token: string, projectId: string): Promise<TasksResponse> => {
-    const res = await fetch(`${API_URL}/tasks/project/${projectId}`, { headers: { Authorization: `Bearer ${token}` } });
+  getTasksByProject: async (token: string, projectId: string, statusFilter?: string): Promise<TasksResponse> => {
+    const params = new URLSearchParams();
+    if (statusFilter) params.append('status', statusFilter);
+    
+    const queryString = params.toString();
+    const url = queryString ? `${API_URL}/tasks/project/${projectId}?${queryString}` : `${API_URL}/tasks/project/${projectId}`;
+    
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
   getTasksByTeam: async (token: string, teamId: string): Promise<TasksResponse> => {

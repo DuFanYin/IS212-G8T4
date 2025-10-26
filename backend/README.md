@@ -29,6 +29,7 @@ src/
 │   ├── activityLogService.js
 │   ├── authService.js
 │   ├── organizationService.js
+│   ├── metricsService.js
 │   ├── notificationService.js
 │   └── emailService.js
 ├── controllers/              # HTTP request handling
@@ -38,11 +39,18 @@ src/
 │   ├── taskController.js
 │   ├── subtaskController.js
 │   ├── activityLogController.js
+│   ├── metricsController.js
 │   ├── notificationController.js
 │   └── organizationController.js
 ├── middleware/               # Request processing middleware
 │   ├── authMiddleware.js
+│   ├── roleMiddleware.js    # Centralized role and permission checks
+│   ├── errorHandler.js     # Centralized error handling middleware
 │   └── attachmentMiddleware.js
+├── utils/                    # Utility helpers
+│   ├── errors.js            # Custom error classes
+│   ├── responseHelper.js    # Standardized API response helpers
+│   └── asyncHandler.js      # Async route wrapper
 ├── routes/                   # API route definitions
 │   ├── authRoutes.js
 │   ├── userRoutes.js         # User management routes
@@ -51,6 +59,7 @@ src/
 │   ├── subtaskRoutes.js
 │   ├── activityLogRoutes.js
 │   ├── logs.route.js         # Activity log routes
+│   ├── metricsRoutes.js      # Metrics routes
 │   ├── notificationRoutes.js
 │   └── organizationRoutes.js
 ├── scripts/                  # Utility scripts
@@ -101,6 +110,7 @@ src/
 - `GET    /api/projects/`                           - Get active projects
 - `GET    /api/projects/departments/:departmentId`  - Get projects by department
 - `GET    /api/projects/:projectId/progress`        - Get project progress (manager/owner only)
+- `GET    /api/projects/:projectId/stats`          - Get project statistics (total, completed, in-progress, overdue, unassigned)
 - `PUT    /api/projects/:projectId/archive`         - Archive/unarchive project
 - `PUT    /api/projects/:projectId`                 - Update project
 - `PUT    /api/projects/:projectId/collaborators`   - Add collaborator
@@ -110,8 +120,8 @@ src/
 ### **Task Routes** (`src/routes/taskRoutes.js`)
 
 - `POST   /api/tasks/`                              - Create new task
-- `GET    /api/tasks/`                              - Get user's tasks (role-based visibility)
-- `GET    /api/tasks/project/:projectId`            - Get tasks by project
+- `GET    /api/tasks/`                              - Get user's tasks with filters (status, sortBy, order)
+- `GET    /api/tasks/project/:projectId`            - Get tasks by project with status filter
 - `GET    /api/tasks/team/:teamId`                  - Get tasks by team (manager of team, director+, HR/SM)
 - `GET    /api/tasks/department/:departmentId`      - Get tasks by department (director+, HR/SM)
 - `GET    /api/tasks/unassigned`                    - Get all unassigned tasks
@@ -138,6 +148,13 @@ src/
 - `GET    /api/logs/`                               - Get activity logs (with optional filters)
 - `POST   /api/logs/`                               - Get activity logs by resource ID (with filters in body)
 
+### **Metrics Routes** (`src/routes/metricsRoutes.js`)
+
+- `GET    /api/metrics/departments`                  - Get department-level metrics (HR/SM only)
+- `GET    /api/metrics/teams`                       - Get all team metrics (Director+ only)
+- `GET    /api/metrics/teams/:teamId`               - Get single team metrics (Manager only)
+- `GET    /api/metrics/personal`                    - Get personal task metrics (Staff only)
+
 ### **Notification Routes** (`src/routes/notificationRoutes.js`)
 
 - `GET    /api/notifications`                        - Get notifications for current user
@@ -157,7 +174,7 @@ src/
 
 ### **UserRepository** (`src/repositories/UserRepository.js`)
 **Methods:**
-- Basic CRUD: `findById()`, `findPublicById()`, `findByEmail()`, `create()`, `updateById()`
+- Basic CRUD: `findById()`, `findByIds()`, `findPublicById()`, `findByEmail()`, `create()`, `updateById()`
 - Auth operations: `updatePasswordHash()`, `setResetToken()`, `clearResetToken()`, `findByResetToken()`
 - Department/Team queries: `findUsersByDepartment()`, `findUsersByTeam()`
 - Global queries: `findAll()`
@@ -212,6 +229,7 @@ src/
 **Methods:**
 - Basic operations: `createProject()`, `getActiveProjects()`, `getAllProjects()`, `getProjectById()`, `updateProject()`
 - Collaboration: `addCollaborator()`, `removeCollaborator()`, `assignRoleToCollaborator()`, `validateCollaborators()`, `validateDepartmentMembership()`
+- Statistics: `getProjectStats()` - Calculate project task statistics (total, completed, inProgress, overdue, unassigned)
 - Visibility: `isVisibleToUser()`
 - Queries: `getProjectsByOwner()`, `getProjectsByDepartment()`, `getVisibleProjectsForUser()`
 - Internal: `getProjectDomainById()` - Fetches domain Project instance for permission checks
@@ -224,6 +242,7 @@ src/
 - Recurring tasks: Automatic task recreation when recurring tasks are completed
 - Visibility: `isVisibleToUser()`
 - Queries: `getUserTasks()`, `getTasksByAssignee()`, `getTasksByCreator()`, `getTasksByProject()`, `getTasksByTeam()`, `getTasksByDepartment()`, `getTasksByCollaborator()`, `getUnassignedTasks()`, `getById()`
+- Filtering/Formatting: `filterByStatus()`, `sortTasks()`, `calculateTaskStats()` - Handle task filtering, sorting, and statistics
 - Utilities: `mapPopulatedTaskDocToDTO()`, `buildEnrichedTaskDTO()` - Handle data transformation and name resolution
 
 
@@ -241,6 +260,13 @@ src/
 ### **AuthService** (`src/services/authService.js`)
 **Methods:**
 - Token generation: `generateToken()` - Generates JWT tokens for user authentication
+
+### **MetricsService** (`src/services/metricsService.js`)
+**Methods:**
+- `getDepartmentMetrics()` - Get aggregated metrics for all departments (HR/SM only)
+- `getTeamMetrics()` - Get aggregated metrics for all teams (Director+ only)
+- `getSingleTeamMetrics()` - Get aggregated metrics for a single team (Manager only)
+- `getPersonalMetrics()` - Get personal task metrics for current user (Staff only)
 
 ### **OrganizationService** (`src/services/organizationService.js`)
 **Methods:**
@@ -269,6 +295,37 @@ src/
 **Methods:**
 - `authenticate()` - Validates JWT tokens and attaches user info to request
 - Role-based access control for protected routes
+
+### **RoleMiddleware** (`src/middleware/roleMiddleware.js`)
+**Purpose:** Centralized role and permission checks
+**Methods:**
+- `ROLE_HIERARCHY` - Defines role hierarchy (SM/HR: 4, Director: 3, Manager: 2, Staff: 1)
+- `hasRole(user, roles)` - Check if user has specific role(s)
+- `hasAnyRole(user, roles)` - Check if user has any of the specified roles
+- `isHigherRole(user1, user2)` - Compare role hierarchy levels
+- Helper functions for department, team, and task permission checks
+
+### **ErrorHandler** (`src/middleware/errorHandler.js`)
+**Purpose:** Centralized error handling for Express routes
+**Features:**
+- Catches and handles all errors from controllers
+- Maps custom error types to appropriate HTTP status codes
+- Automatically formats error responses consistently
+- Maps common error messages to status codes (e.g., "not found" → 404, "unauthorized" → 401)
+
+### **Utils** (`src/utils/`)
+**Errors** (`src/utils/errors.js`)
+- Custom error classes: `AppError`, `BadRequestError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`
+- All errors inherit from `AppError` with proper status codes and operational flags
+
+**ResponseHelper** (`src/utils/responseHelper.js`)
+- `sendSuccess(res, data, message, statusCode)` - Send standardized success responses
+- `sendError(res, message, statusCode)` - Send standardized error responses
+
+**AsyncHandler** (`src/utils/asyncHandler.js`)
+- Wraps async route handlers to automatically catch errors
+- Eliminates need for try-catch blocks in every controller
+- Passes errors to error handler middleware automatically
 
 ## Project Collaborator Role System
 

@@ -26,6 +26,7 @@ export default function ProjectDetailPage() {
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const token = storage.getToken();
   const [progress, setProgress] = useState<{ total: number; unassigned: number; ongoing: number; under_review: number; completed: number; percent: number } | null>(null);
+  const [projectStats, setProjectStats] = useState<{ total: number; completed: number; inProgress: number; overdue: number; unassigned: number } | null>(null);
   const [selectedCollaboratorForRole, setSelectedCollaboratorForRole] = useState<Collaborator | null>(null);
 
   useEffect(() => {
@@ -43,11 +44,18 @@ export default function ProjectDetailPage() {
         const tasksRes = await taskService.getTasksByProject(token, id);
         setTasks(tasksRes.data || []);
 
-        // Fetch aggregated progress (if authorized)
+        // Fetch aggregated progress and stats (if authorized)
         try {
-          const progRes = await projectService.getProjectProgress(token, id);
+          const [progRes, statsRes] = await Promise.all([
+            projectService.getProjectProgress(token, id),
+            projectService.getProjectStats(token, id)
+          ]);
           if (progRes?.status === 'success') {
             setProgress(progRes.data);
+          }
+          if (statsRes?.status === 'success') {
+            // Store stats for use in component
+            setProjectStats(statsRes.data);
           }
         } catch {}
       } catch (e) {
@@ -84,27 +92,25 @@ export default function ProjectDetailPage() {
     );
   }
 
-  // Calculate project task statistics
-  const now = new Date();
-  const projectStats = {
+  const stats = projectStats || {
     total: tasks.length,
     completed: tasks.filter(t => t.status === 'completed').length,
     inProgress: tasks.filter(t => t.status === 'ongoing' || t.status === 'under_review').length,
-    overdue: tasks.filter(t => new Date(t.dueDate) < now && t.status !== 'completed').length,
+    overdue: tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'completed').length,
     unassigned: tasks.filter(t => t.status === 'unassigned').length,
   };
 
   const completionPercentage = typeof progress?.percent === 'number'
     ? progress.percent
-    : projectStats.total > 0
-      ? Math.round((projectStats.completed / projectStats.total) * 100)
+    : stats.total > 0
+      ? Math.round((stats.completed / stats.total) * 100)
       : 0;
 
-  // Filter tasks based on active filter
   const getFilteredTasks = () => {
+    const now = new Date();
     switch (activeFilter) {
       case 'overdue':
-        return tasks.filter(t => new Date(t.dueDate) < now && t.status !== 'completed');
+        return tasks.filter(t => t.dueDate && new Date(t.dueDate) < now && t.status !== 'completed');
       case 'in-progress':
         return tasks.filter(t => t.status === 'ongoing' || t.status === 'under_review');
       case 'completed':
@@ -221,7 +227,7 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <StatCard
                 title="Total"
-                value={progress?.total ?? projectStats.total}
+                value={progress?.total ?? stats.total}
                 icon="📋"
                 color="blue"
                 onClick={() => setActiveFilter('all')}
@@ -229,7 +235,7 @@ export default function ProjectDetailPage() {
               />
               <StatCard
                 title="Completed"
-                value={progress?.completed ?? projectStats.completed}
+                value={progress?.completed ?? stats.completed}
                 icon="✅"
                 color="green"
                 onClick={() => setActiveFilter('completed')}
@@ -237,7 +243,7 @@ export default function ProjectDetailPage() {
               />
               <StatCard
                 title="In Progress"
-                value={progress ? (progress.ongoing + progress.under_review) : projectStats.inProgress}
+                value={progress ? (progress.ongoing + progress.under_review) : stats.inProgress}
                 icon="🔄"
                 color="yellow"
                 onClick={() => setActiveFilter('in-progress')}
@@ -245,7 +251,7 @@ export default function ProjectDetailPage() {
               />
               <StatCard
                 title="Overdue"
-                value={projectStats.overdue}
+                value={stats.overdue}
                 icon="⚠️"
                 color="red"
                 onClick={() => setActiveFilter('overdue')}
@@ -253,7 +259,7 @@ export default function ProjectDetailPage() {
               />
               <StatCard
                 title="Unassigned"
-                value={progress?.unassigned ?? projectStats.unassigned}
+                value={progress?.unassigned ?? stats.unassigned}
                 icon="❓"
                 color="gray"
                 onClick={() => setActiveFilter('unassigned')}

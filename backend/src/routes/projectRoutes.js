@@ -4,7 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const {
   createProject, getProjects, getProjectsByDepartment, updateProject,
   addCollaborators, removeCollaborators, setStatusProject,
-  getProjectProgress,
+  getProjectProgress, getProjectStats,
   assignRole
 } = require('../controllers/projectController');
 
@@ -12,8 +12,9 @@ router.post('/', authMiddleware, createProject);
 router.get('/', authMiddleware, getProjects);
 router.get('/departments/:departmentId', authMiddleware, getProjectsByDepartment);
 
-// NEW: manager/owner progress view
+// Progress and stats endpoints
 router.get('/:projectId/progress', authMiddleware, getProjectProgress);
+router.get('/:projectId/stats', authMiddleware, getProjectStats);
 
 router.put('/:projectId/archive', authMiddleware, setStatusProject);
 // Assign role to collaborator (owner only)

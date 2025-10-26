@@ -107,11 +107,13 @@ export async function getVisibleTasks(
   token: string,
   selectedDepartment: string | null,
   selectedTeam: string | null,
-  teams: Team[]
+  teams: Team[],
+  filters?: { status?: string; sortBy?: string; order?: string }
 ) {
   const orgResp = await fetchOrgTasks(token, selectedDepartment, selectedTeam, teams);
   if (orgResp.status === 'success') return orgResp;
-  const userResp = await taskService.getUserTasks(token);
+  // Fallback to getUserTasks with filters when org endpoints are not permitted
+  const userResp = await taskService.getUserTasks(token, filters);
   if (userResp.status === 'success') return userResp;
   return orgResp; // propagate original error
 }

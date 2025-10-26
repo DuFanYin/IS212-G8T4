@@ -33,14 +33,11 @@ export default function ProjectsTasksPage() {
   const [unassignedTasks, setUnassignedTasks] = useState<Task[]>([]);
   const [unassignedTasksLoading, setUnassignedTasksLoading] = useState(false);
   const [showUnassignedTasks, setShowUnassignedTasks] = useState(false);
-  
-  // Modal states
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false);
   
   const token = storage.getToken();
 
-  // Fetch projects on component mount
   useEffect(() => {
     if (!user?.token) return;
     
@@ -100,7 +97,6 @@ export default function ProjectsTasksPage() {
     fetchProjectTasks();
   }, [selectedProject, token]);
 
-  // Fetch unassigned tasks
   useEffect(() => {
     if (!showUnassignedTasks || !token) {
       setUnassignedTasks([]);
@@ -132,14 +128,12 @@ export default function ProjectsTasksPage() {
     );
   }
 
-  // Filter tasks based on selected filter
   const currentTasks = showUnassignedTasks ? unassignedTasks : projectTasks;
   const filteredTasks = currentTasks.filter(task => {
     if (selectedFilter === 'all') return true;
     return task.status === selectedFilter;
   });
 
-  // Filter projects based on selected project filter
   const filteredProjects = projects.filter(project => {
     if (selectedProjectFilter === 'active') return !project.isArchived;
     if (selectedProjectFilter === 'archived') return project.isArchived;

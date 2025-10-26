@@ -9,7 +9,7 @@ import { useMetrics } from '@/lib/hooks/useMetrics';
 
 export default function DepartmentReportPage() {
     useUser(); // Initialize context
-    const { teamStats, loading } = useMetrics({ teams: [], departments: [] });
+    const { teamStats, loading } = useMetrics();
 
     if (loading) {
         return (

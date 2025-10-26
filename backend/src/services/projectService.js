@@ -35,6 +35,59 @@ class ProjectService {
     return this.taskRepository.countByStatusForProject(projectId);
   }
 
+  /**
+   * Get detailed statistics for a project's tasks
+   * Returns: { total, completed, inProgress, overdue, unassigned }
+   */
+  async getProjectStats(projectId, userId) {
+    try {
+      const project = await this.getProjectDomainById(projectId);
+      const userDoc = await this.userRepository.findById(userId);
+      if (!userDoc) throw new Error('User not found');
+      const user = new User(userDoc);
+
+      // Authorize: allow if user can see all tasks OR can modify this project
+      const isManagerLike = typeof user.canSeeAllTasks === 'function' && user.canSeeAllTasks();
+      const isOwnerOrManager = typeof project.canBeModifiedBy === 'function' && project.canBeModifiedBy(user);
+      if (!isManagerLike && !isOwnerOrManager) {
+        throw new Error('Not authorized');
+      }
+
+      // Get all tasks for this project
+      const taskDocs = await this.taskRepository.findTasksByProject(projectId);
+      const TaskModel = require('../db/models/Task');
+      
+      // Populate tasks
+      const populated = await TaskModel.populate(taskDocs, [
+        { path: 'assigneeId', select: 'name' },
+        { path: 'createdBy', select: 'name' },
+        { path: 'collaborators', select: 'name' },
+        { path: 'projectId', select: 'name' },
+      ]);
+
+      const Task = require('../domain/Task');
+      const tasks = populated.map(doc => new Task(doc));
+
+      // Calculate statistics
+      const now = new Date();
+      const stats = {
+        total: tasks.length,
+        completed: tasks.filter(t => t.status === 'completed').length,
+        inProgress: tasks.filter(t => t.status === 'ongoing' || t.status === 'under_review').length,
+        overdue: tasks.filter(t => {
+          if (!t.dueDate) return false;
+          const dueDate = new Date(t.dueDate);
+          return dueDate < now && t.status !== 'completed';
+        }).length,
+        unassigned: tasks.filter(t => t.status === 'unassigned').length,
+      };
+
+      return stats;
+    } catch (error) {
+      throw new Error(`Error fetching project stats: ${error.message}`);
+    }
+  }
+
   // Internal: fetch domain Project by id (for permission/logic checks)
   async getProjectDomainById(projectId) {
     const doc = await this.projectRepository.findById(projectId);

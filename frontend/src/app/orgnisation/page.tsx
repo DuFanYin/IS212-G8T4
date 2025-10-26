@@ -18,11 +18,8 @@ export default function OrganizationPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // View is implicit: if a team is selected (and allowed), we fetch team tasks; otherwise department
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortBy>('due_asc');
-  
-  // Organization data
   const [departments, setDepartments] = useState<Department[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
@@ -30,9 +27,6 @@ export default function OrganizationPage() {
   
   const token = storage.getToken();
 
-  // Rely on backend for authorization; avoid duplicating role checks on frontend
-  
-  // Load organization data using shared utility (progressive, backend-authorized)
   useEffect(() => {
     const loadOrganizationData = async () => {
       if (!user || !token) return;
@@ -51,9 +45,6 @@ export default function OrganizationPage() {
     loadOrganizationData();
   }, [user, token]);
 
-  // No explicit view selector; selection controls drive fetch logic
-
-  // Load tasks based on selected organization unit via shared utility
   useEffect(() => {
     const load = async () => {
       if (!user || !token) return;
@@ -61,7 +52,21 @@ export default function OrganizationPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await getVisibleTasks(token, selectedDepartment, selectedTeam, teams);
+        
+        const backendSortBy = sortBy === 'due_asc' ? 'dueDate' : 
+                              sortBy === 'due_desc' ? 'dueDate' :
+                              sortBy === 'status' ? 'status' :
+                              sortBy === 'assignee' ? 'assignee' :
+                              sortBy === 'project' ? 'project' : undefined;
+        
+        const backendOrder = sortBy === 'due_desc' ? 'desc' : 'asc';
+        
+        const res = await getVisibleTasks(token, selectedDepartment, selectedTeam, teams, {
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          sortBy: backendSortBy,
+          order: backendOrder
+        });
+        
         if (res.status === 'success') {
           setTasks(res.data);
         } else {
@@ -77,8 +82,10 @@ export default function OrganizationPage() {
     };
     
     load();
-  }, [user, token, selectedDepartment, selectedTeam, teams]);
+  }, [user, token, selectedDepartment, selectedTeam, teams, statusFilter, sortBy]);
 
+  const filteredSorted = tasks;
+  
   const kpis = useMemo(() => {
     const now = new Date();
     const counts = {
@@ -91,17 +98,6 @@ export default function OrganizationPage() {
     };
     return counts;
   }, [tasks]);
-
-  const filteredSorted = useMemo(() => {
-    const base = statusFilter === 'all' ? tasks : tasks.filter(t => t.status === statusFilter);
-    const arr = [...base];
-    if (sortBy === 'due_asc') arr.sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
-    if (sortBy === 'due_desc') arr.sort((a, b) => new Date(b.dueDate || 0).getTime() - new Date(a.dueDate || 0).getTime());
-    if (sortBy === 'status') arr.sort((a, b) => a.status.localeCompare(b.status));
-    if (sortBy === 'assignee') arr.sort((a, b) => (a.assigneeName || '').localeCompare(b.assigneeName || ''));
-    if (sortBy === 'project') arr.sort((a, b) => (a.projectName || '').localeCompare(b.projectName || ''));
-    return arr;
-  }, [tasks, statusFilter, sortBy]);
 
   if (!user) {
     return (

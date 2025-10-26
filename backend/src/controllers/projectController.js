@@ -1,195 +1,109 @@
 const ProjectService = require('../services/projectService');
+const asyncHandler = require('../utils/asyncHandler');
+const { sendSuccess } = require('../utils/responseHelper');
+const { ValidationError } = require('../utils/errors');
 
-const createProject = async (req, res) => {
-  try {
-    const { name, description, deadline, departmentId, collaborators, isArchived, hasContainedTasks, ownerId } = req.body;
+const createProject = asyncHandler(async (req, res) => {
+  const { name, deadline } = req.body;
 
-    if (!name) {
-      return res.status(400).json({
-        status: "error",
-        message: "Name is required"
-      });
-    }
-
-    if(deadline){
-      const today = new Date();
-
-      if(new Date(deadline) < today || isNaN(new Date(deadline).getTime())){
-        return res.status(400).json({
-          status: "error",
-          message: "Invalid date"
-        });
-      }
-    }
-
-    const userId = req.user.userId;
-
-    const project = await ProjectService.createProject(req.body, userId);
-
-    res.json({
-      status: "success",
-      data: project.toDTO() 
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: "error",
-      message: err.message
-    });
+  if (!name) {
+    throw new ValidationError('Name is required');
   }
-};
 
-const updateProject = async (req, res) => {
+  if (deadline) {
+    const today = new Date();
+    if (new Date(deadline) < today || isNaN(new Date(deadline).getTime())) {
+      throw new ValidationError('Invalid date');
+    }
+  }
+
+  const userId = req.user.userId;
+  const project = await ProjectService.createProject(req.body, userId);
+  sendSuccess(res, project.toDTO());
+});
+
+const updateProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
   const updateData = req.body;
-
   const userId = req.user.userId;
 
-  try {
-    const updatedProject = await ProjectService.updateProject(projectId, updateData, userId);
-    res.status(200).json({ 
-      status: "success",
-      data: updatedProject.toDTO() 
-    });
-  } catch (error) {
-    res.status(400).json({ 
-      status: "error",
-      message: error.message 
-    });
-  }
-};
+  const updatedProject = await ProjectService.updateProject(projectId, updateData, userId);
+  sendSuccess(res, updatedProject.toDTO());
+});
 
-const addCollaborators = async (req, res) => {
+const addCollaborators = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  const { collaboratorId } = req.body; 
-
+  const { collaboratorId } = req.body;
   const userId = req.user.userId;
 
-  try {
-    const updatedProject = await ProjectService.addCollaborator(projectId, collaboratorId, userId);
-    res.status(200).json({ 
-      status: "success",
-      data: updatedProject.toDTO() 
-    });
-  } catch (error) {
-    res.status(400).json({ 
-      status: "error",
-      message: error.message 
-    });
-  }
-};
+  const updatedProject = await ProjectService.addCollaborator(projectId, collaboratorId, userId);
+  sendSuccess(res, updatedProject.toDTO());
+});
 
-const removeCollaborators = async (req, res) => {
+const removeCollaborators = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  const { collaboratorId } = req.body; 
-
+  const { collaboratorId } = req.body;
   const userId = req.user.userId;
 
-  try {
-    const updatedProject = await ProjectService.removeCollaborator(projectId, collaboratorId, userId);
-    res.status(200).json({ 
-      status: "success",
-      data: updatedProject.toDTO() 
-    });
-  } catch (error) {
-    res.status(400).json({ 
-      status: "error",
-      message: error.message 
-    });
-  }
-};
+  const updatedProject = await ProjectService.removeCollaborator(projectId, collaboratorId, userId);
+  sendSuccess(res, updatedProject.toDTO());
+});
 
-const assignRole = async (req, res) => {
+const assignRole = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
   const { collaboratorId, role } = req.body;
-  const userId = req.user.userId; // acting user (should be the project owner)
-
-  try {
-    // Call service
-    const updatedProject = await ProjectService.assignRoleToCollaborator(
-      projectId,
-      collaboratorId,
-      role,
-      userId
-    );
-
-    res.status(200).json({
-      status: "success",
-      message: "Role assigned successfully",
-      data: updatedProject.toDTO()
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: "error",
-      message: error.message
-    });
-  }
-};
-
-const getProjects = async (req, res) => {
-  try{
-    const userId = req.user.userId;
-    const projects = await ProjectService.getVisibleProjectsForUser(userId);
-
-    res.json({
-      status: "success",
-      data: projects,
-      message: "Project data is successfully retrieved"
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: "error",
-      message: err.message
-    });
-  }
-}
-
-const getProjectsByDepartment = async (req, res) => {
-  try{
-    const { departmentId } = req.params;
-    const projects = await ProjectService.getProjectsByDepartment(departmentId);
-
-    res.json({
-      status: "success",
-      data: projects,
-      message: "Project data is successfully retrieved"
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: "error",
-      message: err.message
-    });
-  }
-}
-
-const setStatusProject = async (req, res) => {
-  const { projectId } = req.params;
-  const updateData = req.body;
-
   const userId = req.user.userId;
 
-  try {
-    const updatedProject = await ProjectService.updateProject(projectId, updateData, userId);
-    res.status(200).json({ 
-      status: "success",
-      data: updatedProject.toDTO() 
-    });
-  } catch (error) {
-    res.status(400).json({ 
-      status: "error",
-      message: error.message 
-    });
-  }
-}
+  const updatedProject = await ProjectService.assignRoleToCollaborator(
+    projectId,
+    collaboratorId,
+    role,
+    userId
+  );
+
+  sendSuccess(res, updatedProject.toDTO(), 'Role assigned successfully');
+});
+
+const getProjects = asyncHandler(async (req, res) => {
+  const userId = req.user.userId;
+  const projects = await ProjectService.getVisibleProjectsForUser(userId);
+  sendSuccess(res, projects, 'Project data is successfully retrieved');
+});
+
+const getProjectsByDepartment = asyncHandler(async (req, res) => {
+  const { departmentId } = req.params;
+  const projects = await ProjectService.getProjectsByDepartment(departmentId);
+  sendSuccess(res, projects, 'Project data is successfully retrieved');
+});
+
+const setStatusProject = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+  const updateData = req.body;
+  const userId = req.user.userId;
+
+  const updatedProject = await ProjectService.updateProject(projectId, updateData, userId);
+  sendSuccess(res, updatedProject.toDTO());
+});
+
 async function getProjectProgress(req, res, next) {
   try {
-    const userId = req.user?.userId; // tokens set by authMiddleware
+    const userId = req.user?.userId;
     const stats = await ProjectService.getProjectProgress(req.params.projectId, userId);
-    return res.status(200).json({ status: 'success', data: stats });
+    sendSuccess(res, stats);
   } catch (err) {
-    // Map known auth errors to 403; otherwise 400
-    const message = err?.message || 'Error fetching project progress';
-    const status = /not authorized/i.test(message) ? 403 : 400;
-    return res.status(status).json({ status: 'error', message });
+    const status = /not authorized/i.test(err.message) ? 403 : 400;
+    return res.status(status).json({ status: 'error', message: err.message });
+  }
+}
+
+async function getProjectStats(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    const stats = await ProjectService.getProjectStats(req.params.projectId, userId);
+    sendSuccess(res, stats);
+  } catch (err) {
+    const status = /not authorized/i.test(err.message) ? 403 : 400;
+    return res.status(status).json({ status: 'error', message: err.message });
   }
 }
 
@@ -202,5 +116,6 @@ module.exports = {
   removeCollaborators,
   setStatusProject,
   getProjectProgress,
+  getProjectStats,
   assignRole
 };

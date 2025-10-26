@@ -1,43 +1,26 @@
 const Notification = require('../db/models/Notification');
+const asyncHandler = require('../utils/asyncHandler');
+const { sendSuccess } = require('../utils/responseHelper');
 
-exports.createNotification = async (req, res) => {
-  try {
-    const { userId, message, type, link } = req.body;
+exports.createNotification = asyncHandler(async (req, res) => {
+  const { userId, message, type, link } = req.body;
 
-    const newNotification = await Notification.create({
-      userId: userId, 
-      message,
-      type,
-      link,
-      read: false // Matches your 'Notification.js' model
-    });
+  const newNotification = await Notification.create({
+    userId,
+    message,
+    type,
+    link,
+    read: false
+  });
 
-    console.log('✅ Backend: Notification created in DB:', newNotification);
+  sendSuccess(res, newNotification, 'Notification created', 201);
+});
 
-    res.status(201).json({ 
-      success: true, 
-      message: 'Notification created',
-      data: newNotification
-    });
+exports.getNotificationsForUser = asyncHandler(async (req, res) => {
+  const userId = req.user.userId;
 
-  } catch (error) {
-    console.error('❌ /api/notifications POST Error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to create notification' 
-    });
-  }
-};
+  const notifications = await Notification.find({ userId })
+    .sort({ createdAt: -1 });
 
-exports.getNotificationsForUser = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-
-    const notifications = await Notification.find({ userId: userId }) // Matches your 'Notification.js' model
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({ status: 'success', data: notifications });
-  } catch (err) {
-    res.status(500).json({ status: 'error', message: err.message });
-  }
-};
+  sendSuccess(res, notifications);
+});

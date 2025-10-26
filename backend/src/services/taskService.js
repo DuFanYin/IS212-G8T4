@@ -9,6 +9,7 @@ const TaskModel = require('../db/models/Task');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
 const ActivityLogRepository = require('../repositories/ActivityLogRepository');
 const notificationService = require('./notificationService');
+const { ROLE_HIERARCHY } = require('../middleware/roleMiddleware');
 
 
 class TaskService {
@@ -239,8 +240,7 @@ class TaskService {
           throw new Error('Only managers and above can assign tasks');
         }
 
-        const roleHierarchy = { 'sm': 4, 'director': 3, 'manager': 2, 'staff': 1 };
-        if (roleHierarchy[user.role] <= roleHierarchy[assignee.role]) {
+        if (ROLE_HIERARCHY[user.role] <= ROLE_HIERARCHY[assignee.role]) {
           throw new Error('Can only assign tasks to lower-ranked roles');
         }
       }
@@ -352,6 +352,7 @@ class TaskService {
 
   /**
    * Check task visibility for a user
+   * OPTIMIZED: Batch loads all involved users in 1 query instead of N queries
    * @param {string} taskId - Task ID
    * @param {string} userId - User ID
    */
@@ -362,114 +363,63 @@ class TaskService {
 
       const task = new Task(taskDoc);
       const userRepository = new UserRepository();
+      
+      // Load requester
       const userDoc = await userRepository.findById(userId);
       if (!userDoc) return false;
       const user = new User(userDoc);
 
-      // HR/SM: see all tasks/projects
+      // HR/SM: see all tasks - early return, no queries needed
       if (user.canSeeAllTasks()) return true;
 
-      // Director: see department tasks (project dept OR any involved user dept)
+      // Collect all involved user IDs
+      const involvedUserIds = [
+        task.assigneeId,
+        task.createdBy,
+        ...(Array.isArray(task.collaborators) ? task.collaborators : [])
+      ].filter(Boolean);
+
+      // Batch load ALL involved users in ONE query (instead of N queries)
+      const involvedUserDocs = involvedUserIds.length > 0 
+        ? await userRepository.findByIds(involvedUserIds)
+        : [];
+      
+      const involvedUsers = new Map(involvedUserDocs.map(doc => [doc._id?.toString(), doc]));
+
+      // Director: see department tasks
       if (user.canSeeDepartmentTasks()) {
-        // Project department
+        // Check project department
         if (task.projectId) {
           const project = await projectService.getProjectById(task.projectId);
-          if (project && project.departmentId && user.canAccessDepartment(project.departmentId)) {
-            return true;
-          }
+          if (project?.departmentId && user.canAccessDepartment(project.departmentId)) return true;
         }
-        // Assignee department
-        if (task.assigneeId) {
-          const assigneeDoc = await userRepository.findById(task.assigneeId);
-          const assignee = assigneeDoc ? new User(assigneeDoc) : null;
-          if (assignee?.departmentId && user.canAccessDepartment(assignee.departmentId)) {
-            return true;
-          }
-        }
-        // Creator department
-        if (task.createdBy) {
-          const creatorDoc = await userRepository.findById(task.createdBy);
-          const creator = creatorDoc ? new User(creatorDoc) : null;
-          if (creator?.departmentId && user.canAccessDepartment(creator.departmentId)) {
-            return true;
-          }
-        }
-        // Any collaborator department
-        if (Array.isArray(task.collaborators) && task.collaborators.length > 0) {
-          for (const collabId of task.collaborators) {
-            const collabDoc = await userRepository.findById(collabId);
-            const collab = collabDoc ? new User(collabDoc) : null;
-            if (collab?.departmentId && user.canAccessDepartment(collab.departmentId)) {
-              return true;
-            }
-          }
+        // Check if any involved user is in requester's department
+        for (const [id, doc] of involvedUsers) {
+          if (doc.departmentId && user.canAccessDepartment(doc.departmentId)) return true;
         }
       }
 
-      // Manager: see team tasks (any involved user team)
+      // Manager: see team tasks
       if (user.canSeeTeamTasks()) {
-        // Assignee team
-        if (task.assigneeId) {
-          const assigneeDoc = await userRepository.findById(task.assigneeId);
-          const assignee = assigneeDoc ? new User(assigneeDoc) : null;
-          if (assignee?.teamId && user.teamId?.toString() === assignee.teamId?.toString()) {
-            return true;
-          }
-        }
-        // Creator team
-        if (task.createdBy) {
-          const creatorDoc = await userRepository.findById(task.createdBy);
-          const creator = creatorDoc ? new User(creatorDoc) : null;
-          if (creator?.teamId && user.teamId?.toString() === creator.teamId?.toString()) {
-            return true;
-          }
-        }
-        // Any collaborator team
-        if (Array.isArray(task.collaborators) && task.collaborators.length > 0) {
-          for (const collabId of task.collaborators) {
-            const collabDoc = await userRepository.findById(collabId);
-            const collab = collabDoc ? new User(collabDoc) : null;
-            if (collab?.teamId && user.teamId?.toString() === collab.teamId?.toString()) {
-              return true;
-            }
-          }
+        // Check if any involved user is in requester's team
+        for (const [id, doc] of involvedUsers) {
+          if (doc.teamId?.toString() === user.teamId?.toString()) return true;
         }
       }
 
-      // Staff: see own tasks, teammates' tasks (createdBy/assignee/collab), and tasks they're collaborating on
+      // Staff: see own tasks or tasks they're involved in
       if (user.isStaff()) {
+        const userIdStr = user.id?.toString();
+        
         // Own tasks
-        if (task.assigneeId && task.assigneeId.toString?.() === user.id?.toString?.()) return true;
-        if (task.createdBy && task.createdBy.toString?.() === user.id?.toString?.()) return true;
-
-        // Team members' tasks via assignee
-        if (task.assigneeId) {
-          const assigneeDoc = await userRepository.findById(task.assigneeId);
-          const assignee = assigneeDoc ? new User(assigneeDoc) : null;
-          if (assignee?.teamId && user.teamId?.toString() === assignee.teamId?.toString()) {
-            return true;
-          }
+        if (task.assigneeId?.toString() === userIdStr || task.createdBy?.toString() === userIdStr) return true;
+        
+        // Team members' tasks (check batch-loaded users)
+        for (const [id, doc] of involvedUsers) {
+          if (doc.teamId?.toString() === user.teamId?.toString()) return true;
         }
-        // Team members' tasks via creator
-        if (task.createdBy) {
-          const creatorDoc = await userRepository.findById(task.createdBy);
-          const creator = creatorDoc ? new User(creatorDoc) : null;
-          if (creator?.teamId && user.teamId?.toString() === creator.teamId?.toString()) {
-            return true;
-          }
-        }
-        // Team members' tasks via collaborators
-        if (Array.isArray(task.collaborators) && task.collaborators.length > 0) {
-          for (const collabId of task.collaborators) {
-            const collabDoc = await userRepository.findById(collabId);
-            const collab = collabDoc ? new User(collabDoc) : null;
-            if (collab?.teamId && user.teamId?.toString() === collab.teamId?.toString()) {
-              return true;
-            }
-          }
-        }
-
-        // Project tasks they're collaborating on
+        
+        // Tasks they're collaborating on
         if (task.isCollaborator(user.id)) return true;
       }
 
@@ -497,7 +447,7 @@ class TaskService {
     }
   }
 
-  async getTasksByProject(projectId, userId) {
+  async getTasksByProject(projectId, userId, filters = {}) {
     try {
       const docs = await this.taskRepository.findTasksByProject(projectId);
       const populated = await TaskModel.populate(docs, [
@@ -512,7 +462,19 @@ class TaskService {
           visible.push(doc);
         }
       }
-      return visible.map((d) => this.mapPopulatedTaskDocToDTO(d));
+      
+      let tasks = visible.map((d) => this.mapPopulatedTaskDocToDTO(d));
+      
+      // Apply filtering and sorting if provided
+      if (filters.status) {
+        tasks = this.filterByStatus(tasks, filters.status);
+      }
+      
+      if (filters.sortBy) {
+        tasks = this.sortTasks(tasks, filters.sortBy, filters.order);
+      }
+      
+      return tasks;
     } catch (error) {
       throw new Error('Error fetching tasks by project');
     }
@@ -615,7 +577,103 @@ class TaskService {
     }
   }
 
-  async getUserTasks(userId) {
+  /**
+   * Helper method to filter tasks by status
+   * @param {Array} tasks - Array of task DTOs
+   * @param {string} status - Status to filter by ('all', 'ongoing', 'completed', 'unassigned', 'under_review', 'overdue')
+   * @returns {Array}
+   */
+  filterByStatus(tasks, status) {
+    if (!status || status === 'all') return tasks;
+    
+    if (status === 'overdue') {
+      const now = new Date();
+      return tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const dueDate = new Date(task.dueDate);
+        return dueDate < now && task.status !== 'completed';
+      });
+    }
+    
+    return tasks.filter(task => task.status === status);
+  }
+
+  /**
+   * Helper method to sort tasks
+   * @param {Array} tasks - Array of task DTOs
+   * @param {string} sortBy - Field to sort by ('dueDate', 'status', 'assignee', 'project')
+   * @param {string} order - 'asc' or 'desc'
+   * @returns {Array}
+   */
+  sortTasks(tasks, sortBy, order = 'asc') {
+    if (!sortBy) return tasks;
+    
+    const sorted = [...tasks];
+    
+    switch (sortBy) {
+      case 'dueDate':
+        sorted.sort((a, b) => {
+          const aTime = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+          const bTime = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+          return order === 'asc' ? aTime - bTime : bTime - aTime;
+        });
+        break;
+        
+      case 'status':
+        sorted.sort((a, b) => {
+          const comparison = (a.status || '').localeCompare(b.status || '');
+          return order === 'asc' ? comparison : -comparison;
+        });
+        break;
+        
+      case 'assignee':
+        sorted.sort((a, b) => {
+          const aName = a.assigneeName || '';
+          const bName = b.assigneeName || '';
+          const comparison = aName.localeCompare(bName);
+          return order === 'asc' ? comparison : -comparison;
+        });
+        break;
+        
+      case 'project':
+        sorted.sort((a, b) => {
+          const aName = a.projectName || '';
+          const bName = b.projectName || '';
+          const comparison = aName.localeCompare(bName);
+          return order === 'asc' ? comparison : -comparison;
+        });
+        break;
+        
+      default:
+        break;
+    }
+    
+    return sorted;
+  }
+
+  /**
+   * Calculate task statistics
+   * @param {Array} tasks - Array of task DTOs
+   * @returns {Object}
+   */
+  calculateTaskStats(tasks) {
+    const now = new Date();
+    
+    return {
+      total: tasks.length,
+      unassigned: tasks.filter(t => t.status === 'unassigned').length,
+      ongoing: tasks.filter(t => t.status === 'ongoing').length,
+      under_review: tasks.filter(t => t.status === 'under_review').length,
+      completed: tasks.filter(t => t.status === 'completed').length,
+      overdue: tasks.filter(t => {
+        if (!t.dueDate) return false;
+        const dueDate = new Date(t.dueDate);
+        return dueDate < now && t.status !== 'completed';
+      }).length,
+    };
+  }
+
+  async getUserTasks(userId, filters = {}) {
     try {
       const userRepository = new UserRepository();
       const userDoc = await userRepository.findById(userId);
@@ -657,7 +715,19 @@ class TaskService {
         { path: 'collaborators', select: 'name' },
         { path: 'projectId', select: 'name' },
       ]);
-      return populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
+      
+      let tasks = populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
+      
+      // Apply filtering and sorting
+      if (filters.status) {
+        tasks = this.filterByStatus(tasks, filters.status);
+      }
+      
+      if (filters.sortBy) {
+        tasks = this.sortTasks(tasks, filters.sortBy, filters.order);
+      }
+      
+      return tasks;
     } catch (error) {
       console.error('TaskService.getUserTasks error:', error.message);
       throw new Error(`Error fetching user tasks: ${error.message}`);
@@ -680,8 +750,7 @@ class TaskService {
         throw new Error('Not authorized to assign this task');
       }
 
-      const roleHierarchy = { 'sm': 4, 'director': 3, 'manager': 2, 'staff': 1 };
-      if (roleHierarchy[user.role] <= roleHierarchy[assignee.role]) {
+      if (ROLE_HIERARCHY[user.role] <= ROLE_HIERARCHY[assignee.role]) {
         throw new Error('Can only assign tasks to lower-ranked roles');
       }
 

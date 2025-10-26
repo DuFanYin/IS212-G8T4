@@ -64,6 +64,16 @@ export const projectService = {
     });
     return res.json();
   },
+  // NEW: get project stats
+  getProjectStats: async (
+    token: string,
+    projectId: string
+  ): Promise<{ status: string; data: { total: number; completed: number; inProgress: number; overdue: number; unassigned: number } }> => {
+    const res = await fetch(`${API_URL}/projects/${projectId}/stats`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.json();
+  },
   // NEW: assign role to collaborator
   assignRole: async (
     token: string,

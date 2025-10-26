@@ -5,6 +5,11 @@ class UserRepository {
     return UserModel.findById(id);
   }
 
+  async findByIds(ids) {
+    if (!ids || ids.length === 0) return [];
+    return UserModel.find({ _id: { $in: ids } }).select('-passwordHash');
+  }
+
   async findPublicById(id) {
     return UserModel.findById(id).select('-passwordHash');
   }

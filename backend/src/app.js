@@ -10,6 +10,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/logs', require('./routes/logs.route'));
+app.use('/api/metrics', require('./routes/metricsRoutes'));
 
 
 // Import routes
@@ -31,17 +32,9 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/tasks', subtaskRoutes); // Mount subtask routes under tasks
 app.use('/api/organization', organizationRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
-});
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    status: 'error',
-    message: err.message || 'Internal server error'
-  });
-});
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
 
 module.exports = app;

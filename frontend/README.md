@@ -75,7 +75,7 @@ src/
 │   └── UserContext.tsx          # Global user state management
 ├── lib/
 │   ├── hooks/
-│   │   ├── useMetrics.ts        # Metrics calculation hook
+│   │   ├── useMetrics.ts        # Metrics fetching hook
 │   │   ├── useTasks.ts          # Task management hook
 │   │   ├── useTimeline.ts       # Timeline management hook
 │   │   └── useUsers.ts          # User management hook
@@ -84,6 +84,7 @@ src/
 │   │   ├── api.ts               # Generic API utilities
 │   │   ├── auth.ts              # Authentication API calls
 │   │   ├── config.ts            # API configuration
+│   │   ├── metrics.ts           # Metrics API calls
 │   │   ├── organization.ts      # Organization API calls
 │   │   ├── project.ts           # Project API calls (with role assignment)
 │   │   ├── subtask.ts           # Subtask API calls
@@ -129,10 +130,11 @@ src/
 - ✅ `DELETE /api/projects/:projectId/collaborators` - Remove collaborator
 - ✅ `POST /api/projects/:projectId/assign-role` - Assign role to collaborator
 - ✅ `GET /api/projects/:projectId/progress` - Get project progress
+- ✅ `GET /api/projects/:projectId/stats` - Get project statistics
 
 ### **Task Services** (`src/lib/services/task.ts`)
-- ✅ `GET /api/tasks/` - Get user's tasks
-- ✅ `GET /api/tasks/project/:projectId` - Get tasks by project
+- ✅ `GET /api/tasks/` - Get user's tasks (with filters: status, sortBy, order)
+- ✅ `GET /api/tasks/project/:projectId` - Get tasks by project (with status filter)
 - ✅ `GET /api/tasks/team/:teamId` - Get tasks by team
 - ✅ `GET /api/tasks/department/:departmentId` - Get tasks by department
 - ✅ `GET /api/tasks/unassigned` - Get unassigned tasks
@@ -161,6 +163,13 @@ src/
 
 ### **Activity Log Services** (`src/lib/services/activityLog.ts`)
 - ✅ `GET /api/logs/` - Get activity logs (with filters)
+- ✅ `POST /api/logs/` - Get activity logs with resourceId filter
+
+### **Metrics Services** (`src/lib/services/metrics.ts`)
+- ✅ `GET /api/metrics/departments` - Get department-level metrics
+- ✅ `GET /api/metrics/teams` - Get all team metrics
+- ✅ `GET /api/metrics/teams/:teamId` - Get single team metrics
+- ✅ `GET /api/metrics/personal` - Get personal task metrics
 
 ### **Notification Services** (`not implemented as separate service`)
 - ⚠️ Notifications are created inline in components (home page and Header)
@@ -201,9 +210,9 @@ pnpm dev
 
 ## 📊 API Coverage Summary
 
-**Total Backend Routes**: 38  
-**Frontend Implemented**: 36  
-**Coverage**: 95% ✅
+**Total Backend Routes**: 42  
+**Frontend Implemented**: 42  
+**Coverage**: 100% ✅
 
 All backend API endpoints are properly integrated into the frontend with:
 - ✅ Type-safe service functions

@@ -121,7 +121,6 @@ function TimelineView() {
 
   const token = user?.token;
 
-  // Load org selectors + projects
   useEffect(() => {
     if (!token) return;
     const load = async () => {
@@ -139,8 +138,6 @@ function TimelineView() {
     load();
   }, [token, user]);
 
-
-  // Default selections from user
   useEffect(() => {
     if (!user) return;
     if (user.teamId) setSelectedTeamId(user.teamId);
@@ -153,7 +150,6 @@ function TimelineView() {
     teams,
   });
 
-  // reminder AND overdue notification
   useEffect(() => {
     if (!timelineItems || timelineItems.length === 0 || !user) return;
 
@@ -161,9 +157,8 @@ function TimelineView() {
     if (!token) return;
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize today's date
+    today.setHours(0, 0, 0, 0);
 
-    // --- Reminder Logic ---
     const daysAhead = [1, 3, 7];
     const targetDates = daysAhead.map(d => {
       const date = new Date(today);
@@ -174,29 +169,22 @@ function TimelineView() {
     let newNotificationSent = false; 
 
     timelineItems.forEach(item => {
-      // --- New checks (This is your correct logic) ---
       const isCollaborator = item.collaborators?.includes(user.id);
       const isAssignee = item.assigneeId === user.id;
 
-      // If the user is not involved in this task, skip it.
       if (!item.dueDate || (!isCollaborator && !isAssignee) || item.status === 'completed') return;
-      // --- End new checks ---
       
-      // --- FIX 1: 'dueDate' is only declared once ---
       const dueDate = new Date(item.dueDate);
       dueDate.setHours(0, 0, 0, 0); 
       const dueDateISO = dueDate.toISOString().slice(0, 10);
-      // --- End Fix 1 ---
 
-      const isOverdue = dueDate < today; // No need to re-check status, we did it above
+      const isOverdue = dueDate < today;
       const overdueKey = `overdue-${item.id}`;
       
       if (isOverdue && !remindersSent.has(overdueKey)) {
-        // Mark as sent
         setRemindersSent(prevSet => new Set(prevSet).add(overdueKey));
         newNotificationSent = true;
         
-        // Create message and send
         const message = `Overdue: Task "${item.title}" was due on ${dueDate.toLocaleDateString()}.`;
         
         fetch(`${API_URL}/notifications`, {
@@ -217,15 +205,12 @@ function TimelineView() {
         .catch(err => console.error('❌ Overdue notification failed:', err));
 
       } else if (targetDates.includes(dueDateISO) && !remindersSent.has(item.id)) {
-        // Mark as sent
         setRemindersSent(prevSet => new Set(prevSet).add(item.id));
         newNotificationSent = true;
 
-        // Create message and send
         const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         const message = `Reminder: Task "${item.title}" is due in ${daysDiff} day(s).`;
         
-        // --- FIX 2: Use the environment variable here too ---
         fetch(`${API_URL}/notifications`, {
           method: 'POST',
           headers: {
@@ -256,7 +241,6 @@ function TimelineView() {
   const [assigneeOnly, setAssigneeOnly] = useState<boolean>(false);
   const [collaboratorOnly, setCollaboratorOnly] = useState<boolean>(false);
 
-  // Filter by selected project (when set) before grouping
   const filteredItems = useMemo(() => {
     if (!assigneeOnly && !collaboratorOnly) return timelineItems;
     const currentUserId = user?.id;
@@ -290,12 +274,11 @@ function TimelineView() {
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       projectTasks.forEach(task => {
         result.push({ type: 'task', item: task });
-        if (expandedTasks.has(task.id)) {
-          const taskSubs = subtasks
-            .filter(s => s.parentTaskId === task.id)
-            .sort((a, b) => new Date(b.createdAt ?? '').getTime() - new Date(a.createdAt ?? '').getTime());
-          taskSubs.forEach(st => result.push({ type: 'subtask', item: st }));
-        }
+        if (expandedTasks.has(task.id)) return;
+        const taskSubs = subtasks
+          .filter(s => s.parentTaskId === task.id)
+          .sort((a, b) => new Date(b.createdAt ?? '').getTime() - new Date(a.createdAt ?? '').getTime());
+        taskSubs.forEach(st => result.push({ type: 'subtask', item: st }));
       });
     });
     const taskIds = new Set(tasks.map(t => t.id));
@@ -320,7 +303,7 @@ function TimelineView() {
   }, [departments, selectedDepartmentId, user?.departmentName]);
 
   //For Metrics
-  const { teamStats, loading: metricsLoading } = useMetrics({ teams, departments, currentTeamName });
+  const { teamStats, loading: metricsLoading } = useMetrics();
 
   const toggleTaskExpansion = (taskId: string) => setExpandedTasks(prev => toggleSet(prev, taskId));
   const toggleProjectExpansion = (projectName: string) => setExpandedProjects(prev => toggleSet(prev, projectName));
