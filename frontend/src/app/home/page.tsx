@@ -248,6 +248,7 @@ function TimelineView() {
   };
 
   const handleExportReport = async () => {
+    let wrapper: HTMLElement | null = null;
     try {
       const element = document.getElementById('report-section');
       if (!element) {
@@ -264,8 +265,10 @@ function TimelineView() {
       clone.style.background = '#ffffff';
 
       // Render it offscreen
-      const wrapper = document.createElement('div');
+      wrapper = document.createElement('div');
       wrapper.style.position = 'fixed';
+      wrapper.style.left = '-9999px';
+      wrapper.style.top = '0';
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
 
@@ -298,11 +301,6 @@ function TimelineView() {
         windowWidth: clone.scrollWidth,
         windowHeight: clone.scrollHeight,
       });
-
-      // Clean up
-      if (document.body.contains(wrapper)) {
-        document.body.removeChild(wrapper);
-      }
 
       // Convert to multi-page PDF
       const imgData = canvas.toDataURL('image/png');
@@ -342,8 +340,9 @@ function TimelineView() {
       const generatedBy = user?.name ?? 'Unknown';
       pdf.text(`By: ${generatedBy}`, pdfWidth - 10, 26, { align: 'right' });
 
-      pdf.addImage(imgData, 'PNG', 0, 30, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
+      const headerSpace = 30; // Space for header on first page
+      pdf.addImage(imgData, 'PNG', 0, headerSpace, imgWidth, imgHeight);
+      heightLeft -= (pdfHeight - headerSpace);
 
       while (heightLeft > 0) {
         position -= pdfHeight;
@@ -356,6 +355,11 @@ function TimelineView() {
     } catch (err) {
       console.error('Error exporting PDF:', err);
       alert('Failed to export PDF. Please try again.');
+    } finally {
+      // Always cleanup wrapper
+      if (wrapper && document.body.contains(wrapper)) {
+        document.body.removeChild(wrapper);
+      }
     }
   };
 
