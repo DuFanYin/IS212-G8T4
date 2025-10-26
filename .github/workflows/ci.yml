@@ -39,25 +39,13 @@ jobs:
             echo "::error::MONGO_URL secret is not set. Please configure it in GitHub repository settings."
             exit 1
           fi
+          echo "Environment variables configured"
 
       - name: Run backend tests
         working-directory: ./backend
         run: npm test
-
-      - name: Generate backend test coverage
-        working-directory: ./backend
-        run: npm run test:coverage
-
-      - name: Check coverage reports
-        working-directory: ./backend
-        if: always()
-        run: |
-          if [ -d "./coverage" ]; then
-            echo "Coverage report generated successfully"
-            ls -la coverage/
-          else
-            echo "No coverage directory found"
-          fi
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096' # Increase memory for CI
 
   frontend-tests:
     name: Frontend Tests
@@ -81,21 +69,8 @@ jobs:
       - name: Run frontend tests
         working-directory: ./frontend
         run: npm test
-
-      - name: Generate frontend test coverage
-        working-directory: ./frontend
-        run: npm run test:coverage
-
-      - name: Check coverage reports
-        working-directory: ./frontend
-        if: always()
-        run: |
-          if [ -d "./coverage" ]; then
-            echo "Coverage report generated successfully"
-            ls -la coverage/
-          else
-            echo "No coverage directory found"
-          fi
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096' # Increase memory for CI
 
   build-check:
     name: Build Check

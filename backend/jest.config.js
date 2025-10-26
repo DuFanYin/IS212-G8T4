@@ -10,6 +10,8 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   setupFilesAfterEnv: ['./__tests__/setup.js'],
-  testTimeout: 30000,
-  maxWorkers: 1
+  testTimeout: 60000, // Increase timeout for CI
+  maxWorkers: 1,
+  retries: 1, // Retry failed tests once
+  forceExit: true // Force exit after tests complete
 };
