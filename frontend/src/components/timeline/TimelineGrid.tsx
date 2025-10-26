@@ -51,7 +51,7 @@ export function TimelineGrid(props: {
           const widthPercent = Math.min(100 - leftPercent, Math.max(5, ((endMs - startMs) / totalMs) * 100));
           const barHeight = row.type === 'task' ? 16 : 8;
           const top = rowOffsets[index] + (rowHeights[index] - barHeight) / 2;
-          const isOverdue = new Date(item.dueDate) < new Date();
+          const isOverdue = new Date(item.dueDate) < new Date() && item.status !== 'completed';
           const isCompleted = item.status === 'completed';
           const colorClass = isCompleted
             ? STATUS_COLOR.completed

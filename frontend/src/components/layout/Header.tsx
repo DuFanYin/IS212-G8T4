@@ -9,45 +9,63 @@ import Dropdown from './Dropdown';
 import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 
+type Notification = {
+  _id?: string;
+  id?: string;
+  message: string;
+};
+
 export default function Header() {
   const { user, logout }: { user: User | null; logout: () => void } = useUser();
   const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
-
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNoti, setLoadingNoti] = useState(true);
 
+  const fetchNotifications = async (userId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('⚠️ No token found in localStorage');
+        return;
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      console.log('📬 Notifications from backend:', data);
+      setNotifications(data.data || []);
+    } catch (err) {
+      console.error('❌ Failed to fetch notifications:', err);
+    } finally {
+      setLoadingNoti(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          console.warn('⚠️ No token found in localStorage');
-          return;
-        }
+    if (user?.id) {
+      fetchNotifications(user.id);
+    }
+  }, [user]);
 
-        const res = await fetch('http://localhost:3000/api/notifications', {
-          method: 'POST', 
-          headers: {
-            'Content-Type': 'application/json', 
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ userId: user?.id }),
-        });
-
-        const data = await res.json();
-        console.log('📬 Notifications from backend:', data);
-        setNotifications(data.data || []);
-      } catch (err) {
-        console.error('❌ Failed to fetch notifications:', err);
-      } finally {
-        setLoadingNoti(false);
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('🔁 Refreshing notifications after task update...');
+      if (user?.id) {
+        fetchNotifications(user.id);
       }
     };
 
-    if (user) {
-      fetchNotifications();
-    }
+    window.addEventListener('refreshNotifications', handleRefresh);
+    return () => {
+      window.removeEventListener('refreshNotifications', handleRefresh);
+    };
   }, [user]);
 
   const isActive = (path: string) => {
@@ -123,9 +141,9 @@ export default function Header() {
           ) : notifications.length === 0 ? (
             <div className="p-4 text-sm text-gray-500 text-center">No notifications</div>
           ) : (
-            notifications.map((n) => (
+            notifications.map((n, index) => (
               <div
-                key={n._id || n.id}
+                key={n._id || n.id || `notif-${index}`}
                 className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
               >
                 {n.message}

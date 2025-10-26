@@ -287,21 +287,37 @@ class TaskService {
         oldDueDate &&
         new Date(updateData.dueDate).toISOString() !== new Date(oldDueDate).toISOString()
       ) {
-        const collaborators = updatedTask.collaborators || [];
-        
-        console.log("🔔 Triggering notifications for collaborators...");
-        console.log("Collaborator IDs:", collaborators);
+        // Get all relevant users
+      const collaborators = updatedTask.collaborators?.map(c => c.toString()) || [];
+      const assigneeId = updatedTask.assigneeId?.toString();
+      const userMakingChange = userId.toString();
 
-        for (const collaboratorId of collaborators) {
-          // console.log(`→ Sending notification to userId: ${collaboratorId}`);
+      // Create a unique set of all involved users (assignee + collaborators)
+      const allInvolved = new Set(collaborators);
+      if (assigneeId) {
+        allInvolved.add(assigneeId);
+      }
 
+      // Remove the user who made the change (so they don't get a notification)
+      allInvolved.delete(userMakingChange);
+
+      // Convert the set back to an array
+      const userIdsToNotify = [...allInvolved];
+
+      if (userIdsToNotify.length > 0) {
+        console.log("🔔 Triggering deadline change notifications...");
+        console.log("User IDs to Notify:", userIdsToNotify);
+
+        // Send notification to each person
+        for (const idToNotify of userIdsToNotify) {
           await notificationService.createNotification({
-            userId: collaboratorId?.toString?.(),
-            message: `Task "${updatedTask.title}" deadline changed from ${new Date(oldDueDate).toDateString()} → ${new Date(updateData.dueDate).toDateString()}`,
-            link: `/tasks/${updatedTask.id}`,
+            userId: idToNotify,
+            message: `Task "${updatedTask.title}" deadline changed to ${new Date(updateData.dueDate).toDateString()}`,
+            link: `/projects-tasks/task/${updatedTask.id}`, // <-- Fixed link
             type: 'deadline-change',
           });
         }
+      }
       }
 
       //Logging
