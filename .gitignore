@@ -19,6 +19,9 @@ next-env.d.ts
 /build
 /dist
 
+# Storage
+backend/src/storage/
+
 # Environment files
 .env
 .env.local
