@@ -29,6 +29,7 @@ src/
 │   ├── activityLogService.js
 │   ├── authService.js
 │   ├── organizationService.js
+│   ├── notificationService.js
 │   └── emailService.js
 ├── controllers/              # HTTP request handling
 │   ├── authController.js
@@ -37,6 +38,7 @@ src/
 │   ├── taskController.js
 │   ├── subtaskController.js
 │   ├── activityLogController.js
+│   ├── notificationController.js
 │   └── organizationController.js
 ├── middleware/               # Request processing middleware
 │   ├── authMiddleware.js
@@ -48,6 +50,8 @@ src/
 │   ├── taskRoutes.js
 │   ├── subtaskRoutes.js
 │   ├── activityLogRoutes.js
+│   ├── logs.route.js         # Activity log routes
+│   ├── notificationRoutes.js
 │   └── organizationRoutes.js
 ├── scripts/                  # Utility scripts
 │   └── generateSecret.js
@@ -71,6 +75,7 @@ src/
         ├── Comment.js
         ├── ActivityLog.js
         ├── Department.js
+        ├── Notification.js
         └── index.js
 ```
 
@@ -131,6 +136,12 @@ src/
 ### **Activity Log Routes** (`src/routes/activityLogRoutes.js`)
 
 - `GET    /api/logs/`                               - Get activity logs (with optional filters)
+- `POST   /api/logs/`                               - Get activity logs by resource ID (with filters in body)
+
+### **Notification Routes** (`src/routes/notificationRoutes.js`)
+
+- `GET    /api/notifications`                        - Get notifications for current user
+- `POST   /api/notifications`                        - Create new notification
 
 ### **Organization Routes** (`src/routes/organizationRoutes.js`)
 
@@ -243,6 +254,11 @@ src/
 - `sendPasswordResetEmail(email, resetToken)` - Sends password reset email with reset link
 - `sendInvitationEmail(email, invitationToken, role)` - Sends invitation email with registration link
 **Configuration:** Uses Gmail SMTP with credentials from environment variables
+
+### **NotificationService** (`src/services/notificationService.js`)
+**Purpose:** Notification management service
+**Methods:**
+- `createNotification({ userId, message, link, type })` - Create new notification for a user
 
 
 

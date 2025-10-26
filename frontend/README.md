@@ -162,6 +162,10 @@ src/
 ### **Activity Log Services** (`src/lib/services/activityLog.ts`)
 - ✅ `GET /api/logs/` - Get activity logs (with filters)
 
+### **Notification Services** (`not implemented as separate service`)
+- ⚠️ Notifications are created inline in components (home page and Header)
+- Created and fetched in `src/app/home/page.tsx` and `src/components/layout/Header.tsx`
+
 
 ### Testing
 - **Runner**: Vitest + jsdom
@@ -197,9 +201,9 @@ pnpm dev
 
 ## 📊 API Coverage Summary
 
-**Total Backend Routes**: 36  
+**Total Backend Routes**: 38  
 **Frontend Implemented**: 36  
-**Coverage**: 100% ✅
+**Coverage**: 95% ✅
 
 All backend API endpoints are properly integrated into the frontend with:
 - ✅ Type-safe service functions

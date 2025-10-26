@@ -1,8 +1,6 @@
 require('dotenv').config();
 const app = require('./app');
 const { connectDB } = require('./db/connect');
-const notificationRoutes = require('./routes/notificationRoutes');
-app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 3000;
 

@@ -23,6 +23,7 @@ import { useMetrics } from '@/lib/hooks/useMetrics';
 // Report PDF
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { API_URL } from '@/lib/services/config';
 
 // ========================= Local Types (can be moved to types file) =========================
 type TimelineRow = { type: 'project' | 'task' | 'subtask'; item?: TimelineItem; projectName?: string };
@@ -199,7 +200,7 @@ function TimelineView() {
         // Create message and send
         const message = `Overdue: Task "${item.title}" was due on ${dueDate.toLocaleDateString()}.`;
         
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
+        fetch(`${API_URL}/notifications`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -226,7 +227,7 @@ function TimelineView() {
         const message = `Reminder: Task "${item.title}" is due in ${daysDiff} day(s).`;
         
         // --- FIX 2: Use the environment variable here too ---
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
+        fetch(`${API_URL}/notifications`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

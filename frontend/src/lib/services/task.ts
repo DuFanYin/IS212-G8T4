@@ -1,6 +1,5 @@
 import { CreateTaskRequest, UpdateTaskRequest, AssignTaskRequest, UpdateTaskStatusRequest, TaskResponse, TasksResponse } from '@/lib/types/task';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from './config';
 
 export const taskService = {
   getUserTasks: async (token: string): Promise<TasksResponse> => {
