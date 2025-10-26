@@ -255,50 +255,41 @@ function TimelineView() {
         return;
       }
 
-      // 1️⃣ Clone node and expand it
+      // Clone node and expand it
       const clone = element.cloneNode(true) as HTMLElement;
       clone.style.position = 'absolute';
-      clone.style.left = '0';
-      clone.style.top = '0';
       clone.style.width = `${element.scrollWidth}px`;
       clone.style.height = `${element.scrollHeight}px`;
       clone.style.overflow = 'visible';
       clone.style.background = '#ffffff';
 
-      // Remove export button etc.
-      clone.querySelectorAll('button, input, .no-print').forEach(el => {
-        (el as HTMLElement).style.display = 'none';
-      });
-
-      // 2️⃣ Render it offscreen
+      // Render it offscreen
       const wrapper = document.createElement('div');
       wrapper.style.position = 'fixed';
-      wrapper.style.left = '-9999px';
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
 
       // Wait for fonts and ensure rendering
       await document.fonts.ready;
-      await new Promise(r => requestAnimationFrame(r));
+      await new Promise(r => setTimeout(r, 1000));
 
-      // Ensure text is visible
-      clone.querySelectorAll('span, button, p, div').forEach(el => {
+      // Project Button
+      clone.querySelectorAll('button[aria-label="Collapse project"]').forEach(el => {
         const elem = el as HTMLElement;
-        if (elem.textContent?.trim()) {
-          elem.style.color = '#000';
-          elem.style.opacity = '1';
-        }
+        elem.style.color = '#000';
+        elem.style.opacity = '1';
+        elem.style.overflow = 'visible';
       });
 
-      // Force all transforms and transitions off to ensure text renders
-      clone.querySelectorAll('*').forEach(el => {
+      // Tasks Button
+      clone.querySelectorAll('button[title]').forEach(el => {
         const elem = el as HTMLElement;
-        elem.style.transform = 'none';
-        elem.style.transition = 'none';
-        elem.style.willChange = 'auto';
+        elem.style.color = '#000';
+        elem.style.opacity = '1';
+        elem.style.overflow = 'visible';
       });
 
-      // 3️⃣ Capture clone instead of visible element
+      // Capture clone instead of visible element
       const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
@@ -308,12 +299,12 @@ function TimelineView() {
         windowHeight: clone.scrollHeight,
       });
 
-      // 4️⃣ Clean up
+      // Clean up
       if (document.body.contains(wrapper)) {
         document.body.removeChild(wrapper);
       }
 
-      // 5️⃣ Convert to multi-page PDF
+      // Convert to multi-page PDF
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
 
@@ -325,7 +316,33 @@ function TimelineView() {
       let heightLeft = imgHeight;
       let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      let header = "";
+      if (user?.role == "hr") {
+        header = "Individual Report"
+      }
+      else if (user?.role == "manager") {
+        header = "Team Report"
+      }
+      else if (user?.role == "director") {
+        header = "Department Report"
+      }
+      else {
+        header = "Individual Report"
+      }
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(18);
+      pdf.text(header, pdfWidth / 2, 15, { align: 'center' });
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.text(`Date: ${new Date().toLocaleString()}`, pdfWidth - 10, 22, { align: 'right' });
+
+      pdf.setFontSize(9);
+      const generatedBy = user?.name ?? 'Unknown';
+      pdf.text(`By: ${generatedBy}`, pdfWidth - 10, 26, { align: 'right' });
+
+      pdf.addImage(imgData, 'PNG', 0, 30, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
 
       while (heightLeft > 0) {
@@ -335,7 +352,7 @@ function TimelineView() {
         heightLeft -= pdfHeight;
       }
 
-      pdf.save(`Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+      pdf.save(`${header}_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Error exporting PDF:', err);
       alert('Failed to export PDF. Please try again.');
@@ -405,7 +422,26 @@ function TimelineView() {
                   </div>
                 </div>
                 {/* Row 2: legend */}
-                <Legend />
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex-1 min-w-0">
+                    <Legend />
+                  </div>
+
+                  {/* Control button styled to look like a subtle icon button */}
+                  <div className="flex-shrink-0 ml-3">
+                    <button
+                      type="button"
+                      title="Timeline controls"
+                      aria-label="Open timeline controls"
+                      className="inline-flex items-center justify-center p-2 border border-gray-200 bg-white rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 transition"
+                      onClick={handleExportReport}
+                    >
+                      <svg className="w-4 h-4 text-gray-700" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 18">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 1v11m0 0 4-4m-4 4L4 8m11 4v3a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-3" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -459,15 +495,6 @@ function TimelineView() {
                 <ProductivityMetric tasks={teamStats} />
                 <ProductivityIndex tasks={teamStats} />
               </Card>
-            </div>
-
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={handleExportReport}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Export Report PDF
-              </button>
             </div>
           </>
         )}
