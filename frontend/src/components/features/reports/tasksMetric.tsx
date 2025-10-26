@@ -98,7 +98,7 @@ export default function TasksMetric({ tasks }: metricProps) {
                 {/* Tooltip rendered outside the clipped inner container so it can overflow and remain visible */}
                 {hovered && hovered.groupIdx === groupIdx && (
                   <div className="absolute left-1/2 -top-7 -translate-x-1/2 bg-white text-blue-700 px-2 py-1 rounded shadow text-xs z-20 whitespace-nowrap border border-blue-200">
-                    {STATUS_LABELS[hovered.status]}: {(group as any)[hovered.status]}
+                    {STATUS_LABELS[hovered.status]}: {group[hovered.status as keyof typeof group] as number}
                   </div>
                 )}
               </div>

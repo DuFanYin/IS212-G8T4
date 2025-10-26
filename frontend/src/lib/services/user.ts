@@ -1,5 +1,26 @@
 import { API_URL } from './config';
-import type { UsersResponse, UserResponse } from '@/lib/types/user';
+import type { UsersResponse } from '@/lib/types/user';
+
+interface InvitationResult {
+  email: string;
+  status: string;
+  message?: string;
+}
+
+interface InvitationSummary {
+  total: number;
+  success: number;
+  failed: number;
+}
+
+interface InvitationResponse {
+  status: string;
+  message: string;
+  data: {
+    results: InvitationResult[];
+    summary: InvitationSummary;
+  };
+}
 
 export const userService = {
   getTeamMembers: async (token: string): Promise<UsersResponse> => {
@@ -27,7 +48,7 @@ export const userService = {
       teamId?: string;
       departmentId?: string;
     }
-  ): Promise<{ status: string; message: string; data: { results: any[]; summary: any } }> => {
+  ): Promise<InvitationResponse> => {
     const res = await fetch(`${API_URL}/users/invite`, {
       method: 'POST',
       headers: { 

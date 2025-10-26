@@ -39,7 +39,7 @@ export const useTasks = () => {
       } else {
         setError(response.message || 'Failed to fetch team tasks');
       }
-    } catch (err) {
+    } catch {
       setError('Error fetching team tasks');
     } finally {
       setLoading(false);

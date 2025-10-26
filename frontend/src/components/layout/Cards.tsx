@@ -14,7 +14,7 @@ export default function Cards({ children, className }: CardsProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl w-full px-4">
         {items.map((child, i) => (
           <div
-            key={(child as any)?.key ?? i}
+            key={(React.isValidElement(child) && child.key) ? String(child.key) : i}
             className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 flex flex-col items-center justify-center min-h-[260px]"
           >
             {child}

@@ -24,6 +24,7 @@ type StatusBucket = {
 };
 
 type Row = {
+  titleName?: string;
   name: string;
   departmentName?: string;
 } & StatusBucket;
@@ -169,7 +170,7 @@ export function useMetrics(params: UseMetricsParams) {
     return () => {
       cancelled = true;
     };
-  }, [user?.token, user?.role, user?.teamId, user?.name, user?.departmentName, teams, departments, fetchTasksForMetrics, countStatuses]);
+  }, [user, currentTeamName, teams, departments, fetchTasksForMetrics, countStatuses]);
 
   return {
     teamStats,

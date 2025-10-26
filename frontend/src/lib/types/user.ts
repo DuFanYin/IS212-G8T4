@@ -12,6 +12,7 @@ export interface User {
 
 export interface AuthResponse {
   status: string;
+  message?: string;
   data: {
     token: string;
     user: User;

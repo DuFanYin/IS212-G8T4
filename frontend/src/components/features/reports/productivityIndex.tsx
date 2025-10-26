@@ -11,10 +11,10 @@ interface metricProps {
   }>;
 }
 
-function getProductivityIndex(tasks) {
-  const totalTasks = tasks.reduce((sum, t) => sum + t.ongoing + t.under_review + t.completed + t.overdue, 0);
-  const completedTasks = tasks.reduce((sum, t) => sum + t.completed, 0);
-  const overdueTasks = tasks.reduce((sum, t) => sum + t.overdue, 0);
+function getProductivityIndex(tasks: metricProps['tasks']): number {
+  const totalTasks = tasks.reduce((sum: number, t: metricProps['tasks'][0]) => sum + t.ongoing + t.under_review + t.completed + t.overdue, 0);
+  const completedTasks = tasks.reduce((sum: number, t: metricProps['tasks'][0]) => sum + t.completed, 0);
+  const overdueTasks = tasks.reduce((sum: number, t: metricProps['tasks'][0]) => sum + t.overdue, 0);
 
   if (totalTasks === 0) return 0;
   return Math.max(0, ((completedTasks - overdueTasks) / totalTasks));
