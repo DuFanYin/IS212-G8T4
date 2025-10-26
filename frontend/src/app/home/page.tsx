@@ -98,7 +98,7 @@ function useTimelineBounds(items: TimelineItem[]) {
 // ========================= Page Wrapper =========================
 export default function HomePage() {
   const { user }: { user: User | null } = useUser();
-  useEffect(() => { storage.getToken(); }, []);
+  
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -112,6 +112,7 @@ export default function HomePage() {
 // ========================= Main TimelineView (can be moved to own file) =========================
 function TimelineView() {
   const { user }: { user: User | null } = useUser();
+  const [remindersSent, setRemindersSent] = useState<Set<string>>(new Set());
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
 
@@ -151,6 +152,104 @@ function TimelineView() {
     selectedDepartmentId,
     teams,
   });
+
+  // reminder AND overdue notification
+  useEffect(() => {
+    if (!timelineItems || timelineItems.length === 0 || !user) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today's date
+
+    // --- Reminder Logic ---
+    const daysAhead = [1, 3, 7];
+    const targetDates = daysAhead.map(d => {
+      const date = new Date(today);
+      date.setDate(date.getDate() + d);
+      return date.toISOString().slice(0, 10);
+    });
+
+    let newNotificationSent = false; 
+
+    timelineItems.forEach(item => {
+      // --- New checks (This is your correct logic) ---
+      const isCollaborator = item.collaborators?.includes(user.id);
+      const isAssignee = item.assigneeId === user.id;
+
+      // If the user is not involved in this task, skip it.
+      if (!item.dueDate || (!isCollaborator && !isAssignee) || item.status === 'completed') return;
+      // --- End new checks ---
+      
+      // --- FIX 1: 'dueDate' is only declared once ---
+      const dueDate = new Date(item.dueDate);
+      dueDate.setHours(0, 0, 0, 0); 
+      const dueDateISO = dueDate.toISOString().slice(0, 10);
+      // --- End Fix 1 ---
+
+      const isOverdue = dueDate < today; // No need to re-check status, we did it above
+      const overdueKey = `overdue-${item.id}`;
+      
+      if (isOverdue && !remindersSent.has(overdueKey)) {
+        // Mark as sent
+        setRemindersSent(prevSet => new Set(prevSet).add(overdueKey));
+        newNotificationSent = true;
+        
+        // Create message and send
+        const message = `Overdue: Task "${item.title}" was due on ${dueDate.toLocaleDateString()}.`;
+        
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            message,
+            type: 'overdue', 
+            link: `/projects-tasks/task/${item.id}`,
+          }),
+        })
+        .then(res => res.json())
+        .then(data => console.log('✅ Overdue notification sent:', data.message))
+        .catch(err => console.error('❌ Overdue notification failed:', err));
+
+      } else if (targetDates.includes(dueDateISO) && !remindersSent.has(item.id)) {
+        // Mark as sent
+        setRemindersSent(prevSet => new Set(prevSet).add(item.id));
+        newNotificationSent = true;
+
+        // Create message and send
+        const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const message = `Reminder: Task "${item.title}" is due in ${daysDiff} day(s).`;
+        
+        // --- FIX 2: Use the environment variable here too ---
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            message,
+            type: 'reminder',
+            link: `/projects-tasks/task/${item.id}`,
+          }),
+        })
+        .then(res => res.json())
+        .then(data => console.log('✅ Reminder sent:', data.message))
+        .catch(err => console.error('❌ Reminder failed:', err));
+      }
+    });
+
+    if (newNotificationSent) {
+      window.dispatchEvent(new CustomEvent('refreshNotifications'));
+    }
+
+  }, [timelineItems, user, remindersSent]);
 
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());

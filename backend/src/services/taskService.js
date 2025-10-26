@@ -8,6 +8,8 @@ const User = require('../domain/User');
 const TaskModel = require('../db/models/Task');
 const SubtaskRepository = require('../repositories/SubtaskRepository');
 const ActivityLogRepository = require('../repositories/ActivityLogRepository');
+const notificationService = require('./notificationService');
+
 
 class TaskService {
   constructor(taskRepository) {
@@ -174,6 +176,7 @@ class TaskService {
       if (!taskDoc) throw new Error('Task not found');
 
       const task = new Task(taskDoc);
+      const oldDueDate = task.dueDate;
       const userRepository = new UserRepository();
       const userDoc = await userRepository.findById(userId);
       const user = new User(userDoc);
@@ -277,6 +280,56 @@ class TaskService {
 
       const updatedTaskDoc = await this.taskRepository.updateById(taskId, updateData);
       const updatedTask = new Task(updatedTaskDoc);
+      
+      // console.log("========== Due Date Change Check ==========");
+      // console.log("Old Due Date:", oldDueDate);
+      // console.log("New Due Date:", updateData.dueDate);
+
+      // if (oldDueDate && updateData.dueDate) {
+      //   console.log("Old ISO:", new Date(oldDueDate).toISOString());
+      //   console.log("New ISO:", new Date(updateData.dueDate).toISOString());
+      // }
+      // console.log("============================================");
+
+
+      // Notify collaborators if dueDate changed
+      if (
+        updateData.dueDate &&
+        oldDueDate &&
+        new Date(updateData.dueDate).toISOString() !== new Date(oldDueDate).toISOString()
+      ) {
+        // Get all relevant users
+      const collaborators = updatedTask.collaborators?.map(c => c.toString()) || [];
+      const assigneeId = updatedTask.assigneeId?.toString();
+      const userMakingChange = userId.toString();
+
+      // Create a unique set of all involved users (assignee + collaborators)
+      const allInvolved = new Set(collaborators);
+      if (assigneeId) {
+        allInvolved.add(assigneeId);
+      }
+
+      // Remove the user who made the change (so they don't get a notification)
+      allInvolved.delete(userMakingChange);
+
+      // Convert the set back to an array
+      const userIdsToNotify = [...allInvolved];
+
+      if (userIdsToNotify.length > 0) {
+        console.log("🔔 Triggering deadline change notifications...");
+        console.log("User IDs to Notify:", userIdsToNotify);
+
+        // Send notification to each person
+        for (const idToNotify of userIdsToNotify) {
+          await notificationService.createNotification({
+            userId: idToNotify,
+            message: `Task "${updatedTask.title}" deadline changed to ${new Date(updateData.dueDate).toDateString()}`,
+            link: `/projects-tasks/task/${updatedTask.id}`, // <-- Fixed link
+            type: 'deadline-change',
+          });
+        }
+      }
+      }
 
       //Logging
       const activityLogDoc =  await activityLogService.logActivity("updated", taskId, previousTaskDoc, updatedTaskDoc, userId);
