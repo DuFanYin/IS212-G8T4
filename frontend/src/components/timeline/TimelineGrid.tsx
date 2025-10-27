@@ -16,7 +16,7 @@ export function TimelineGrid(props: {
   STATUS_COLOR?: Record<string, string>;
 }) {
   const { rows, rowHeights, rowOffsets, totalHeight, dateHeaderLabels, todayLinePosition, verticalGridLines, projectSpans, timelineBounds, STATUS_COLOR = { completed: 'bg-green-500', ongoing: 'bg-blue-500', under_review: 'bg-yellow-500', overdue: 'bg-red-500', default: 'bg-gray-400' } } = props;
-  const [hoveredItem, setHoveredItem] = useState<{ item: TimelineItem; x: number; y: number } | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<{ item?: TimelineItem; projectName?: string; x: number; y: number } | null>(null);
   
   const formatDate = (date: Date) => date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   
@@ -41,7 +41,18 @@ export function TimelineGrid(props: {
           const left = Math.max(0, (startMs / totalMs) * 100);
           const width = Math.min(100 - left, Math.max(1, ((endMs - startMs) / totalMs) * 100));
           const top = rowOffsets[index] + (rowHeights[index] - 12) / 2;
-          return <div key={`proj-span-${index}`} className="absolute bg-gray-700/30 rounded-sm" style={{ left: `${left}%`, width: `${width}%`, top: `${top}px`, height: '12px' }} />;
+          return (
+            <div
+              key={`proj-span-${index}`}
+              className="absolute bg-gray-700/30 rounded-sm hover:opacity-80 transition-opacity"
+              style={{ left: `${left}%`, width: `${width}%`, top: `${top}px`, height: '12px' }}
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredItem({ projectName: row.projectName, x: rect.left + rect.width / 2, y: rect.top });
+              }}
+              onMouseLeave={() => setHoveredItem(null)}
+            />
+          );
         })}
         <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30" style={{ left: `${todayLinePosition}%` }} />
         {rows.map((row, index) => {
@@ -81,21 +92,42 @@ export function TimelineGrid(props: {
         })}
       </div>
       {hoveredItem && (() => {
-        const { item } = hoveredItem;
-        const { start, end } = getItemDates(item.createdAt, item.dueDate);
-        return (
-          <div
-            className="fixed z-50 bg-gray-900 text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap"
-            style={{
-              left: `${hoveredItem.x}px`,
-              top: `${hoveredItem.y - 5}px`,
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            <div className="font-semibold mb-1">{item.title}</div>
-            <div className="text-gray-300">Start: {formatDate(start)} | End: {formatDate(end)}</div>
-          </div>
-        );
+        if (hoveredItem.item) {
+          // Task/Subtask tooltip
+          const { item } = hoveredItem;
+          const { start, end } = getItemDates(item.createdAt, item.dueDate);
+          return (
+            <div
+              className="fixed z-50 bg-gray-900 text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap"
+              style={{
+                left: `${hoveredItem.x}px`,
+                top: `${hoveredItem.y - 5}px`,
+                transform: 'translate(-50%, -100%)',
+              }}
+            >
+              <div className="font-semibold mb-1">{item.title}</div>
+              <div className="text-gray-300">Start: {formatDate(start)} | End: {formatDate(end)}</div>
+            </div>
+          );
+        } else if (hoveredItem.projectName) {
+          // Project tooltip
+          const span = projectSpans.get(hoveredItem.projectName);
+          if (!span) return null;
+          return (
+            <div
+              className="fixed z-50 bg-gray-900 text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap"
+              style={{
+                left: `${hoveredItem.x}px`,
+                top: `${hoveredItem.y - 5}px`,
+                transform: 'translate(-50%, -100%)',
+              }}
+            >
+              <div className="font-semibold mb-1">{hoveredItem.projectName}</div>
+              <div className="text-gray-300">Start: {formatDate(span.start)} | End: {formatDate(span.end)}</div>
+            </div>
+          );
+        }
+        return null;
       })()}
     </div>
   );

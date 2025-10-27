@@ -234,7 +234,7 @@ function TimelineView() {
       window.dispatchEvent(new CustomEvent('refreshNotifications'));
     }
 
-  }, [timelineItems, user, remindersSent]);
+  }, [timelineItems, user]);
 
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());

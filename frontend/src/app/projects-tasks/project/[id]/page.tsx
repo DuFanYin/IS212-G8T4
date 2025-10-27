@@ -14,6 +14,8 @@ import { UserSelector } from '@/components/features/users/UserSelector';
 import AssignRoleModal from '@/components/features/AssignRoleModal';
 import ActivityLogList from '@/components/features/ActivityLogList';
 import type { Collaborator } from '@/lib/types/project';
+import { getTaskCounts } from '@/lib/utils/taskSort';
+import { getStatusColor, isTaskOverdue, formatStatusLabel } from '@/lib/utils/taskStatusColors';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -92,12 +94,14 @@ export default function ProjectDetailPage() {
     );
   }
 
+  // Use project stats from backend if available, otherwise compute from tasks
+  const taskCounts = getTaskCounts(tasks);
   const stats = projectStats || {
-    total: tasks.length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-    inProgress: tasks.filter(t => t.status === 'ongoing' || t.status === 'under_review').length,
-    overdue: tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'completed').length,
-    unassigned: tasks.filter(t => t.status === 'unassigned').length,
+    total: taskCounts.all,
+    completed: taskCounts.completed,
+    inProgress: taskCounts.ongoing + taskCounts.under_review,
+    overdue: taskCounts.overdue,
+    unassigned: taskCounts.unassigned,
   };
 
   const completionPercentage = typeof progress?.percent === 'number'
@@ -536,23 +540,8 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onClick }: TaskCardProps) {
-  const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'completed';
+  const overdue = isTaskOverdue(task.dueDate, task.status);
   
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'ongoing':
-        return 'bg-blue-100 text-blue-800';
-      case 'under_review':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'unassigned':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <div
       className="py-4 flex items-start justify-between hover:bg-gray-50 cursor-pointer transition-colors duration-200 px-2 rounded"
@@ -571,9 +560,9 @@ function TaskCard({ task, onClick }: TaskCardProps) {
       </div>
       <div className="flex flex-col items-end gap-2">
         <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(task.status)}`}>
-          {task.status.replace('_', ' ')}
+          {formatStatusLabel(task.status)}
         </span>
-        {isOverdue && (
+        {overdue && (
           <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
             Overdue
           </span>

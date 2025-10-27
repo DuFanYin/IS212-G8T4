@@ -77,6 +77,7 @@ src/
 │   ├── hooks/
 │   │   ├── useMetrics.ts        # Metrics fetching hook
 │   │   ├── useTasks.ts          # Task management hook
+│   │   ├── useTaskFilters.ts    # Task filtering and sorting hook
 │   │   ├── useTimeline.ts       # Timeline management hook
 │   │   └── useUsers.ts          # User management hook
 │   ├── services/                # API service layer (split by domain)
@@ -103,7 +104,9 @@ src/
 │       ├── inactivityTracker.ts # Session management
 │       ├── orgAccess.ts          # Organization access utilities
 │       ├── storage.ts            # Local storage utilities
-│       └── timeline.ts           # Timeline utilities
+│       ├── taskStatusColors.ts  # Task status and priority color utilities
+│       ├── taskSort.ts          # Task sorting and filtering utilities
+│       └── timeline.ts          # Timeline utilities
 ```
 
 ## 🔌 API Integration Status

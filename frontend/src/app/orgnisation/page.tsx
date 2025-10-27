@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import type { User } from '@/lib/types/user';
 import type { Task } from '@/lib/types/task';
@@ -9,23 +9,31 @@ import { type Department, type Team } from '@/lib/services/organization';
 import { storage } from '@/lib/utils/storage';
 import { loadOrgSelectors, getVisibleTasks } from '@/lib/utils/orgAccess';
 import { TaskItem } from '@/components/features/tasks/TaskItem';
-
-type StatusFilter = 'all' | 'unassigned' | 'ongoing' | 'under_review' | 'completed';
-type SortBy = 'due_asc' | 'due_desc';
+import { TaskSortSelect } from '@/components/features/TaskSortSelect';
+import { TaskStatusFilter } from '@/components/features/TaskStatusFilter';
+import { useTaskFilters } from '@/lib/hooks/useTaskFilters';
 
 export default function OrganizationPage() {
   const { user }: { user: User | null } = useUser();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [sortBy, setSortBy] = useState<SortBy>('due_asc');
   const [departments, setDepartments] = useState<Department[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   
   const token = storage.getToken();
+  
+  // Use centralized filtering/sorting hook
+  const {
+    statusFilter,
+    sortBy,
+    setStatusFilter,
+    setSortBy,
+    filteredAndSortedTasks,
+    taskCounts: kpis
+  } = useTaskFilters({ tasks });
 
   useEffect(() => {
     const loadOrganizationData = async () => {
@@ -53,13 +61,12 @@ export default function OrganizationPage() {
         setLoading(true);
         setError(null);
         
-        const backendSortBy = 'dueDate';
-        const backendOrder = sortBy === 'due_desc' ? 'desc' : 'asc';
-        
+        // Fetch ALL tasks without status filter so KPI counts remain accurate
+        // Client-side filtering via useTaskFilters will handle the filtering
+        // Only send sort params to backend for due date sorting
         const res = await getVisibleTasks(token, selectedDepartment, selectedTeam, teams, {
-          status: statusFilter !== 'all' ? statusFilter : undefined,
-          sortBy: backendSortBy,
-          order: backendOrder
+          sortBy: sortBy.startsWith('due_') ? 'dueDate' : undefined,
+          order: sortBy === 'due_desc' ? 'desc' : sortBy === 'due_asc' ? 'asc' : undefined
         });
         
         if (res.status === 'success') {
@@ -77,22 +84,7 @@ export default function OrganizationPage() {
     };
     
     load();
-  }, [user, token, selectedDepartment, selectedTeam, teams, statusFilter, sortBy]);
-
-  const filteredSorted = tasks;
-  
-  const kpis = useMemo(() => {
-    const now = new Date();
-    const counts = {
-      total: tasks.length,
-      unassigned: tasks.filter(t => t.status === 'unassigned').length,
-      ongoing: tasks.filter(t => t.status === 'ongoing').length,
-      under_review: tasks.filter(t => t.status === 'under_review').length,
-      completed: tasks.filter(t => t.status === 'completed').length,
-      overdue: tasks.filter(t => t.dueDate && new Date(t.dueDate) < now && t.status !== 'completed').length,
-    };
-    return counts;
-  }, [tasks]);
+  }, [user, token, selectedDepartment, selectedTeam, teams, sortBy]);
 
   if (!user) {
     return (
@@ -196,44 +188,26 @@ export default function OrganizationPage() {
               {/* Sort by due date (placed in the same row as selectors) */}
               <div className="w-full md:w-auto">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Sort</label>
-                <select
+                <TaskSortSelect
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortBy)}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-48"
-                >
-                  <option value="due_asc">Due Date (Earliest First)</option>
-                  <option value="due_desc">Due Date (Latest First)</option>
-                </select>
+                  onChange={setSortBy}
+                  size="md"
+                  className="w-full md:w-56"
+                />
               </div>
             </div>
           </div>
 
           {/* Task Summary (clickable KPI filters) */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            <button onClick={() => setStatusFilter('all')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='all'?'border-blue-400':'border-slate-200'}`}>
-              <div className="text-xs text-gray-500">All</div>
-              <div className="text-xl font-semibold">{kpis.total}</div>
-            </button>
-            <button onClick={() => setStatusFilter('unassigned')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='unassigned'?'border-blue-400':'border-slate-200'}`}>
-              <div className="text-xs text-gray-500">Unassigned</div>
-              <div className="text-xl font-semibold">{kpis.unassigned}</div>
-            </button>
-            <button onClick={() => setStatusFilter('ongoing')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='ongoing'?'border-blue-400':'border-slate-200'}`}>
-              <div className="text-xs text-gray-500">Ongoing</div>
-              <div className="text-xl font-semibold">{kpis.ongoing}</div>
-            </button>
-            <button onClick={() => setStatusFilter('under_review')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='under_review'?'border-blue-400':'border-slate-200'}`}>
-              <div className="text-xs text-gray-500">Under Review</div>
-              <div className="text-xl font-semibold">{kpis.under_review}</div>
-            </button>
-            <button onClick={() => setStatusFilter('completed')} className={`bg-white rounded shadow p-3 text-left border ${statusFilter==='completed'?'border-blue-400':'border-slate-200'}`}>
-              <div className="text-xs text-gray-500">Completed</div>
-              <div className="text-xl font-semibold">{kpis.completed}</div>
-            </button>
-            <div className="bg-white rounded shadow p-3 text-left border border-slate-200">
-              <div className="text-xs text-gray-500">Overdue</div>
-              <div className="text-xl font-semibold">{kpis.overdue}</div>
-            </div>
+          <div className="mb-6">
+            <TaskStatusFilter
+              value={statusFilter}
+              onChange={setStatusFilter}
+              counts={kpis}
+              variant="buttons"
+              showOverdue={true}
+              overdueCount={kpis.overdue}
+            />
           </div>
 
           {error && (
@@ -242,7 +216,7 @@ export default function OrganizationPage() {
 
           {loading ? (
             <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow">Loading tasks...</div>
-          ) : filteredSorted.length === 0 ? (
+          ) : filteredAndSortedTasks.length === 0 ? (
             <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow">
               No tasks found for the selected organization unit.
             </div>
@@ -251,7 +225,7 @@ export default function OrganizationPage() {
               {/* Controls row removed; KPI boxes are the filter, sort moved above */}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSorted.map((task) => (
+                {filteredAndSortedTasks.map((task) => (
                   <TaskItem key={task.id} task={task} />
                 ))}
               </div>

@@ -1,5 +1,6 @@
 import { useRouter } from 'next/navigation';
 import { Task } from '@/lib/types/task';
+import { getStatusColor, getPriorityColor, isTaskOverdue, formatStatusLabel } from '@/lib/utils/taskStatusColors';
 
 interface TaskItemProps {
   task: Task;
@@ -8,20 +9,6 @@ interface TaskItemProps {
 
 export const TaskItem = ({ task, onClick }: TaskItemProps) => {
   const router = useRouter();
-  const getStatusColor = (status: Task['status']) => {
-    switch (status) {
-      case 'unassigned':
-        return 'bg-gray-100 text-gray-800';
-      case 'ongoing':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'under_review':
-        return 'bg-purple-100 text-purple-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -29,22 +16,6 @@ export const TaskItem = ({ task, onClick }: TaskItemProps) => {
       month: 'short',
       day: 'numeric'
     });
-  };
-
-  const isOverdue = (dueDate: string) => {
-    // Compare by day; consider due date as end-of-day to avoid timezone false positives
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const due = new Date(dueDate);
-    due.setHours(23, 59, 59, 999);
-    return due < today && task.status !== 'completed';
-  };
-
-  const getPriorityColor = (priority: number) => {
-    if (priority >= 8) return 'bg-red-100 text-red-800'; // High priority
-    if (priority >= 6) return 'bg-orange-100 text-orange-800'; // Medium-high
-    if (priority >= 4) return 'bg-yellow-100 text-yellow-800'; // Medium
-    return 'bg-green-100 text-green-800'; // Low priority
   };
 
   const handleViewDetails = (e: React.MouseEvent) => {
@@ -78,9 +49,9 @@ export const TaskItem = ({ task, onClick }: TaskItemProps) => {
               P{(task.priority || 5)}
             </span>
             <span className={`px-2 py-1 rounded text-xs ${getStatusColor(task.status)}`}>
-              {task.status.replace('_', ' ').toUpperCase()}
+              {formatStatusLabel(task.status)}
             </span>
-            {isOverdue(task.dueDate) && (
+            {isTaskOverdue(task.dueDate, task.status) && (
               <span className="px-2 py-1 rounded bg-red-100 text-red-800 text-xs">
                 OVERDUE
               </span>
@@ -96,7 +67,7 @@ export const TaskItem = ({ task, onClick }: TaskItemProps) => {
         {/* Meta Information */}
         <div className="space-y-1 mt-auto">
           <div className="flex items-center justify-between text-xs text-gray-500">
-            <span className={isOverdue(task.dueDate) ? 'text-red-600 font-medium' : ''}>
+            <span className={isTaskOverdue(task.dueDate, task.status) ? 'text-red-600 font-medium' : ''}>
               Due: {formatDate(task.dueDate)}
             </span>
             <span>
