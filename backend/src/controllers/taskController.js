@@ -43,12 +43,22 @@ exports.getProjectTasks = asyncHandler(async (req, res) => {
 });
 
 exports.getTeamTasks = asyncHandler(async (req, res) => {
-  const tasks = await TaskService.getTasksByTeam(req.params.teamId, req.user.userId);
+  const filters = {
+    status: req.query.status,
+    sortBy: req.query.sortBy,
+    order: req.query.order || 'asc'
+  };
+  const tasks = await TaskService.getTasksByTeam(req.params.teamId, req.user.userId, filters);
   sendSuccess(res, tasks);
 });
 
 exports.getDepartmentTasks = asyncHandler(async (req, res) => {
-  const tasks = await TaskService.getTasksByDepartment(req.params.departmentId, req.user.userId);
+  const filters = {
+    status: req.query.status,
+    sortBy: req.query.sortBy,
+    order: req.query.order || 'asc'
+  };
+  const tasks = await TaskService.getTasksByDepartment(req.params.departmentId, req.user.userId, filters);
   sendSuccess(res, tasks);
 });
 

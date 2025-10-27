@@ -24,12 +24,28 @@ export const taskService = {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
-  getTasksByTeam: async (token: string, teamId: string): Promise<TasksResponse> => {
-    const res = await fetch(`${API_URL}/tasks/team/${teamId}`, { headers: { Authorization: `Bearer ${token}` } });
+  getTasksByTeam: async (token: string, teamId: string, filters?: { status?: string; sortBy?: string; order?: string }): Promise<TasksResponse> => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.order) params.append('order', filters.order);
+    
+    const queryString = params.toString();
+    const url = queryString ? `${API_URL}/tasks/team/${teamId}?${queryString}` : `${API_URL}/tasks/team/${teamId}`;
+    
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
-  getTasksByDepartment: async (token: string, departmentId: string): Promise<TasksResponse> => {
-    const res = await fetch(`${API_URL}/tasks/department/${departmentId}`, { headers: { Authorization: `Bearer ${token}` } });
+  getTasksByDepartment: async (token: string, departmentId: string, filters?: { status?: string; sortBy?: string; order?: string }): Promise<TasksResponse> => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.order) params.append('order', filters.order);
+    
+    const queryString = params.toString();
+    const url = queryString ? `${API_URL}/tasks/department/${departmentId}?${queryString}` : `${API_URL}/tasks/department/${departmentId}`;
+    
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
   getTaskById: async (token: string, taskId: string): Promise<TaskResponse> => {

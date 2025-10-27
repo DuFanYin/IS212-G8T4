@@ -59,7 +59,7 @@ function useTimelineBounds(items: TimelineItem[]) {
   }, [bounds]);
 
   const formatDate = (date: Date) =>
-    date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    date.toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit' });
 
   const dateHeaderLabels = useMemo<ReactNode[]>(() => {
     const labels: ReactNode[] = [];
