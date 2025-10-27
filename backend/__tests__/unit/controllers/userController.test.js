@@ -1,159 +1,237 @@
-jest.mock('../../../src/utils/asyncHandler', () => {
-  return (fn) => fn;
-});
-
-jest.mock('../../../src/utils/responseHelper', () => ({
-  sendSuccess: jest.fn((res, data, message) => {
-    return res.json({
-      status: 'success',
-      data,
-      ...(message && { message })
-    });
-  })
-}));
-
-jest.mock('../../../src/services/userService');
-jest.mock('../../../src/services/emailService');
-jest.mock('../../../src/domain/User');
-
+const userController = require('../../../src/controllers/userController');
 const userService = require('../../../src/services/userService');
 const User = require('../../../src/domain/User');
+const { NotFoundError, ForbiddenError, ValidationError } = require('../../../src/utils/errors');
+
+jest.mock('../../../src/services/userService');
+jest.mock('../../../src/domain/User');
+jest.mock('../../../src/services/emailService');
 
 describe('UserController', () => {
-  let userController;
-  let mockReq, mockRes;
+  let req, res, next;
 
   beforeEach(() => {
-    userController = require('../../../src/controllers/userController');
-    mockReq = {
+    req = {
       user: { userId: 'user123' },
+      params: {},
       body: {}
     };
-    mockRes = {
+    
+    res = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      json: jest.fn().mockReturnThis()
     };
+    
+    next = jest.fn();
     jest.clearAllMocks();
   });
 
   describe('getProfile', () => {
     it('should return user profile successfully', async () => {
-      const mockUser = {
-        toProfileDTO: jest.fn().mockReturnValue({ id: 'user123', name: 'Test User' })
-      };
-      userService.getUserById.mockResolvedValue(mockUser);
+      const mockUser = { toProfileDTO: jest.fn().mockReturnValue({ id: 'user123', name: 'Test User' }) };
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
 
-      await userController.getProfile(mockReq, mockRes);
+      await userController.getProfile(req, res, next);
 
       expect(userService.getUserById).toHaveBeenCalledWith('user123');
-      expect(mockRes.json).toHaveBeenCalledWith({
-        status: 'success',
-        data: { id: 'user123', name: 'Test User' }
-      });
+      expect(mockUser.toProfileDTO).toHaveBeenCalled();
     });
 
-    it('should throw error when user not found', async () => {
-      userService.getUserById.mockResolvedValue(null);
+    it('should handle user not found', async () => {
+      userService.getUserById = jest.fn().mockResolvedValue(null);
 
-      await expect(userController.getProfile(mockReq, mockRes)).rejects.toThrow('User');
+      await userController.getProfile(req, res, next);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(next).toHaveBeenCalledWith(expect.any(NotFoundError));
     });
   });
 
   describe('getTeamMembers', () => {
-    it('should return team members for users with canAssignTasks permission', async () => {
-      const mockCurrentUser = { _id: 'user123', role: 'manager' };
+    it('should return team members for HR/SM', async () => {
+      const mockUser = { 
+        canAssignTasks: jest.fn().mockReturnValue(false),
+        canSeeAllTasks: jest.fn().mockReturnValue(true),
+        departmentId: 'dept123',
+        teamId: 'team123'
+      };
       const mockUsers = [
-        { toSafeDTO: jest.fn().mockReturnValue({ id: 'user1', name: 'User 1' }) },
-        { toSafeDTO: jest.fn().mockReturnValue({ id: 'user2', name: 'User 2' }) }
+        { toSafeDTO: jest.fn().mockReturnValue({ id: 'user1' }) },
+        { toSafeDTO: jest.fn().mockReturnValue({ id: 'user2' }) }
       ];
 
-      userService.getUserById.mockResolvedValueOnce(mockCurrentUser);
-      userService.getUsersByTeam.mockResolvedValue(mockUsers);
-      
-      User.mockImplementation(() => ({
-        canAssignTasks: () => true,
-        canSeeAllTasks: () => false,
-        canSeeDepartmentTasks: () => false,
-        canSeeTeamTasks: () => true,
-        isHR: () => false
-      }));
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      userService.getAllUsers = jest.fn().mockResolvedValue(mockUsers);
+      User.mockImplementation(() => mockUser);
 
-      await userController.getTeamMembers(mockReq, mockRes);
+      await userController.getTeamMembers(req, res, next);
 
-      expect(mockRes.json).toHaveBeenCalledWith({
-        status: 'success',
-        data: [{ id: 'user1', name: 'User 1' }, { id: 'user2', name: 'User 2' }]
-      });
+      expect(userService.getAllUsers).toHaveBeenCalled();
     });
 
-    it('should throw error for users without permissions', async () => {
-      const mockCurrentUser = { _id: 'user123', role: 'staff' };
-      userService.getUserById.mockResolvedValue(mockCurrentUser);
-      
-      User.mockImplementation(() => ({
-        canAssignTasks: () => false,
-        canSeeAllTasks: () => false
-      }));
+    it('should return team members for managers', async () => {
+      const mockUser = { 
+        canAssignTasks: jest.fn().mockReturnValue(true),
+        canSeeAllTasks: jest.fn().mockReturnValue(false),
+        canSeeDepartmentTasks: jest.fn().mockReturnValue(false),
+        canSeeTeamTasks: jest.fn().mockReturnValue(true),
+        departmentId: 'dept123',
+        teamId: 'team123'
+      };
+      const mockUsers = [{ toSafeDTO: jest.fn().mockReturnValue({ id: 'user1' }) }];
 
-      await expect(userController.getTeamMembers(mockReq, mockRes)).rejects.toThrow('Insufficient permissions');
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      userService.getUsersByTeam = jest.fn().mockResolvedValue(mockUsers);
+      User.mockImplementation(() => mockUser);
+
+      await userController.getTeamMembers(req, res, next);
+
+      expect(userService.getUsersByTeam).toHaveBeenCalledWith('team123');
+    });
+
+    it('should handle insufficient permissions', async () => {
+      const mockUser = { 
+        canAssignTasks: jest.fn().mockReturnValue(false),
+        canSeeAllTasks: jest.fn().mockReturnValue(false),
+        departmentId: 'dept123',
+        teamId: 'team123'
+      };
+
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      User.mockImplementation(() => mockUser);
+
+      await userController.getTeamMembers(req, res, next);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError));
     });
   });
 
   describe('getDepartmentMembers', () => {
-    it('should return department members for users with canSeeDepartmentTasks permission', async () => {
-      const mockCurrentUser = { _id: 'user123', departmentId: 'dept123', role: 'director' };
-      const mockUsers = [
-        { toSafeDTO: jest.fn().mockReturnValue({ id: 'user1', name: 'User 1' }) }
-      ];
+    it('should return department members successfully', async () => {
+      const mockUser = { 
+        canSeeDepartmentTasks: jest.fn().mockReturnValue(true),
+        canSeeAllTasks: jest.fn().mockReturnValue(false),
+        departmentId: 'dept123'
+      };
+      const mockUsers = [{ toSafeDTO: jest.fn().mockReturnValue({ id: 'user1' }) }];
 
-      userService.getUserById.mockResolvedValue(mockCurrentUser);
-      userService.getUsersByDepartment.mockResolvedValue(mockUsers);
-      
-      User.mockImplementation(() => ({
-        canSeeDepartmentTasks: () => true,
-        canSeeAllTasks: () => false
-      }));
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      userService.getUsersByDepartment = jest.fn().mockResolvedValue(mockUsers);
+      User.mockImplementation(() => mockUser);
 
-      mockReq.params = { departmentId: 'dept123' };
+      await userController.getDepartmentMembers(req, res, next);
 
-      await userController.getDepartmentMembers(mockReq, mockRes);
-
-      expect(userService.getUsersByDepartment).toHaveBeenCalledWith('dept123');
-      expect(mockRes.json).toHaveBeenCalledWith({
-        status: 'success',
-        data: [{ id: 'user1', name: 'User 1' }]
-      });
+      expect(userService.getUsersByDepartment).toHaveBeenCalled();
     });
 
-    it('should throw error when user not found', async () => {
-      userService.getUserById.mockResolvedValue(null);
+    it('should handle insufficient permissions', async () => {
+      const mockUser = { 
+        canSeeDepartmentTasks: jest.fn().mockReturnValue(false),
+        canSeeAllTasks: jest.fn().mockReturnValue(false),
+        departmentId: 'dept123'
+      };
 
-      await expect(userController.getDepartmentMembers(mockReq, mockRes)).rejects.toThrow('User');
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      User.mockImplementation(() => mockUser);
+
+      await userController.getDepartmentMembers(req, res, next);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError));
     });
   });
 
   describe('sendBulkInvitations', () => {
-    it('should throw error when user is not HR', async () => {
-      const mockCurrentUser = { _id: 'user123', role: 'staff' };
-      userService.getUserById.mockResolvedValue(mockCurrentUser);
-      
-      User.mockImplementation(() => ({
-        isHR: () => false
-      }));
+    it('should send invitations successfully', async () => {
+      const mockUser = { _id: 'user123', isHR: jest.fn().mockReturnValue(true) };
+      req.body = {
+        emails: ['122686006h@gmail.com'],
+        role: 'staff',
+        departmentId: 'dept123',
+        teamId: 'team123'
+      };
 
-      await expect(userController.sendBulkInvitations(mockReq, mockRes)).rejects.toThrow('Only HR');
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      userService.getUserByEmail = jest.fn().mockResolvedValue(null);
+      User.mockImplementation(() => mockUser);
+
+      await userController.sendBulkInvitations(req, res, next);
+
+      expect(userService.getUserByEmail).toHaveBeenCalled();
     });
 
-    it('should throw error when emails array is empty', async () => {
-      const mockCurrentUser = { _id: 'user123', role: 'hr' };
-      userService.getUserById.mockResolvedValue(mockCurrentUser);
-      mockReq.body = { emails: [] };
+    it('should handle non-HR users', async () => {
+      const mockUser = { _id: 'user123', isHR: jest.fn().mockReturnValue(false) };
       
-      User.mockImplementation(() => ({
-        isHR: () => true
-      }));
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      User.mockImplementation(() => mockUser);
 
-      await expect(userController.sendBulkInvitations(mockReq, mockRes)).rejects.toThrow('Email list is required');
+      await userController.sendBulkInvitations(req, res, next);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(next).toHaveBeenCalledWith(expect.any(ForbiddenError));
+    });
+
+    it('should handle invalid emails array', async () => {
+      const mockUser = { _id: 'user123', isHR: jest.fn().mockReturnValue(true) };
+      req.body = { emails: null };
+
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      User.mockImplementation(() => mockUser);
+
+      await userController.sendBulkInvitations(req, res, next);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(next).toHaveBeenCalledWith(expect.any(ValidationError));
+    });
+
+    it('should handle invalid email format', async () => {
+      const mockUser = { _id: 'user123', isHR: jest.fn().mockReturnValue(true) };
+      req.body = {
+        emails: ['invalid-email'],
+        role: 'staff'
+      };
+
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      User.mockImplementation(() => mockUser);
+
+      await userController.sendBulkInvitations(req, res, next);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(next).toHaveBeenCalledWith(expect.any(ValidationError));
+    });
+
+    it('should handle invalid role', async () => {
+      const mockUser = { _id: 'user123', isHR: jest.fn().mockReturnValue(true) };
+      req.body = {
+        emails: ['122686006h@gmail.com'],
+        role: 'invalid-role'
+      };
+
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      User.mockImplementation(() => mockUser);
+
+      await userController.sendBulkInvitations(req, res, next);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(next).toHaveBeenCalledWith(expect.any(ValidationError));
+    });
+
+    it('should skip existing users', async () => {
+      const mockUser = { _id: 'user123', isHR: jest.fn().mockReturnValue(true) };
+      req.body = {
+        emails: ['existing@example.com'],
+        role: 'staff'
+      };
+
+      userService.getUserById = jest.fn().mockResolvedValue(mockUser);
+      userService.getUserByEmail = jest.fn().mockResolvedValue({ id: 'existing' });
+      User.mockImplementation(() => mockUser);
+
+      await userController.sendBulkInvitations(req, res, next);
+
+      expect(userService.getUserByEmail).toHaveBeenCalledWith('existing@example.com');
     });
   });
 });

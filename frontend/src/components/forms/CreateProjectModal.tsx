@@ -1,17 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useUser } from '@/contexts/UserContext';
+import { loadOrgSelectors } from '@/lib/utils/orgAccess';
+import type { Department } from '@/lib/services/organization';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (data: { name: string; description?: string; deadline?: string }) => Promise<void>;
+  onCreate: (data: { name: string; description?: string; deadline?: string; departmentId?: string; collaboratorIds?: string[] }) => Promise<void>;
 }
 
 export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectModalProps) => {
+  const { user } = useUser();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [deadline, setDeadline] = useState<string>('');
+  const [departmentId, setDepartmentId] = useState<string>('');
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load departments when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadDepartments = async () => {
+      if (!user?.token) return;
+      try {
+        const res = await loadOrgSelectors({ token: user.token, user });
+        setDepartments(res.departments || []);
+        if (user.departmentId) {
+          setDepartmentId(user.departmentId);
+        }
+      } catch (err) {
+        console.error('Failed to load departments:', err);
+      }
+    };
+    loadDepartments();
+  }, [isOpen, user]);
 
   if (!isOpen) return null;
 
@@ -25,8 +49,16 @@ export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectM
     try {
       setLoading(true);
       const isoDeadline = deadline ? new Date(deadline).toISOString() : undefined;
-      await onCreate({ name, description: description || undefined, deadline: isoDeadline });
-      setName(''); setDescription(''); setDeadline('');
+      await onCreate({ 
+        name, 
+        description: description || undefined, 
+        deadline: isoDeadline,
+        departmentId: departmentId || undefined
+      });
+      setName(''); 
+      setDescription(''); 
+      setDeadline('');
+      setDepartmentId('');
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create project');
@@ -43,6 +75,14 @@ export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectM
         <form onSubmit={handleSubmit} className="space-y-3">
           <input className="w-full border rounded p-2" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
           <input className="w-full border rounded p-2" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          {departments.length > 0 && (
+            <select className="w-full border rounded p-2" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
+              <option value="">Select Department (Optional)</option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
+              ))}
+            </select>
+          )}
           <input className="w-full border rounded p-2" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
           <div className="flex justify-end space-x-2 pt-2">
             <button type="button" onClick={onClose} className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">Cancel</button>

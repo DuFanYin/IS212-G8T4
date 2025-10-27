@@ -173,7 +173,7 @@ export default function ProjectsTasksPage() {
     }
   };
   
-  const handleCreateProject = async (data: { name: string; description?: string; deadline?: string; collaborators?: string[] }) => {
+  const handleCreateProject = async (data: { name: string; description?: string; deadline?: string; departmentId?: string; collaboratorIds?: string[] }) => {
     if (!token) return;
     const res = await projectService.createProject(token, data);
     if (res.status === 'success' && res.data) {

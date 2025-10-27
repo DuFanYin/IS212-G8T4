@@ -361,59 +361,126 @@ function ProjectCollaboratorPicker({ project, onUpdated }: { project: Project; o
   const { user }: { user: User | null } = useUser();
   const token = storage.getToken();
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [showRoleModal, setShowRoleModal] = useState<boolean>(false);
+  const [selectedRole, setSelectedRole] = useState<'viewer' | 'editor'>('viewer');
   const [adding, setAdding] = useState<boolean>(false);
   const [resetTick, setResetTick] = useState<number>(0);
+  
   if (!user) return null;
+  
+  const handleAddCollaborator = async () => {
+    if (!token || !selectedUserId || adding) return;
+    setAdding(true);
+    try {
+      const id = (project.id || project._id) as string;
+      const trimmed = selectedUserId.trim();
+      if (!trimmed) return;
+      
+      // First add the collaborator
+      const addRes = await projectService.addCollaborator(token, id, trimmed);
+      
+      if (addRes?.status === 'success' && addRes.data) {
+        // Then assign role
+        await projectService.assignRole(token, id, trimmed, selectedRole);
+        
+        // Refresh project data
+        const res = await projectService.getProjects(token);
+        const list = res.data || [];
+        const updated = list.find((p) => (p.id || p._id) === id) || addRes.data;
+        onUpdated(updated as unknown as Project);
+      } else {
+        alert(addRes?.message || 'Failed to add collaborator');
+      }
+      setSelectedUserId('');
+      setShowRoleModal(false);
+      setResetTick((t) => t + 1);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to add collaborator');
+    } finally {
+      setAdding(false);
+    }
+  };
+  
   return (
-    <div className="flex items-center gap-2 w-full">
-      <div className="flex-1">
-        <UserSelector
-          token={token || ''}
-          userRole={user.role}
-          userDepartmentId={user.departmentId}
-          placeholder="Select collaborator..."
-          resetTrigger={resetTick}
-          onUserSelect={(u) => setSelectedUserId(u.id)}
-          forceDepartmentScope={true}
-          departmentIdOverride={project.departmentId as unknown as string}
-        />
+    <>
+      <div className="flex items-center gap-2 w-full">
+        <div className="flex-1">
+          <UserSelector
+            token={token || ''}
+            userRole={user.role}
+            userDepartmentId={user.departmentId}
+            placeholder="Select collaborator..."
+            resetTrigger={resetTick}
+            onUserSelect={(u) => setSelectedUserId(u.id)}
+            forceDepartmentScope={true}
+            departmentIdOverride={project.departmentId as unknown as string}
+          />
+        </div>
+        <button
+          type="button"
+          className="px-3 py-2 text-sm rounded bg-gray-900 text-white disabled:opacity-50"
+          disabled={!selectedUserId || adding}
+          onClick={() => {
+            if (selectedUserId) setShowRoleModal(true);
+          }}
+        >
+          {adding ? 'Adding...' : 'Add'}
+        </button>
       </div>
-      <button
-        type="button"
-        className="px-3 py-2 text-sm rounded bg-gray-900 text-white disabled:opacity-50"
-        disabled={!selectedUserId || adding}
-        onClick={async () => {
-          if (!token || !selectedUserId || adding) return;
-          setAdding(true);
-          try {
-            const id = (project.id || project._id) as string;
-            const trimmed = selectedUserId.trim();
-            if (!trimmed) return;
-            const addRes = await projectService.addCollaborator(token, id, trimmed);
-            if (addRes?.status === 'success' && addRes.data) {
-              onUpdated(addRes.data as unknown as Project);
-            } else {
-              // fallback: refresh list, else show message
-              const res = await projectService.getProjects(token);
-              const list = res.data || [];
-              const updated = list.find((p) => (p.id || p._id) === id) || project;
-              onUpdated(updated);
-              if (!addRes || addRes.status !== 'success') {
-                alert(addRes?.message || 'Failed to add collaborator');
-              }
-            }
-            setSelectedUserId('');
-            setResetTick((t) => t + 1);
-          } catch (e) {
-            alert(e instanceof Error ? e.message : 'Failed to add collaborator');
-          } finally {
-            setAdding(false);
-          }
-        }}
-      >
-        {adding ? 'Adding...' : 'Add'}
-      </button>
-    </div>
+      
+      {/* Role Selection Modal */}
+      {showRoleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Choose Role for New Collaborator</h2>
+            <div className="space-y-2 mb-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="role"
+                  value="viewer"
+                  checked={selectedRole === 'viewer'}
+                  onChange={(e) => setSelectedRole(e.target.value as 'viewer')}
+                  className="mr-2"
+                />
+                <span>Viewer - Can view project details and tasks</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="role"
+                  value="editor"
+                  checked={selectedRole === 'editor'}
+                  onChange={(e) => setSelectedRole(e.target.value as 'editor')}
+                  className="mr-2"
+                />
+                <span>Editor - Can edit project details and manage tasks</span>
+              </label>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRoleModal(false);
+                  setSelectedUserId('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAddCollaborator}
+                disabled={adding}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {adding ? 'Adding...' : 'Add & Assign Role'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

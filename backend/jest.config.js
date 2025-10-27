@@ -6,7 +6,8 @@ module.exports = {
     '!src/server.js',
     '!src/db/connect.js',
     '!src/db/seed/**/*.js',
-    '!src/db/seedData.js'
+    '!src/db/seedData.js',
+    '!src/scripts/**/*.js'
   ],
   coverageDirectory: 'coverage',
   setupFilesAfterEnv: ['./__tests__/setup.js'],

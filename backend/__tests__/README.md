@@ -622,10 +622,103 @@ npm test -- --watch
 ```
 
 ### Coverage Results
-- **Statements**: 85.65%
-- **Branches**: 64.43% (improved from ~55%)
-- **Functions**: 88.75%
-- **Lines**: 86.76%
+- **Statements**: 76.94%
+- **Branches**: 56.17%
+- **Functions**: 76.22%
+- **Lines**: 78.53%
+
+### Missing Test Coverage
+
+The following areas need additional test coverage:
+
+#### Controllers (Missing Tests)
+- **metricsController** (43.75% coverage) - All methods need integration tests:
+  - `GET /api/metrics/departments` - Get department metrics
+  - `GET /api/metrics/teams` - Get team metrics
+  - `GET /api/metrics/teams/:teamId` - Get single team metrics
+  - `GET /api/metrics/personal` - Get personal metrics
+
+- **notificationController** (45.45% coverage) - All methods need integration tests:
+  - `POST /api/notifications` - Create notification
+  - `GET /api/notifications` - Get user notifications
+
+- **userController** (54.65% coverage) - Missing tests for:
+  - Department members endpoint coverage gaps
+  - Send bulk invitations with different scenarios
+
+- **projectController** (78.78% coverage) - Missing tests for:
+  - Project stats endpoint edge cases
+  - Assign role functionality
+  - Collaborator operations edge cases
+
+#### Services (Missing Tests)
+- **metricsService** (14.28% coverage) - Critical gaps:
+  - All aggregation methods need comprehensive unit tests
+  - Department/Team/Personal metrics calculation
+  - Error handling for failed queries
+
+- **emailService** (17.64% coverage) - Needs tests:
+  - Send password reset email
+  - Send invitation email
+  - Email template rendering
+  - SMTP configuration validation
+
+- **projectService** (70.33% coverage) - Missing tests for:
+  - Project stats aggregation
+  - Advanced collaborator management
+  - Multi-project task handling
+
+- **taskService** (74.94% coverage) - Missing tests for:
+  - Attachment operations (add/remove)
+  - Recurring task logic
+  - Advanced filtering and sorting edge cases
+  - Task visibility complex scenarios
+
+#### Middleware (Missing Tests)
+- **roleMiddleware** (32.25% coverage) - Major gaps:
+  - `requireRole` middleware tests
+  - `requireTaskManagement` middleware tests
+  - Permission check helper functions
+  - Role hierarchy comparisons
+
+- **errorHandler** (84% coverage) - Minor gaps:
+  - Edge case error mappings
+  - Custom error type handling
+
+#### Repositories (Missing Tests)
+- **TaskRepository** (82.22% coverage) - Missing tests for:
+  - Complex query operations
+  - Multi-project task filtering
+  - Attachment operations
+
+- **ProjectRepository** (62.26% coverage) - Missing tests for:
+  - Collaborator role management
+  - Legacy format compatibility
+  - Advanced search and filtering
+
+#### Routes (Missing Tests)
+- **activityLogRoutes** (0% coverage) - No tests
+  - Need basic route mounting tests
+
+### Recommended Test Additions
+
+**High Priority:**
+1. Integration tests for metricsController (all 4 endpoints)
+2. Unit tests for metricsService (all aggregation methods)
+3. Integration tests for notificationController
+4. Middleware tests for roleMiddleware (all middleware factories)
+5. Email service tests with mocking
+
+**Medium Priority:**
+6. Task attachment endpoint tests
+7. Recurring task logic tests
+8. Advanced project collaborator role tests
+9. Error handler edge case tests
+
+**Low Priority:**
+10. Route mounting tests
+11. Advanced filtering edge cases
+12. Complex aggregation scenarios
 
 ### Test Environment
 - **Database**: Uses test database with seeded data

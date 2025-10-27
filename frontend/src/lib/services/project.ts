@@ -10,7 +10,7 @@ export const projectService = {
     const res = await fetch(`${API_URL}/projects/departments/${departmentId}`, { headers: { Authorization: `Bearer ${token}` } });
     return res.json();
   },
-  createProject: async (token: string, data: { name: string; description?: string; deadline?: string; collaborators?: string[] }): Promise<ProjectResponse> => {
+  createProject: async (token: string, data: { name: string; description?: string; deadline?: string; departmentId?: string; collaboratorIds?: string[] }): Promise<ProjectResponse> => {
     const res = await fetch(`${API_URL}/projects`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
