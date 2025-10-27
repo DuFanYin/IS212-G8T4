@@ -20,6 +20,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const today = new Date().toISOString().split('T')[0];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +130,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
               name="dueDate"
               value={formData.dueDate}
               onChange={handleChange}
+              min={today}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

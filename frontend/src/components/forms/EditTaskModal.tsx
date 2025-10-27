@@ -12,6 +12,7 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
   const [formData, setFormData] = useState<UpdateTaskRequest>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     if (task) {
@@ -112,6 +113,7 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
               name="dueDate"
               value={formData.dueDate ? formData.dueDate.substring(0, 10) : ''}
               onChange={handleChange}
+              min={today}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

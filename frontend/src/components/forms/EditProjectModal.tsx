@@ -14,6 +14,7 @@ export const EditProjectModal = ({ isOpen, project, onClose, onSave }: EditProje
   const [deadline, setDeadline] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     if (project) {
@@ -49,7 +50,7 @@ export const EditProjectModal = ({ isOpen, project, onClose, onSave }: EditProje
         <form onSubmit={handleSubmit} className="space-y-3">
           <input className="w-full border rounded p-2" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
           <input className="w-full border rounded p-2" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <input className="w-full border rounded p-2" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          <input className="w-full border rounded p-2" type="date" value={deadline} min={today} onChange={(e) => setDeadline(e.target.value)} />
           <div className="flex justify-end space-x-2 pt-2">
             <button type="button" onClick={onClose} className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">Cancel</button>
             <button type="submit" disabled={loading} className="px-3 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50">{loading ? 'Saving...' : 'Save'}</button>
