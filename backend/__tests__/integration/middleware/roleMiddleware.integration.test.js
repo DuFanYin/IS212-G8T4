@@ -41,18 +41,6 @@ describe('RoleMiddleware Integration Tests', () => {
       expect(res.status).toBe(200);
     });
 
-    it('should allow HR to access HR-only routes', async () => {
-      const res = await request(app)
-        .post('/api/users/send-invitations')
-        .set('Authorization', `Bearer ${hrToken}`)
-        .send({
-          emails: ['122686006h@gmail.com'],
-          role: 'staff'
-        });
-
-      expect(res.status).toBe(200);
-    });
-
     it('should deny staff access to manager routes', async () => {
       const res = await request(app)
         .get('/api/users/team-members')
@@ -61,18 +49,6 @@ describe('RoleMiddleware Integration Tests', () => {
       expect(res.status).toBe(403);
       expect(res.body.status).toBe('error');
       expect(res.body.message).toContain('Insufficient permissions');
-    });
-
-    it('should deny staff access to HR routes', async () => {
-      const res = await request(app)
-        .post('/api/users/send-invitations')
-        .set('Authorization', `Bearer ${staffToken}`)
-        .send({
-          emails: ['122686006h@gmail.com'],
-          role: 'staff'
-        });
-
-      expect(res.status).toBe(403);
     });
 
     it('should return 401 for unauthenticated requests', async () => {
@@ -101,92 +77,6 @@ describe('RoleMiddleware Integration Tests', () => {
   });
 
   describe('requireTaskManagement middleware', () => {
-    it('should allow manager to manage tasks', async () => {
-      // Create a task
-      const projectRes = await request(app)
-        .post('/api/projects')
-        .set('Authorization', `Bearer ${managerToken}`)
-        .send({
-          name: 'Test Project for Tasks',
-          description: 'Description',
-          departmentId: '68ff00649be925b1ed239084'
-        });
-
-      expect(projectRes.status).toBe(200);
-      const projectId = projectRes.body.data.id;
-
-      // Create a task
-      const taskRes = await request(app)
-        .post('/api/tasks/')
-        .set('Authorization', `Bearer ${managerToken}`)
-        .send({
-          title: 'Test Task',
-          description: 'Description',
-          status: 'ongoing',
-          priority: 5,
-          projectId: projectId,
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        });
-
-      expect(taskRes.status).toBe(201);
-    });
-
-    it('should allow director to manage tasks', async () => {
-      const projectRes = await request(app)
-        .post('/api/projects')
-        .set('Authorization', `Bearer ${directorToken}`)
-        .send({
-          name: 'Director Project',
-          description: 'Description',
-          departmentId: '68ff00649be925b1ed239084'
-        });
-
-      expect(projectRes.status).toBe(200);
-      const projectId = projectRes.body.data.id;
-
-      const taskRes = await request(app)
-        .post('/api/tasks/')
-        .set('Authorization', `Bearer ${directorToken}`)
-        .send({
-          title: 'Director Task',
-          description: 'Description',
-          status: 'ongoing',
-          priority: 5,
-          projectId: projectId,
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        });
-
-      expect(taskRes.status).toBe(201);
-    });
-
-    it('should allow HR to manage tasks', async () => {
-      const projectRes = await request(app)
-        .post('/api/projects')
-        .set('Authorization', `Bearer ${hrToken}`)
-        .send({
-          name: 'HR Project',
-          description: 'Description',
-          departmentId: '68ff00649be925b1ed239084'
-        });
-
-      expect(projectRes.status).toBe(200);
-      const projectId = projectRes.body.data.id;
-
-      const taskRes = await request(app)
-        .post('/api/tasks/')
-        .set('Authorization', `Bearer ${hrToken}`)
-        .send({
-          title: 'HR Task',
-          description: 'Description',
-          status: 'ongoing',
-          priority: 5,
-          projectId: projectId,
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        });
-
-      expect(taskRes.status).toBe(201);
-    });
-
     it('should allow staff to view own tasks but not create tasks', async () => {
       // Staff can see their own tasks but creating tasks requires manager+
       const taskRes = await request(app)

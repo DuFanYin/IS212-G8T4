@@ -57,7 +57,7 @@ __tests__/
 ```
 
 
-## All Test Files and Cases (379)
+## All Test Files and Cases (502)
 
 ### Authentication & Security Tests
 
@@ -115,6 +115,72 @@ __tests__/
   - GET /api/organization/departments/:departmentId/teams › should deny managers from viewing department teams
   - GET /api/organization/departments/:departmentId/teams › should require authentication
   - GET /api/organization/departments/:departmentId/teams › should handle non-existent department gracefully
+
+### Metrics Management Tests
+
+- metrics/departments.test.js (4)
+  - GET /api/metrics/departments › should return department metrics for SM users
+  - GET /api/metrics/departments › should return department metrics for HR users
+  - GET /api/metrics/departments › should deny access for non-SM/HR users
+  - GET /api/metrics/departments › should require authentication
+
+- metrics/teams.test.js (6)
+  - GET /api/metrics/teams › should return team metrics for director users
+  - GET /api/metrics/teams › should return team metrics for SM users
+  - GET /api/metrics/teams › should return team metrics for HR users
+  - GET /api/metrics/teams › should deny access for manager users
+  - GET /api/metrics/teams › should deny access for staff users
+  - GET /api/metrics/teams › should require authentication
+
+- metrics/single-team.test.js (5)
+  - GET /api/metrics/teams/:teamId › should return team metrics for manager users
+  - GET /api/metrics/teams/:teamId › should return team metrics for SM users
+  - GET /api/metrics/teams/:teamId › should return team metrics for HR users
+  - GET /api/metrics/teams/:teamId › should deny access for non-manager users
+  - GET /api/metrics/teams/:teamId › should require authentication
+
+- metrics/personal.test.js (4)
+  - GET /api/metrics/personal › should return personal metrics for staff users
+  - GET /api/metrics/personal › should return personal metrics for manager users
+  - GET /api/metrics/personal › should return personal metrics for SM users
+  - GET /api/metrics/personal › should require authentication
+
+### Notifications Tests
+
+- notifications/create.test.js (3)
+  - POST /api/notifications › should create notification with valid data
+  - POST /api/notifications › should require authentication
+  - POST /api/notifications › should validate required fields
+
+- notifications/get.test.js (4)
+  - GET /api/notifications › should return notifications for authenticated user
+  - GET /api/notifications › should return notifications for manager user
+  - GET /api/notifications › should return notifications for SM user
+  - GET /api/notifications › should require authentication
+
+### Middleware Tests
+
+- middleware/roleMiddleware.integration.test.js (10)
+  - requireRole › should allow manager to access manager-only routes
+  - requireRole › should allow director to access director routes
+  - requireRole › should deny staff access to manager routes
+  - requireRole › should return 401 for unauthenticated requests
+  - requireRole › should allow HR to access team members (can see all)
+  - requireRole › should allow manager with canAssignTasks to access team members
+  - requireTaskManagement › should allow staff to view own tasks but not create tasks
+  - ROLE_HIERARCHY › should have correct hierarchy values
+  - ROLE_HIERARCHY › should correctly determine role hierarchy
+
+### User Controller Integration Tests
+
+- users/userController.integration.test.js (6)
+  - GET /api/users/profile › should return user profile for authenticated user
+  - GET /api/users/profile › should return 401 for unauthenticated user
+  - GET /api/users/team-members › should return team members for manager
+  - GET /api/users/team-members › should return 403 for staff user
+  - GET /api/users/team-members › should return team members for HR
+  - GET /api/users/department-members/:departmentId › should return department members for director
+  - GET /api/users/department-members/:departmentId › should return 403 for staff user
 
 ### Task Management Tests
 
@@ -187,6 +253,19 @@ __tests__/
   - should return tasks by project including those from projects[]
   - should compute project progress including multi-project tasks
 
+- tasks/attachments.test.js (6)
+  - Task Attachments API › should allow a staff user to upload an attachment and save it in storage/<taskId>/
+  - Task Attachments API › should reject unsupported file formats
+  - Task Attachments API › should prevent unauthorized users from adding attachments
+  - Task Attachments API › should allow task owner to remove an attachment
+  - Task Attachments API › should allow a manager collaborator to remove an attachment
+  - Task Attachments API › should not allow unrelated users to remove attachments
+
+- tasks/recurring-tasks.test.js (3)
+  - should create a recurring task
+  - should update recurrence of a task
+  - should create a new recurring task when completed
+
 ### Subtask Management Tests
 
 - subtasks/create.test.js (2)
@@ -255,11 +334,11 @@ __tests__/
 
 ### Activity Log Tests
 
-- activity_log/list-log.test.js
+- activity_log/list-log.test.js (2)
   - GET /api/activity-log › should list recent activity entries with pagination
   - GET /api/activity-log › should require authentication
 
-- activity_log/task-log.test.js
+- activity_log/task-log.test.js (2)
   - should log create/update/assign/status changes for tasks
   - should return activity entry IDs on task responses where applicable
 
@@ -489,6 +568,105 @@ __tests__/
   - OrganizationService › getAllTeams › should return all teams with statistics
   - OrganizationService › getAllTeams › should handle errors when fetching all teams
 
+- unit/services/emailService.test.js (4)
+  - EmailService › sendPasswordResetEmail › should send password reset email successfully
+  - EmailService › sendPasswordResetEmail › should handle email errors gracefully
+  - EmailService › sendInvitationEmail › should send invitation email successfully
+  - EmailService › sendInvitationEmail › should handle different roles
+
+- unit/services/emailService.error.test.js (4)
+  - EmailService › sendPasswordResetEmail › should handle sendMail errors
+  - EmailService › sendPasswordResetEmail › should handle email errors gracefully
+  - EmailService › sendInvitationEmail › should handle sendMail errors
+  - EmailService › sendInvitationEmail › should handle network errors
+
+- unit/services/notificationService.test.js (2)
+  - NotificationService › should create notification successfully
+  - NotificationService › should handle errors when creating notification
+
+- unit/services/metricsService.test.js (6)
+  - MetricsService › getTeamMetrics › should return team metrics successfully
+  - MetricsService › getTeamMetrics › should handle errors when fetching team metrics
+  - MetricsService › getSingleTeamMetrics › should return single team metrics successfully
+  - MetricsService › getSingleTeamMetrics › should handle errors when fetching single team metrics
+  - MetricsService › getPersonalMetrics › should return personal metrics successfully
+  - MetricsService › getPersonalMetrics › should handle errors when fetching personal metrics
+
+- unit/services/projectService.collaborators.test.js (5)
+  - ProjectService › addCollaborator › should add collaborator successfully
+  - ProjectService › addCollaborator › should handle collaborator not found
+  - ProjectService › removeCollaborator › should remove collaborator successfully
+  - ProjectService › removeCollaborator › should prevent removing project owner
+
+- unit/services/projectService.extended.test.js (10)
+  - ProjectService › getProjectProgress › should return project progress successfully
+  - ProjectService › getProjectProgress › should throw Not Authorized error
+  - ProjectService › updateProject › should update project successfully
+  - ProjectService › addCollaborator › should add collaborator successfully
+  - ProjectService › assignRoleToCollaborator › should assign role successfully
+  - ProjectService › assignRoleToCollaborator › should throw error when not owner
+  - ProjectService › validateCollaborators › should validate collaborators in same department
+  - ProjectService › validateCollaborators › should throw error when collaborator not found
+  - ProjectService › isVisibleToUser › should return false when error occurs
+
+- unit/services/projectService.getProjectStats.test.js (3)
+  - ProjectService › getProjectStats › should return project stats successfully
+  - ProjectService › getProjectStats › should handle errors when user not found
+  - ProjectService › getProjectStats › should handle errors when project not found
+
+- unit/services/taskService.attachments.test.js (2)
+  - TaskService › removeAttachment › should remove attachment from task successfully
+  - TaskService › removeAttachment › should handle errors when attachment not found
+
+- unit/services/taskService.filtering.test.js (5)
+  - TaskService › filterByStatus › should return all tasks when status is all
+  - TaskService › filterByStatus › should filter by ongoing/completed/unassigned/under_review status
+  - TaskService › sortTasks › should sort by due date ascending/descending
+  - TaskService › sortTasks › should sort by assignee ascending
+  - TaskService › sortTasks › should return unsorted when sortBy is not provided
+
+- unit/services/taskService.unassigned.test.js (2)
+  - TaskService › calculateTaskStats › should calculate task statistics correctly
+  - TaskService › calculateTaskStats › should handle empty task array
+
+- unit/repositories/projectRepository.collaborators.test.js (3)
+  - ProjectRepository › assignRole › should assign role to collaborator successfully
+  - ProjectRepository › assignRole › should handle project not found
+  - ProjectRepository › assignRole › should convert legacy collaborators to new format
+  - ProjectRepository › setHasTasks › should update hasTasks flag successfully
+
+#### Middleware Tests
+
+- unit/middleware/roleMiddleware.functions.test.js (50+)
+  - hasRole › should return true when user has the role
+  - hasRole › should return false when user does not have the role
+  - hasRole › should return true when user has any role in array
+  - hasRole › should return false for null user or user without role
+  - hasAnyRole › comprehensive tests for role checking
+  - isHigherRole › comprehensive comparison tests
+  - isHigherOrEqualRole › tests for equal roles
+  - canAssignTasks › tests for all role types
+  - canSeeAllTasks › tests for HR/SM access
+  - canSeeDepartmentTasks › tests for director access
+  - canSeeTeamTasks › tests for manager access
+  - canManageTasks › tests for management permissions
+  - canSeeTasks › tests for visibility permissions
+
+- unit/middleware/roleMiddleware.middleware.test.js (11)
+  - requireRole › should allow access for authorized role
+  - requireRole › should deny access for unauthorized role
+  - requireRole › should return 401 when user not authenticated
+  - requireRole › should return 401 when userId missing
+  - requireRole › should handle errors and return 500
+  - requireTaskManagement › should allow access for manager/HR
+  - requireTaskManagement › should deny access for staff
+  - requireTaskManagement › should return 401 when user not authenticated
+  - requireTaskManagement › should return 401 when userId missing
+  - requireTaskManagement › should handle errors and return 500
+  - requireTaskManagement › should handle user not found error
+
+**Note:** Redundant test file `roleMiddleware.test.js` has been removed. All helper function tests are now consolidated in `roleMiddleware.functions.test.js` for better maintainability without reducing coverage.
+
 #### Controller Tests
 
 - unit/controllers/authController.test.js (15)
@@ -542,54 +720,10 @@ __tests__/
   - OrganizationController › getTeamsByDepartment › should return teams for HR users
   - OrganizationController › getTeamsByDepartment › should return 403 for staff users
 
+- unit/controllers/projectController.stats.test.js (2)
+  - ProjectController › getProjectStats › should return project stats successfully
+  - ProjectController › getProjectStats › should handle errors
 
-
-## Test Philosophy
-
-Tests focus on **core business requirements** with balanced coverage:
-- **Authentication & Security**: Essential login flows and password reset functionality
-- **Role-based Access Control**: Proper permission enforcement across all endpoints
-- **Task Management**: CRUD operations, assignment, and filtering by organization structure
-- **Project Collaboration**: Team-based project management and collaborator handling
-- **Data Validation**: Input validation for required fields and business rules
-- **Error Handling**: Graceful handling of common error scenarios
-
-### Balanced Test Coverage (379 total tests)
-The suite covers authentication, users, organization, tasks (including grouping and attachments), subtasks, projects, activity logs, domain models, repositories, services, and controllers with comprehensive unit and integration testing.
-
-## Test Status: ✅ All Tests Passing
-
-**Latest Test Results:**
-- **Total Test Suites**: 59 passed
-- **Total Tests**: 379 passed  
-- **Test Coverage**: Comprehensive integration and unit testing
-- **Status**: All backend tests are currently passing successfully
-
-### Recent Test Fixes Applied:
-- **Authentication Tests**: Fixed email service mocking in unit tests
-- **Integration Tests**: Updated expectations to handle email service failures gracefully
-- **Password Reset Tests**: Resolved timing issues in reset token validation
-- **Branch Coverage Improvement**: Added targeted unit tests for userController, organizationController, and organizationService
-- **Coverage Enhancement**: Improved overall branch coverage from ~55% to 64.43%
-
-### What We Test
-- ✅ Core business functionality and user workflows
-- ✅ Role-based permissions and access control
-- ✅ Data validation and required field handling
-- ✅ Authentication and security measures
-- ✅ Error scenarios and edge cases that matter
-- ✅ Domain model validation and business logic
-- ✅ Repository data access patterns
-- ✅ Service layer business rules
-- ✅ Controller request/response handling
-- ✅ Unit testing for isolated component behavior
-- ✅ Integration testing for end-to-end workflows
-
-### What We Don't Test
-- ❌ Every possible input combination
-- ❌ Implementation details and internal methods
-- ❌ Excessive edge cases that don't add business value
-- ❌ Simple wrapper functions or trivial operations
 
 ## Running Tests
 
@@ -620,108 +754,3 @@ npm test -- --testPathPatterns="unit"
 # Run tests in watch mode
 npm test -- --watch
 ```
-
-### Coverage Results
-- **Statements**: 76.94%
-- **Branches**: 56.17%
-- **Functions**: 76.22%
-- **Lines**: 78.53%
-
-### Missing Test Coverage
-
-The following areas need additional test coverage:
-
-#### Controllers (Missing Tests)
-- **metricsController** (43.75% coverage) - All methods need integration tests:
-  - `GET /api/metrics/departments` - Get department metrics
-  - `GET /api/metrics/teams` - Get team metrics
-  - `GET /api/metrics/teams/:teamId` - Get single team metrics
-  - `GET /api/metrics/personal` - Get personal metrics
-
-- **notificationController** (45.45% coverage) - All methods need integration tests:
-  - `POST /api/notifications` - Create notification
-  - `GET /api/notifications` - Get user notifications
-
-- **userController** (54.65% coverage) - Missing tests for:
-  - Department members endpoint coverage gaps
-  - Send bulk invitations with different scenarios
-
-- **projectController** (78.78% coverage) - Missing tests for:
-  - Project stats endpoint edge cases
-  - Assign role functionality
-  - Collaborator operations edge cases
-
-#### Services (Missing Tests)
-- **metricsService** (14.28% coverage) - Critical gaps:
-  - All aggregation methods need comprehensive unit tests
-  - Department/Team/Personal metrics calculation
-  - Error handling for failed queries
-
-- **emailService** (17.64% coverage) - Needs tests:
-  - Send password reset email
-  - Send invitation email
-  - Email template rendering
-  - SMTP configuration validation
-
-- **projectService** (70.33% coverage) - Missing tests for:
-  - Project stats aggregation
-  - Advanced collaborator management
-  - Multi-project task handling
-
-- **taskService** (74.94% coverage) - Missing tests for:
-  - Attachment operations (add/remove)
-  - Recurring task logic
-  - Advanced filtering and sorting edge cases
-  - Task visibility complex scenarios
-
-#### Middleware (Missing Tests)
-- **roleMiddleware** (32.25% coverage) - Major gaps:
-  - `requireRole` middleware tests
-  - `requireTaskManagement` middleware tests
-  - Permission check helper functions
-  - Role hierarchy comparisons
-
-- **errorHandler** (84% coverage) - Minor gaps:
-  - Edge case error mappings
-  - Custom error type handling
-
-#### Repositories (Missing Tests)
-- **TaskRepository** (82.22% coverage) - Missing tests for:
-  - Complex query operations
-  - Multi-project task filtering
-  - Attachment operations
-
-- **ProjectRepository** (62.26% coverage) - Missing tests for:
-  - Collaborator role management
-  - Legacy format compatibility
-  - Advanced search and filtering
-
-#### Routes (Missing Tests)
-- **activityLogRoutes** (0% coverage) - No tests
-  - Need basic route mounting tests
-
-### Recommended Test Additions
-
-**High Priority:**
-1. Integration tests for metricsController (all 4 endpoints)
-2. Unit tests for metricsService (all aggregation methods)
-3. Integration tests for notificationController
-4. Middleware tests for roleMiddleware (all middleware factories)
-5. Email service tests with mocking
-
-**Medium Priority:**
-6. Task attachment endpoint tests
-7. Recurring task logic tests
-8. Advanced project collaborator role tests
-9. Error handler edge case tests
-
-**Low Priority:**
-10. Route mounting tests
-11. Advanced filtering edge cases
-12. Complex aggregation scenarios
-
-### Test Environment
-- **Database**: Uses test database with seeded data
-- **Email Service**: Mocked in unit tests, may fail in integration tests (expected behavior)
-- **File Storage**: Uses temporary storage for attachment tests
-- **Authentication**: Uses test JWT secrets and mock users
