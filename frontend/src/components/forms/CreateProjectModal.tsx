@@ -18,6 +18,7 @@ export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectM
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const today = new Date().toISOString().split('T')[0];
 
   // Load departments when modal opens
   useEffect(() => {
@@ -73,7 +74,9 @@ export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectM
         <h2 className="text-lg font-semibold mb-4">Create Project</h2>
         {error && <div className="mb-3 p-2 bg-red-100 text-red-700 rounded">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-3">
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
           <input className="w-full border rounded p-2" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
           <input className="w-full border rounded p-2" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
           {departments.length > 0 && (
             <select className="w-full border rounded p-2" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
@@ -83,7 +86,8 @@ export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectM
               ))}
             </select>
           )}
-          <input className="w-full border rounded p-2" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">Due Date</label>
+          <input id="deadline" className="w-full border rounded p-2" type="date" placeholder="Select a due date" value={deadline} min={today} onChange={(e) => setDeadline(e.target.value)} />
           <div className="flex justify-end space-x-2 pt-2">
             <button type="button" onClick={onClose} className="px-3 py-2 rounded bg-gray-100 hover:bg-gray-200">Cancel</button>
             <button type="submit" disabled={loading} className="px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 disabled:opacity-50">{loading ? 'Creating...' : 'Create'}</button>
