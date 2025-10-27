@@ -78,7 +78,8 @@ export async function fetchOrgTasks(
   token: string,
   selectedDepartment: string | null,
   selectedTeam: string | null,
-  teams: Team[]
+  teams: Team[],
+  filters?: { status?: string; sortBy?: string; order?: string }
 ) {
   // Note: The caller should have selectedDepartment/team based on role-aware selectors.
   // Prefer team tasks when team is selected and matches department (when present)
@@ -88,13 +89,13 @@ export async function fetchOrgTasks(
 
   if (selectedTeam && teamMatchesDept) {
     try {
-      return await taskService.getTasksByTeam(token, selectedTeam);
+      return await taskService.getTasksByTeam(token, selectedTeam, filters);
     } catch {}
   }
 
   if (selectedDepartment) {
     try {
-      return await taskService.getTasksByDepartment(token, selectedDepartment);
+      return await taskService.getTasksByDepartment(token, selectedDepartment, filters);
     } catch {}
   }
 
@@ -110,7 +111,7 @@ export async function getVisibleTasks(
   teams: Team[],
   filters?: { status?: string; sortBy?: string; order?: string }
 ) {
-  const orgResp = await fetchOrgTasks(token, selectedDepartment, selectedTeam, teams);
+  const orgResp = await fetchOrgTasks(token, selectedDepartment, selectedTeam, teams, filters);
   if (orgResp.status === 'success') return orgResp;
   // Fallback to getUserTasks with filters when org endpoints are not permitted
   const userResp = await taskService.getUserTasks(token, filters);

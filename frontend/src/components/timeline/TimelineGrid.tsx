@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { getItemDates } from '@/lib/utils/timeline';
 import type { TimelineItem } from '@/lib/hooks/useTimeline';
 
@@ -15,7 +15,11 @@ export function TimelineGrid(props: {
   handleClick: (item: TimelineItem) => void;
   STATUS_COLOR?: Record<string, string>;
 }) {
-  const { rows, rowHeights, rowOffsets, totalHeight, dateHeaderLabels, todayLinePosition, verticalGridLines, projectSpans, timelineBounds, handleClick, STATUS_COLOR = { completed: 'bg-green-500', ongoing: 'bg-blue-500', under_review: 'bg-yellow-500', overdue: 'bg-red-500', default: 'bg-gray-400' } } = props;
+  const { rows, rowHeights, rowOffsets, totalHeight, dateHeaderLabels, todayLinePosition, verticalGridLines, projectSpans, timelineBounds, STATUS_COLOR = { completed: 'bg-green-500', ongoing: 'bg-blue-500', under_review: 'bg-yellow-500', overdue: 'bg-red-500', default: 'bg-gray-400' } } = props;
+  const [hoveredItem, setHoveredItem] = useState<{ item: TimelineItem; x: number; y: number } | null>(null);
+  
+  const formatDate = (date: Date) => date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  
   return (
     <div className="relative flex-1 overflow-hidden" data-testid="timeline-grid">
       <div className="h-9 bg-gray-50 relative">
@@ -65,14 +69,34 @@ export function TimelineGrid(props: {
           return (
             <div
               key={item.id}
-              className={`absolute cursor-pointer z-40 ${colorClass} rounded-sm shadow-sm`}
+              className={`absolute z-40 ${colorClass} rounded-sm shadow-sm hover:opacity-80 transition-opacity`}
               style={{ left: `${leftPercent.toFixed(3)}%`, top: `${top}px`, width: `${widthPercent.toFixed(3)}%`, height: `${barHeight}px` }}
-              title={`${item.title} ${isOverdue ? '(Overdue)' : ''}`}
-              onClick={() => handleClick(item)}
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredItem({ item, x: rect.left + rect.width / 2, y: rect.top });
+              }}
+              onMouseLeave={() => setHoveredItem(null)}
             />
           );
         })}
       </div>
+      {hoveredItem && (() => {
+        const { item } = hoveredItem;
+        const { start, end } = getItemDates(item.createdAt, item.dueDate);
+        return (
+          <div
+            className="fixed z-50 bg-gray-900 text-white text-xs rounded px-2 py-1 pointer-events-none whitespace-nowrap"
+            style={{
+              left: `${hoveredItem.x}px`,
+              top: `${hoveredItem.y - 5}px`,
+              transform: 'translate(-50%, -100%)',
+            }}
+          >
+            <div className="font-semibold mb-1">{item.title}</div>
+            <div className="text-gray-300">Start: {formatDate(start)} | End: {formatDate(end)}</div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

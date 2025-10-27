@@ -11,7 +11,7 @@ import { loadOrgSelectors, getVisibleTasks } from '@/lib/utils/orgAccess';
 import { TaskItem } from '@/components/features/tasks/TaskItem';
 
 type StatusFilter = 'all' | 'unassigned' | 'ongoing' | 'under_review' | 'completed';
-type SortBy = 'due_asc' | 'due_desc' | 'status' | 'assignee' | 'project';
+type SortBy = 'due_asc' | 'due_desc';
 
 export default function OrganizationPage() {
   const { user }: { user: User | null } = useUser();
@@ -53,12 +53,7 @@ export default function OrganizationPage() {
         setLoading(true);
         setError(null);
         
-        const backendSortBy = sortBy === 'due_asc' ? 'dueDate' : 
-                              sortBy === 'due_desc' ? 'dueDate' :
-                              sortBy === 'status' ? 'status' :
-                              sortBy === 'assignee' ? 'assignee' :
-                              sortBy === 'project' ? 'project' : undefined;
-        
+        const backendSortBy = 'dueDate';
         const backendOrder = sortBy === 'due_desc' ? 'desc' : 'asc';
         
         const res = await getVisibleTasks(token, selectedDepartment, selectedTeam, teams, {
@@ -206,11 +201,8 @@ export default function OrganizationPage() {
                   onChange={(e) => setSortBy(e.target.value as SortBy)}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full md:w-48"
                 >
-                  <option value="due_asc">Due date ↑</option>
-                  <option value="due_desc">Due date ↓</option>
-                  <option value="status">Status</option>
-                  <option value="assignee">Assignee</option>
-                  {selectedDepartment && <option value="project">Project</option>}
+                  <option value="due_asc">Due Date (Earliest First)</option>
+                  <option value="due_desc">Due Date (Latest First)</option>
                 </select>
               </div>
             </div>

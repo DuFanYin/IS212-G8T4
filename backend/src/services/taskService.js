@@ -480,7 +480,7 @@ class TaskService {
     }
   }
 
-  async getTasksByTeam(teamId, requesterId) {
+  async getTasksByTeam(teamId, requesterId, filters = {}) {
     try {
       const userRepository = new UserRepository();
       const requesterDoc = await userRepository.findById(requesterId);
@@ -505,13 +505,25 @@ class TaskService {
         { path: 'collaborators', select: 'name' },
         { path: 'projectId', select: 'name' },
       ]);
-      return populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
+      
+      let tasks = populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
+      
+      // Apply filtering and sorting
+      if (filters.status) {
+        tasks = this.filterByStatus(tasks, filters.status);
+      }
+      
+      if (filters.sortBy) {
+        tasks = this.sortTasks(tasks, filters.sortBy, filters.order);
+      }
+      
+      return tasks;
     } catch (error) {
       throw new Error('Error fetching tasks by team');
     }
   }
 
-  async getTasksByDepartment(departmentId, requesterId) {
+  async getTasksByDepartment(departmentId, requesterId, filters = {}) {
     try {
       const userRepository = new UserRepository();
       const requesterDoc = await userRepository.findById(requesterId);
@@ -526,7 +538,19 @@ class TaskService {
         { path: 'collaborators', select: 'name' },
         { path: 'projectId', select: 'name' },
       ]);
-      return populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
+      
+      let tasks = populated.map((d) => this.mapPopulatedTaskDocToDTO(d));
+      
+      // Apply filtering and sorting
+      if (filters.status) {
+        tasks = this.filterByStatus(tasks, filters.status);
+      }
+      
+      if (filters.sortBy) {
+        tasks = this.sortTasks(tasks, filters.sortBy, filters.order);
+      }
+      
+      return tasks;
     } catch (error) {
       throw new Error('Error fetching tasks by department');
     }

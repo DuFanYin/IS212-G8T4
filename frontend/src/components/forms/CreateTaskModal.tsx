@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { useUser } from '@/contexts/UserContext';
 import { CreateTaskRequest } from '@/lib/types/task';
+import { User } from '@/lib/types/user';
+import { UserSelector } from '@/components/features/users/UserSelector';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -8,6 +11,7 @@ interface CreateTaskModalProps {
 }
 
 export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskModalProps) => {
+  const { user } = useUser();
   const [formData, setFormData] = useState<CreateTaskRequest>({
     title: '',
     description: '',
@@ -18,8 +22,17 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
     collaborators: [],
     recurringInterval: undefined
   });
+  const [selectedAssignee, setSelectedAssignee] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleAssigneeSelect = (user: User) => {
+    setSelectedAssignee(user);
+    setFormData((prev: CreateTaskRequest) => ({
+      ...prev,
+      assigneeId: user.id
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +71,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
         collaborators: [],
         recurringInterval: undefined
       });
+      setSelectedAssignee(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create task');
     } finally {
@@ -152,17 +166,21 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
           
           <div className="mb-4">
             <label htmlFor="assigneeId" className="block text-sm font-medium text-gray-700 mb-2">
-              Assignee ID (optional)
+              Assignee (optional)
             </label>
-            <input
-              id="assigneeId"
-              type="text"
-              name="assigneeId"
-              value={formData.assigneeId}
-              onChange={handleChange}
-              placeholder="User ID to assign task to"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            {user && user.token ? (
+              <UserSelector
+                token={user.token}
+                userRole={user.role}
+                userDepartmentId={user.departmentId}
+                onUserSelect={handleAssigneeSelect}
+                placeholder={selectedAssignee ? selectedAssignee.name : "Select a user..."}
+              />
+            ) : (
+              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500">
+                User information not available
+              </div>
+            )}
           </div>
           
           <div className="mb-6">
