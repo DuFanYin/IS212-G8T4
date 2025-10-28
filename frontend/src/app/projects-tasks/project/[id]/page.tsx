@@ -174,8 +174,8 @@ export default function ProjectDetailPage() {
               <div><span className="font-medium">Updated:</span> {project.updatedAt ? new Date(project.updatedAt).toLocaleString() : '-'}</div>
             </div>
             <div className="mt-4 text-sm text-gray-700">
-              <div className="font-medium mb-1">Collaborators ({project.collaboratorNames?.length ?? 0})</div>
-              {(project.collaboratorNames?.length ?? 0) === 0 ? (
+              <div className="font-medium mb-1">Collaborators ({Array.isArray(project.collaborators) && project.collaborators.length > 0 ? project.collaborators.length : (project.collaboratorNames?.length ?? 0)})</div>
+              {(Array.isArray(project.collaborators) && project.collaborators.length > 0 ? project.collaborators.length : (project.collaboratorNames?.length ?? 0)) === 0 ? (
                 <div className="text-gray-500 mb-3">0 collaborators</div>
               ) : (
                 <div className="space-y-2 mb-3">

@@ -55,7 +55,15 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
         ...(typeof formData.description === 'string' ? { description: formData.description } : {}),
         ...(formData.dueDate ? { dueDate: new Date(formData.dueDate).toISOString() } : {}),
         ...(typeof formData.priority === 'number' ? { priority: formData.priority } : {}),
-        ...(Array.isArray(formData.collaborators) ? { collaborators: formData.collaborators } : {}),
+        // Only send collaborators if task is in a project AND collaborators actually changed
+        ...(() => {
+          if (!task.projectId) return {};
+          if (!Array.isArray(formData.collaborators)) return {};
+          const original = Array.isArray(task.collaborators) ? task.collaborators.map(String) : [];
+          const next = formData.collaborators.map(String);
+          const same = original.length === next.length && original.every((v, i) => v === next[i]);
+          return same ? {} : { collaborators: formData.collaborators };
+        })(),
         ...(typeof formData.recurringInterval === 'number' ? { recurringInterval: formData.recurringInterval } : {})
       };
       await onUpdate(payload);

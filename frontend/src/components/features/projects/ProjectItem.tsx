@@ -106,11 +106,9 @@ export const ProjectItem = ({
             </span>
             <span>
               {(() => {
-                const count = (project.collaboratorNames && project.collaboratorNames.length > 0)
-                  ? project.collaboratorNames.length
-                  : (project.collaborators && project.collaborators.length > 0)
-                    ? project.collaborators.length
-                    : 0;
+                const count = Array.isArray(project.collaborators) && project.collaborators.length > 0
+                  ? project.collaborators.length
+                  : (project.collaboratorNames?.length ?? 0);
                 return count > 0 ? `${count} collaborator${count > 1 ? 's' : ''}` : 'No collaborators';
               })()}
             </span>

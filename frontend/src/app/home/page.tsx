@@ -113,6 +113,28 @@ export default function HomePage() {
 function TimelineView() {
   const { user }: { user: User | null } = useUser();
   const [remindersSent, setRemindersSent] = useState<Set<string>>(new Set());
+
+  // Persist reminder keys across sessions per user
+  useEffect(() => {
+    const userId = user?.id;
+    if (!userId) return;
+    try {
+      const saved = localStorage.getItem(`remindersSent:${userId}`);
+      if (saved) {
+        const arr = JSON.parse(saved);
+        if (Array.isArray(arr)) setRemindersSent(new Set(arr));
+      }
+    } catch {}
+  }, [user?.id]);
+
+  useEffect(() => {
+    const userId = user?.id;
+    if (!userId) return;
+    try {
+      localStorage.setItem(`remindersSent:${userId}` , JSON.stringify(Array.from(remindersSent)));
+    } catch {}
+    // include remindersSent to satisfy lint
+  }, [user?.id, remindersSent]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
 
@@ -234,7 +256,7 @@ function TimelineView() {
       window.dispatchEvent(new CustomEvent('refreshNotifications'));
     }
 
-  }, [timelineItems, user]);
+  }, [timelineItems, user, remindersSent]);
 
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());

@@ -138,6 +138,25 @@ class TaskService {
         }
       }
 
+      // Validate assignee (if provided) with same rules as assignment
+      if (taskData.assigneeId) {
+        const assigneeDoc = await userRepository.findById(taskData.assigneeId);
+        if (!assigneeDoc) {
+          throw new Error('Assignee not found');
+        }
+        const assignee = new User(assigneeDoc);
+
+        if (!user.canAssignTasks()) {
+          throw new Error('Only managers and above can assign tasks');
+        }
+        if (ROLE_HIERARCHY[user.role] <= ROLE_HIERARCHY[assignee.role]) {
+          throw new Error('Can only assign tasks to lower-ranked roles');
+        }
+
+        // Align behavior with assignTask: assignment moves task to ongoing
+        taskData.status = 'ongoing';
+      }
+
       //Check if recurring task has interval set
       if(taskData.recurringInterval && taskData.recurringInterval <= 0){
         throw new Error('Recurring tasks must have a valid recurring interval in days');  
@@ -774,7 +793,9 @@ class TaskService {
         throw new Error('Not authorized to assign this task');
       }
 
-      if (ROLE_HIERARCHY[user.role] <= ROLE_HIERARCHY[assignee.role]) {
+      // Allow assigning to self; otherwise enforce downward assignment
+      const isSelfAssignment = assignee.id?.toString() === user.id?.toString();
+      if (!isSelfAssignment && ROLE_HIERARCHY[user.role] <= ROLE_HIERARCHY[assignee.role]) {
         throw new Error('Can only assign tasks to lower-ranked roles');
       }
 
@@ -782,7 +803,20 @@ class TaskService {
       const previousAssignee = (await this.getById(taskId)).assigneeId;
 
       const updatedTaskDoc = await this.taskRepository.assignTask(taskId, assigneeId);
-      const updatedTask = new Task(updatedTaskDoc);
+      let updatedTask = new Task(updatedTaskDoc);
+
+      // Ensure assignee is a collaborator on the task
+      try {
+        const collabUpdated = await this.taskRepository.addCollaborator(taskId, assigneeId);
+        updatedTask = new Task(collabUpdated);
+      } catch {}
+
+      // If task belongs to a project, ensure assignee is a project collaborator too
+      try {
+        if (updatedTask.projectId) {
+          await projectService.addCollaborator(updatedTask.projectId, assigneeId, userId);
+        }
+      } catch {}
 
       //Logging
       const activityLogDoc = await activityLogService.logActivity("assigned", taskId, previousAssignee, assigneeId, userId);
@@ -839,6 +873,29 @@ class TaskService {
 
       const updatedTaskDoc = await this.taskRepository.updateStatus(taskId, status, userId);
       const updatedTask = new Task(updatedTaskDoc);
+
+      // Notify assignee and collaborators (excluding actor) about status change
+      try {
+        const collaborators = Array.isArray(updatedTask.collaborators)
+          ? updatedTask.collaborators.map((c) => c.toString())
+          : [];
+        const assigneeId = updatedTask.assigneeId ? updatedTask.assigneeId.toString() : null;
+        const actorId = userId.toString();
+        const notifySet = new Set(collaborators);
+        if (assigneeId) notifySet.add(assigneeId);
+        notifySet.delete(actorId);
+        const recipients = [...notifySet];
+        for (const uid of recipients) {
+          await notificationService.createNotification({
+            userId: uid,
+            message: `Task "${updatedTask.title}" status updated to ${status}`,
+            link: `/projects-tasks/task/${updatedTask.id}`,
+            type: 'status-change'
+          });
+        }
+      } catch (e) {
+        // non-fatal
+      }
 
       //Logging
       const activityLogDoc = await activityLogService.logActivity("status_changed", taskId, previousStatus, status, userId);

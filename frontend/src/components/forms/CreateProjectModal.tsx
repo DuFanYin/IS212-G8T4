@@ -47,6 +47,16 @@ export const CreateProjectModal = ({ isOpen, onClose, onCreate }: CreateProjectM
       setError('Name is required');
       return;
     }
+    // Prevent creating projects with a past deadline
+    if (deadline) {
+      const selected = new Date(deadline);
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      if (selected < todayStart) {
+        setError('Due date cannot be in the past');
+        return;
+      }
+    }
     try {
       setLoading(true);
       const isoDeadline = deadline ? new Date(deadline).toISOString() : undefined;
