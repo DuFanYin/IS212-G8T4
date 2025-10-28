@@ -97,8 +97,8 @@ export default function Header() {
                 </Link>
                 {(canTeam || canDept) && (
                   <Link
-                    href="/orgnisation"
-                    className={`${isActive('/orgnisation')} flex items-center px-1 py-2 text-sm font-medium`}
+                    href="/organisation"
+                    className={`${isActive('/organisation')} flex items-center px-1 py-2 text-sm font-medium`}
                   >
                     Organization
                   </Link>
