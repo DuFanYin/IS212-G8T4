@@ -50,7 +50,8 @@ export function useOrgSelectors(user: User | null): UseOrgSelectorsReturn {
     };
     
     loadOrganizationData();
-  }, [user, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, token]);
 
   return {
     departments,

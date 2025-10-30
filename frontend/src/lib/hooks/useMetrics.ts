@@ -70,7 +70,7 @@ export function useMetrics() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user?.token, user?.role, user?.teamId]);
 
   return {
     teamStats,

@@ -203,7 +203,9 @@ class TaskService {
 
       // Check edit permissions
       if (!task.canBeEditedBy(user)) {
-        throw new Error('Not authorized to edit this task');
+        const isCreator = task.createdBy?.toString() === user.id?.toString();
+        const isCollaborator = task.collaborators.some(c => c.toString() === user.id?.toString());
+        throw new Error(`Not authorized to edit this task. Your role (${user.role}) ${isCreator ? 'created this task but' : isCollaborator ? 'is a collaborator but' : ''} does not have edit permissions. ${user.isStaff() ? 'Staff can only edit tasks they created.' : 'You must be a collaborator to edit this task.'}`);
       }
 
       // Staff can only update specific fields
@@ -233,11 +235,12 @@ class TaskService {
         }
       }
 
-      // Validate due date is not in the past
+      // Validate due date is not in the past (for updates, allow past dates if not changing it or for completed tasks)
       if (updateData.dueDate) {
         const dueDate = new Date(updateData.dueDate);
-        const now = new Date();
-        if (dueDate < now) {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        if (dueDate < todayStart && task.status !== 'completed') {
           throw new Error('Due date cannot be in the past');
         }
       }
@@ -256,11 +259,11 @@ class TaskService {
 
         // Managers/Directors can assign tasks to lower roles only
         if (!user.canAssignTasks()) {
-          throw new Error('Only managers and above can assign tasks');
+          throw new Error(`Not authorized to assign tasks during update. Your role (${user.role}) does not have assignment permissions. Only managers, directors, and senior management can assign tasks.`);
         }
 
         if (ROLE_HIERARCHY[user.role] <= ROLE_HIERARCHY[assignee.role]) {
-          throw new Error('Can only assign tasks to lower-ranked roles');
+          throw new Error(`Cannot assign task to this user (${assignee.role}). Your role (${user.role}) can only assign tasks to lower-ranked roles.`);
         }
       }
 
@@ -796,7 +799,7 @@ class TaskService {
       // Allow assigning to self; otherwise enforce downward assignment
       const isSelfAssignment = assignee.id?.toString() === user.id?.toString();
       if (!isSelfAssignment && ROLE_HIERARCHY[user.role] <= ROLE_HIERARCHY[assignee.role]) {
-        throw new Error('Can only assign tasks to lower-ranked roles');
+        throw new Error(`Cannot assign task to ${assignee.name} (${assignee.role}). Your role (${user.role}) can only assign tasks to lower-ranked roles. ${isSelfAssignment ? '' : `Assignee's role (${assignee.role}) is equal or higher than yours.`}`);
       }
 
       //Store for logging

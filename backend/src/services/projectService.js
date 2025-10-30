@@ -283,6 +283,9 @@ class ProjectService {
   //Code Reviewed
   async updateProject(projectId, updateData, userId) {
     const project = await this.getProjectDomainById(projectId);
+    const userRepository = new UserRepository();
+    const userDoc = await userRepository.findById(userId);
+    const user = new User(userDoc);
 
     await this.validateUser(project, userId);
 
@@ -391,7 +394,9 @@ class ProjectService {
     const user = new User(userDoc);
 
     if (!project.canBeModifiedBy(user)) {
-      throw new Error("Not Authorized");
+      const isOwner = project.ownerId?.toString() === userId?.toString();
+      const isCollaborator = project.collaborators?.some(c => (c.user || c)?.toString() === userId?.toString());
+      throw new Error(`Not authorized to modify this project. Your role (${user.role}) ${isOwner ? 'is the owner but' : isCollaborator ? 'is a collaborator but' : 'is not involved and'} does not have modification permissions. Only the project owner or collaborators with editor role can modify projects.`);
     }
   }
 

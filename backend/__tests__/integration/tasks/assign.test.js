@@ -62,14 +62,14 @@ describe('PATCH /api/tasks/:id/assign', () => {
   });
 
   it('should not allow assigning to equal-or-higher role', async () => {
-    const { token: managerToken, taskId, managerUser } = await createTaskAsManager();
-    // manager tries to assign to another manager (equal role)
+    const { token: managerToken, taskId } = await createTaskAsManager();
+    // manager tries to assign to ANOTHER manager (equal role) - NOT self-assignment
+    const anotherManager = await User.findOne({ email: 'manager1@example.com' });
     const res = await request(app)
       .patch(`/api/tasks/${taskId}/assign`)
       .set('Authorization', `Bearer ${managerToken}`)
-      .send({ assigneeId: managerUser._id });
+      .send({ assigneeId: anotherManager._id });
     expect([400, 403, 500]).toContain(res.status);
   });
 });
-
 

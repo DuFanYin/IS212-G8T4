@@ -70,7 +70,9 @@ class SubtaskService {
 
       // Check if user can edit this subtask
       if (!subtask.canBeEditedBy(user)) {
-        throw new Error('User not authorized to edit this subtask');
+        const isAssignee = subtask.assigneeId?.toString() === user.id?.toString();
+        const isCollaborator = subtask.collaborators?.some(c => c.toString() === user.id?.toString());
+        throw new Error(`Not authorized to edit this subtask. Your role (${user.role}) ${isAssignee ? 'is the assignee but' : isCollaborator ? 'is a collaborator but' : 'is not involved and'} does not have edit permissions. You must be the assignee or a collaborator to edit subtasks.`);
       }
 
       const subtaskDoc = await this.subtaskRepository.updateById(subtaskId, updates);
@@ -97,7 +99,9 @@ class SubtaskService {
 
       // Check if user can update status
       if (!subtask.canBeCompletedBy(user)) {
-        throw new Error('User not authorized to update subtask status');
+        const isAssignee = subtask.assigneeId?.toString() === user.id?.toString();
+        const isCollaborator = subtask.collaborators?.some(c => c.toString() === user.id?.toString());
+        throw new Error(`Not authorized to update subtask status. Your role (${user.role}) ${isAssignee ? 'is the assignee but' : isCollaborator ? 'is a collaborator but' : 'is not involved and'} does not have permissions. You must be the assignee or a collaborator to update status.`);
       }
 
       const subtaskDoc = await this.subtaskRepository.updateStatus(subtaskId, status, userId);
@@ -151,7 +155,9 @@ class SubtaskService {
 
       // Check if user can delete this subtask
       if (!subtask.canBeEditedBy(user)) {
-        throw new Error('User not authorized to delete this subtask');
+        const isAssignee = subtask.assigneeId?.toString() === user.id?.toString();
+        const isCollaborator = subtask.collaborators?.some(c => c.toString() === user.id?.toString());
+        throw new Error(`Not authorized to delete this subtask. Your role (${user.role}) ${isAssignee ? 'is the assignee but' : isCollaborator ? 'is a collaborator but' : 'is not involved and'} does not have delete permissions. You must be the assignee or a collaborator to delete subtasks.`);
       }
 
       const subtaskDoc = await this.subtaskRepository.softDelete(subtaskId);

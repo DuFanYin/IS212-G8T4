@@ -102,7 +102,7 @@ JWT_SECRET=your_generated_secret
 ```
 
 ### Database Setup
-The project uses MongoDB Atlas with three databases:
+The project uses MongoDB Atlas with two databases:
 - `is212_dev`: Development database
 - `is212_test`: Testing database
 
@@ -112,27 +112,8 @@ NODE_ENV=development npm run seed --prefix backend  # Development
 NODE_ENV=test npm run seed --prefix backend        # Testing
 ```
 
-Custom volumes example:
-```bash
-NODE_ENV=development \
-SEED_DEPARTMENTS=2 SEED_TEAMS=1 SEED_USERS=5 \
-SEED_PROJECTS=2 SEED_TASKS=4 SEED_SUBTASKS=4 \
-SEED_COMMENTS=5 SEED_ACTIVITY_LOGS=5 \
-npm run seed
-```
-
 ### CI/CD Setup
 
 See [`.github/SETUP_GUIDE.md`](.github/SETUP_GUIDE.md) for setup instructions.
 
 The CI runs on every push/PR and tests backend, frontend, and build.
-
-### Notable Backend Behaviors
-
-- Task DTOs include enriched fields: `projectName`, `assigneeName`, `createdByName`, `collaboratorNames`.
-- Task collaborators validation:
-  - On create: collaborators must be a subset of project collaborators; creator auto-added and added to project if missing.
-  - On update: collaborators revalidated against project (handles ObjectId/string normalization).
-- Subtask collaborators must be a subset of parent task collaborators; creator auto-added.
-- Services return concise error messages propagating underlying causes.
-

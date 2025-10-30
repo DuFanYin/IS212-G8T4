@@ -11,9 +11,14 @@ const createProject = asyncHandler(async (req, res) => {
   }
 
   if (deadline) {
-    const today = new Date();
-    if (new Date(deadline) < today || isNaN(new Date(deadline).getTime())) {
-      throw new ValidationError('Invalid date');
+    const deadlineDate = new Date(deadline);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    if (isNaN(deadlineDate.getTime())) {
+      throw new ValidationError('Invalid date format');
+    }
+    if (deadlineDate < todayStart) {
+      throw new ValidationError('Due date cannot be in the past');
     }
   }
 

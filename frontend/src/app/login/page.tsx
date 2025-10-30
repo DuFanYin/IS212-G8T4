@@ -125,7 +125,11 @@ export default function LoginPage() {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              const validationErrors = validate(email, e.target.value);
+              setErrors(prev => ({ ...prev, password: validationErrors.password }));
+            }}
             error={errors.password}
           />
 

@@ -158,13 +158,15 @@ function TimelineView() {
       }
     };
     load();
-  }, [token, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user?.id, user?.departmentId, user?.teamId, user?.role]);
 
   useEffect(() => {
     if (!user) return;
     if (user.teamId) setSelectedTeamId(user.teamId);
     if (user.departmentId) setSelectedDepartmentId(user.departmentId);
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.teamId, user?.departmentId]);
 
   const { timelineItems, loading, error, visibleProjects, projectSpans } = useTimeline({
     selectedTeamId,
