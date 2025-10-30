@@ -6,6 +6,7 @@ const Comment = require('./Comment');
 const ActivityLog = require('./ActivityLog');
 const Department = require('./Department');
 const Team = require('./Team');
+const Invitation = require('./Invitation');
 
 module.exports = {
   User,
@@ -15,5 +16,6 @@ module.exports = {
   Comment,
   ActivityLog,
   Department,
-  Team
+  Team,
+  Invitation
 };

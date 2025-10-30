@@ -183,11 +183,17 @@ export default function ProjectDetailPage() {
                     // New format with roles
                     project.collaborators.map((collab, index) => {
                       const collaborator = typeof collab === 'string' ? { user: collab, role: 'viewer' as const } : collab;
-                      const collaboratorName = project.collaboratorNames?.[index] || collaborator.user;
+                      const userId = typeof collab === 'string' ? collab : collab.user;
+                      // Get name from collaboratorNames array at the same index
+                      const collaboratorName = project.collaboratorNames?.[index] || userId;
+                      // Check if it's still an ID (MongoDB ObjectId format)
+                      const isStillId = typeof collaboratorName === 'string' && collaboratorName.match(/^[0-9a-fA-F]{24}$/);
+                      const displayName = isStillId ? `User ${collaboratorName.substring(0, 8)}...` : collaboratorName;
+                      
                       return (
-                        <div key={collaborator.user} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <div key={`${userId}-${index}`} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{collaboratorName}</span>
+                            <span className="font-medium">{displayName}</span>
                             <span className={`px-2 py-1 rounded text-xs ${
                               collaborator.role === 'editor' 
                                 ? 'bg-blue-100 text-blue-800' 
@@ -209,8 +215,8 @@ export default function ProjectDetailPage() {
                     })
                   ) : (
                     // Old format without roles
-                    project.collaboratorNames!.map((c) => (
-                      <span key={c} className="px-2 py-1 rounded bg-gray-100 text-gray-800">{c}</span>
+                    project.collaboratorNames!.map((c, idx) => (
+                      <span key={`${c}-${idx}`} className="px-2 py-1 rounded bg-gray-100 text-gray-800">{c}</span>
                     ))
                   )}
                 </div>

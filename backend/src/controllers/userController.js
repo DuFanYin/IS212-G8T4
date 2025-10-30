@@ -5,6 +5,7 @@ const EmailService = require('../services/emailService');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendSuccess } = require('../utils/responseHelper');
 const { NotFoundError, ForbiddenError, ValidationError } = require('../utils/errors');
+const { Invitation } = require('../db/models');
 
 const getProfile = asyncHandler(async (req, res) => {
   const user = await userService.getUserById(req.user.userId);
@@ -73,6 +74,9 @@ const sendBulkInvitations = asyncHandler(async (req, res) => {
   }
 
   const { emails, role, departmentId, teamId } = req.body;
+  
+  // Get the current user's ID (domain object uses 'id', not '_id')
+  const currentUserId = user.id || req.user.userId;
 
   if (!emails || !Array.isArray(emails) || emails.length === 0) {
     throw new ValidationError('Email list is required and must be a non-empty array');
@@ -94,9 +98,23 @@ const sendBulkInvitations = asyncHandler(async (req, res) => {
 
   for (const email of emails) {
     try {
-      const existingUser = await userService.getUserByEmail(email);
+      // Check if user already exists (use direct model query instead of service)
+      const { User: UserModel } = require('../db/models');
+      const existingUser = await UserModel.findOne({ email: email.toLowerCase().trim() });
       if (existingUser) {
         results.push({ email, status: 'skipped', message: 'User already exists' });
+        continue;
+      }
+
+      // Check if there's already an active invitation for this email
+      const existingInvitation = await Invitation.findOne({
+        email: email.toLowerCase().trim(),
+        isUsed: false,
+        expiresAt: { $gt: Date.now() }
+      });
+
+      if (existingInvitation) {
+        results.push({ email, status: 'skipped', message: 'Active invitation already exists' });
         continue;
       }
 
@@ -104,18 +122,20 @@ const sendBulkInvitations = asyncHandler(async (req, res) => {
       const invitationToken = crypto.randomBytes(32).toString('hex');
       const hashedToken = await bcrypt.hash(invitationToken, 10);
 
-      const invitationData = {
+      // Create and save invitation to database
+      const invitation = await Invitation.create({
         email: email.toLowerCase().trim(),
         token: hashedToken,
         role: role || 'staff',
         departmentId: departmentId || null,
         teamId: teamId || null,
-        invitedBy: currentUser._id,
+        invitedBy: currentUserId,
         invitedAt: new Date(),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      };
+      });
 
-      await emailService.sendInvitationEmail(email, invitationToken, invitationData.role);
+      // Send email with the plain token (not hashed)
+      await emailService.sendInvitationEmail(email, invitationToken, invitation.role);
       
       results.push({ email, status: 'sent', message: 'Invitation sent successfully' });
     } catch (error) {

@@ -13,7 +13,7 @@ class EmailService {
 
   async sendPasswordResetEmail(email, resetToken) {
     try {
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/login/reset-password?token=${resetToken}`;
       
       const mailOptions = {
         from: process.env.GMAIL,

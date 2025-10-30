@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { User } from '@/lib/types/user';
 import { authService } from '@/lib/services/auth';
 import { storage } from '@/lib/utils/storage';
@@ -23,6 +23,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   const logout = useCallback(() => {
     storage.removeToken();
@@ -33,7 +34,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     const token = storage.getToken();
     if (!token) {
-      logout();
+      // Don't logout/redirect if user is on public pages
+      const publicPages = ['/login', '/register', '/login/reset-password'];
+      if (!publicPages.some(page => pathname?.startsWith(page))) {
+        logout();
+      }
       return;
     }
 
@@ -48,7 +53,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch {
       logout();
     }
-  }, [logout]);
+  }, [logout, pathname]);
 
   useEffect(() => {
     refreshUser();

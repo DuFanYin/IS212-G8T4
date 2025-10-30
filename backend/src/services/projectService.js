@@ -110,9 +110,11 @@ class ProjectService {
     try {
       if (Array.isArray(dto.collaborators) && dto.collaborators.length > 0) {
         const names = [];
-        for (const id of dto.collaborators) {
+        for (const collab of dto.collaborators) {
           try {
-            const doc = await this.userRepository.findById(id);
+            // Handle both new format {user: id, role: 'editor'} and legacy format (just id string)
+            const userId = typeof collab === 'string' ? collab : collab.user;
+            const doc = await this.userRepository.findById(userId);
             if (doc?.name) names.push(doc.name);
           } catch { }
         }
@@ -166,7 +168,7 @@ class ProjectService {
     const docs = await this.projectRepository.findAllProjects();
     const populated = await ProjectModel.populate(docs, [
       { path: 'ownerId', select: 'name' },
-      { path: 'collaborators', select: 'name' },
+      { path: 'collaborators.user', select: 'name' },
       { path: 'departmentId', select: 'name' }
     ]);
     return populated.map((doc) => ({
@@ -178,8 +180,16 @@ class ProjectService {
       deadline: doc.deadline,
       departmentId: doc.departmentId?._id || doc.departmentId,
       departmentName: doc.departmentId?.name,
-      collaborators: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c._id || c) : [],
-      collaboratorNames: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c.name).filter(Boolean) : [],
+      // Return collaborators in their original format (with roles)
+      collaborators: doc.collaborators || [],
+      // Extract names from populated user objects
+      collaboratorNames: Array.isArray(doc.collaborators) 
+        ? doc.collaborators.map((c) => {
+            // Handle new format {user: {_id, name}, role} or legacy format (just user id)
+            if (typeof c === 'string') return null;
+            return c.user?.name || c.user;
+          }).filter(Boolean) 
+        : [],
       isArchived: doc.isArchived,
       hasContainedTasks: doc.hasContainedTasks,
       isOverdue: doc.deadline ? new Date(doc.deadline) < new Date() && !doc.isArchived : false,
@@ -193,7 +203,7 @@ class ProjectService {
     const docs = await this.projectRepository.findActiveProjects();
     const populated = await ProjectModel.populate(docs, [
       { path: 'ownerId', select: 'name' },
-      { path: 'collaborators', select: 'name' },
+      { path: 'collaborators.user', select: 'name' },
       { path: 'departmentId', select: 'name' }
     ]);
     return populated.map((doc) => ({
@@ -205,8 +215,16 @@ class ProjectService {
       deadline: doc.deadline,
       departmentId: doc.departmentId?._id || doc.departmentId,
       departmentName: doc.departmentId?.name,
-      collaborators: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c._id || c) : [],
-      collaboratorNames: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c.name).filter(Boolean) : [],
+      // Return collaborators in their original format (with roles)
+      collaborators: doc.collaborators || [],
+      // Extract names from populated user objects
+      collaboratorNames: Array.isArray(doc.collaborators) 
+        ? doc.collaborators.map((c) => {
+            // Handle new format {user: {_id, name}, role} or legacy format (just user id)
+            if (typeof c === 'string') return null;
+            return c.user?.name || c.user;
+          }).filter(Boolean) 
+        : [],
       isArchived: doc.isArchived,
       hasContainedTasks: doc.hasContainedTasks,
       isOverdue: doc.deadline ? new Date(doc.deadline) < new Date() && !doc.isArchived : false,
@@ -251,7 +269,7 @@ class ProjectService {
 
     const populated = await ProjectModel.populate(docs, [
       { path: 'ownerId', select: 'name' },
-      { path: 'collaborators', select: 'name' },
+      { path: 'collaborators.user', select: 'name' },
       { path: 'departmentId', select: 'name' }
     ]);
 
@@ -264,8 +282,16 @@ class ProjectService {
       deadline: doc.deadline,
       departmentId: doc.departmentId?._id || doc.departmentId,
       departmentName: doc.departmentId?.name,
-      collaborators: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c._id || c) : [],
-      collaboratorNames: Array.isArray(doc.collaborators) ? doc.collaborators.map((c) => c.name).filter(Boolean) : [],
+      // Return collaborators in their original format (with roles)
+      collaborators: doc.collaborators || [],
+      // Extract names from populated user objects
+      collaboratorNames: Array.isArray(doc.collaborators) 
+        ? doc.collaborators.map((c) => {
+            // Handle new format {user: {_id, name}, role} or legacy format (just user id)
+            if (typeof c === 'string') return null;
+            return c.user?.name || c.user;
+          }).filter(Boolean) 
+        : [],
       isArchived: doc.isArchived,
       hasContainedTasks: doc.hasContainedTasks,
       isOverdue: doc.deadline ? new Date(doc.deadline) < new Date() && !doc.isArchived : false,

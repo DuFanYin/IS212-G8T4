@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { User } = require('../db/models');
+const { User, Invitation } = require('../db/models');
 const EmailService = require('../services/emailService');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendSuccess } = require('../utils/responseHelper');
@@ -61,29 +61,92 @@ const registerWithInvitation = asyncHandler(async (req, res) => {
     throw new ValidationError('Password must be at least 6 characters long');
   }
 
+  // Find all valid (non-used, non-expired) invitations
+  const invitations = await Invitation.find({
+    isUsed: false,
+    expiresAt: { $gt: Date.now() }
+  });
+
+  if (!invitations || invitations.length === 0) {
+    throw new ValidationError('Invalid or expired invitation token');
+  }
+
+  // Find the matching invitation by comparing the token
+  let matchedInvitation = null;
+  for (const invitation of invitations) {
+    const isMatch = await bcrypt.compare(token, invitation.token);
+    if (isMatch) {
+      matchedInvitation = invitation;
+      break;
+    }
+  }
+
+  if (!matchedInvitation) {
+    throw new ValidationError('Invalid or expired invitation token');
+  }
+
+  // Check if user already exists with this email
+  const existingUser = await User.findOne({ email: matchedInvitation.email });
+  if (existingUser) {
+    throw new ValidationError('User with this email already exists');
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
 
+  // Create user with invitation data
   const userData = {
     name: name.trim(),
-    email: 'temp@example.com',
+    email: matchedInvitation.email,
     passwordHash,
-    role: 'staff'
+    role: matchedInvitation.role,
+    departmentId: matchedInvitation.departmentId,
+    teamId: matchedInvitation.teamId
   };
 
   const user = await User.create(userData);
 
+  // Mark invitation as used
+  matchedInvitation.isUsed = true;
+  matchedInvitation.usedAt = new Date();
+  await matchedInvitation.save();
+
+  // Generate JWT token for auto-login
+  const jwtToken = jwt.sign(
+    {
+      userId: user._id,
+      email: user.email,
+      role: user.role
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+
   sendSuccess(res, {
+    token: jwtToken,
     user: {
       id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      departmentId: user.departmentId,
+      teamId: user.teamId
     }
   }, 'Account created successfully', 201);
 });
 
 const requestPasswordReset = asyncHandler(async (req, res) => {
   const { email } = req.body;
+
+  if (!email) {
+    throw new ValidationError('Email is required');
+  }
+
+  // Validate email format
+  const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+  if (!emailRegex.test(email)) {
+    throw new ValidationError('Please provide a valid email address');
+  }
+
   const user = await User.findOne({ email });
 
   if (!user) {
@@ -94,7 +157,7 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
   const hashedToken = await bcrypt.hash(resetToken, 10);
 
   user.resetToken = hashedToken;
-  user.resetTokenExpiry = new Date(Date.now() + 3600000);
+  user.resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
   await user.save();
 
   const emailService = new EmailService();
@@ -106,23 +169,43 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
 const resetPassword = asyncHandler(async (req, res) => {
   const { token, newPassword } = req.body;
 
-  const user = await User.findOne({
+  if (!token || !newPassword) {
+    throw new ValidationError('Token and new password are required');
+  }
+
+  if (newPassword.length < 6) {
+    throw new ValidationError('Password must be at least 6 characters long');
+  }
+
+  // Find all users with non-expired reset tokens
+  const usersWithResetTokens = await User.find({
+    resetToken: { $ne: null },
     resetTokenExpiry: { $gt: Date.now() }
   });
 
-  if (!user) {
+  if (!usersWithResetTokens || usersWithResetTokens.length === 0) {
     throw new ValidationError('Invalid or expired reset token');
   }
 
-  const isValidToken = await bcrypt.compare(token, user.resetToken);
-  if (!isValidToken) {
-    throw new ValidationError('Invalid reset token');
+  // Find the matching user by comparing the token
+  let matchedUser = null;
+  for (const user of usersWithResetTokens) {
+    const isMatch = await bcrypt.compare(token, user.resetToken);
+    if (isMatch) {
+      matchedUser = user;
+      break;
+    }
   }
 
-  user.passwordHash = await bcrypt.hash(newPassword, 10);
-  user.resetToken = null;
-  user.resetTokenExpiry = null;
-  await user.save();
+  if (!matchedUser) {
+    throw new ValidationError('Invalid or expired reset token');
+  }
+
+  // Update password and clear reset token
+  matchedUser.passwordHash = await bcrypt.hash(newPassword, 10);
+  matchedUser.resetToken = null;
+  matchedUser.resetTokenExpiry = null;
+  await matchedUser.save();
 
   sendSuccess(res, null, 'Password reset successful');
 });

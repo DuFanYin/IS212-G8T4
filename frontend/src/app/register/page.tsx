@@ -83,14 +83,22 @@ function RegisterForm() {
       
       if (res.status === 'success') {
         setMessage({ 
-          text: 'Account created successfully! You can now log in.', 
+          text: 'Account created successfully! Logging you in...', 
           type: 'success' 
         });
         
-        // Redirect to login page after 2 seconds
+        // Store token and user data
+        if (res.data?.token) {
+          localStorage.setItem('token', res.data.token);
+          if (res.data.user) {
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+          }
+        }
+        
+        // Redirect to home page after 1 second
         setTimeout(() => {
-          router.push('/login');
-        }, 2000);
+          router.push('/home');
+        }, 1000);
       } else {
         setMessage({ text: res.message || 'Failed to create account', type: 'error' });
       }
