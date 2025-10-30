@@ -150,7 +150,7 @@ export const EditTaskModal = ({ isOpen, task, onClose, onUpdate }: EditTaskModal
               type="number"
               name="recurringInterval"
               min={1}
-              value={formData.recurringInterval === undefined ? '' : formData.recurringInterval}
+              value={formData.recurringInterval ?? ''}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
