@@ -22,7 +22,6 @@ class UserService {
     try {
       const userDoc = await this.userRepository.findByEmail(email);
       if (!userDoc) throw new Error('User not found');
-      
       return new User(userDoc);
     } catch (error) {
       throw new Error(error?.message || 'Error fetching user by email');

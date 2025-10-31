@@ -98,9 +98,16 @@ const sendBulkInvitations = asyncHandler(async (req, res) => {
 
   for (const email of emails) {
     try {
-      // Check if user already exists (use direct model query instead of service)
-      const { User: UserModel } = require('../db/models');
-      const existingUser = await UserModel.findOne({ email: email.toLowerCase().trim() });
+      // Check if user already exists
+      let existingUser = null;
+      try {
+        existingUser = await userService.getUserByEmail(email.toLowerCase().trim());
+      } catch (e) {
+        // If user not found, we proceed to invite; rethrow other errors
+        if (!(e instanceof Error) || e.message !== 'User not found') {
+          throw e;
+        }
+      }
       if (existingUser) {
         results.push({ email, status: 'skipped', message: 'User already exists' });
         continue;

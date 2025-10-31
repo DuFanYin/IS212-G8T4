@@ -15,10 +15,12 @@ export function sortTasks(tasks: Task[], sortBy: SortOption): Task[] {
   
   switch (sortBy) {
     case 'priority_high':
-      return sorted.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+      // Business rule: priority 1 is highest. Sort ascending (1 → 10)
+      return sorted.sort((a, b) => (a.priority || 0) - (b.priority || 0));
     
     case 'priority_low':
-      return sorted.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+      // Lowest first means largest number first (10 → 1)
+      return sorted.sort((a, b) => (b.priority || 0) - (a.priority || 0));
     
     case 'due_asc':
       return sorted.sort((a, b) => {

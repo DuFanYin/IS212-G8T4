@@ -177,35 +177,25 @@ const resetPassword = asyncHandler(async (req, res) => {
     throw new ValidationError('Password must be at least 6 characters long');
   }
 
-  // Find all users with non-expired reset tokens
-  const usersWithResetTokens = await User.find({
-    resetToken: { $ne: null },
+  // Find one user with a non-expired reset token
+  const user = await User.findOne({
     resetTokenExpiry: { $gt: Date.now() }
   });
 
-  if (!usersWithResetTokens || usersWithResetTokens.length === 0) {
+  if (!user) {
     throw new ValidationError('Invalid or expired reset token');
   }
 
-  // Find the matching user by comparing the token
-  let matchedUser = null;
-  for (const user of usersWithResetTokens) {
-    const isMatch = await bcrypt.compare(token, user.resetToken);
-    if (isMatch) {
-      matchedUser = user;
-      break;
-    }
-  }
-
-  if (!matchedUser) {
-    throw new ValidationError('Invalid or expired reset token');
+  const isValidToken = await bcrypt.compare(token, user.resetToken);
+  if (!isValidToken) {
+    throw new ValidationError('Invalid reset token');
   }
 
   // Update password and clear reset token
-  matchedUser.passwordHash = await bcrypt.hash(newPassword, 10);
-  matchedUser.resetToken = null;
-  matchedUser.resetTokenExpiry = null;
-  await matchedUser.save();
+  user.passwordHash = await bcrypt.hash(newPassword, 10);
+  user.resetToken = null;
+  user.resetTokenExpiry = null;
+  await user.save();
 
   sendSuccess(res, null, 'Password reset successful');
 });

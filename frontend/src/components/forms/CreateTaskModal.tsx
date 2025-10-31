@@ -160,7 +160,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onCreateTask }: CreateTaskMod
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                <option key={num} value={num}>{num} {num === 1 ? '(Lowest)' : num === 10 ? '(Highest)' : ''}</option>
+                <option key={num} value={num}>{num} {num === 1 ? '(Highest)' : num === 10 ? '(Lowest)' : ''}</option>
               ))}
             </select>
           </div>
