@@ -27,7 +27,7 @@ export function TaskStatusFilter({
 }: TaskStatusFilterProps) {
   if (variant === 'buttons') {
     return (
-      <div className={`flex flex-wrap gap-3 ${className}`}>
+      <div className={`grid grid-cols-6 gap-3 ${className}`}>
         <button 
           onClick={() => onChange('all')} 
           className={`bg-white rounded shadow p-3 text-left border ${value === 'all' ? 'border-blue-400' : 'border-slate-200 hover:border-blue-200'}`}
