@@ -170,7 +170,8 @@ describe('Subtask Domain Class', () => {
       
       expect(subtask.status).toBe('completed');
       expect(subtask.lastStatusUpdate.status).toBe('completed');
-      expect(subtask.lastStatusUpdate.updatedAt).toBeInstanceOf(Date);
+      expect(typeof subtask.lastStatusUpdate.updatedAt?.getTime).toBe('function');
+      expect(Number.isFinite(subtask.lastStatusUpdate.updatedAt.getTime())).toBe(true);
     });
 
     it('should assign subtask to user', () => {
