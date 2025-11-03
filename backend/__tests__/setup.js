@@ -1,5 +1,6 @@
 // Load environment variables from main .env file
 require('dotenv').config();
+const mongoose = require('mongoose');
 
 // Set test environment
 process.env.NODE_ENV = 'test';  // This will make connect.js use is212_test database
@@ -43,5 +44,25 @@ afterEach(() => {
 
 // Disconnect from database after all tests
 afterAll(async () => {
-  await disconnectDB();
+  // Ensure Mongoose disconnects cleanly and release all handles
+  try {
+    await disconnectDB();
+  } finally {
+    // Close native MongoDB client if still open (extra safety)
+    const getClient = mongoose.connection && typeof mongoose.connection.getClient === 'function'
+      ? mongoose.connection.getClient.bind(mongoose.connection)
+      : null;
+    const client = getClient ? getClient() : null;
+    if (client && typeof client.close === 'function') {
+      try { await client.close(); } catch (_) {}
+    }
+
+    // Remove all listeners to avoid keeping the event loop alive
+    if (mongoose.connection && typeof mongoose.connection.removeAllListeners === 'function') {
+      mongoose.connection.removeAllListeners();
+    }
+
+    // Yield the event loop to allow pending tasks to settle
+    await new Promise((resolve) => setImmediate(resolve));
+  }
 }, 30000); // Increase timeout to 30s for cleanup

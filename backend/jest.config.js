@@ -13,5 +13,6 @@ module.exports = {
   setupFilesAfterEnv: ['./__tests__/setup.js'],
   testTimeout: 60000, // Increase timeout for CI
   maxWorkers: 1,
-  forceExit: true // Force exit after tests complete
+  // Avoid forcing process exit; fix lingering handles instead in setup/teardown
+  // forceExit: true
 };
