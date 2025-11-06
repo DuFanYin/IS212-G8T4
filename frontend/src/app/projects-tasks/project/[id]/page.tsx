@@ -16,6 +16,7 @@ import ActivityLogList from '@/components/features/ActivityLogList';
 import type { Collaborator } from '@/lib/types/project';
 import { getTaskCounts } from '@/lib/utils/taskSort';
 import { getStatusColor, isTaskOverdue, formatStatusLabel } from '@/lib/utils/taskStatusColors';
+import { EditProjectModal } from '@/components/forms/EditProjectModal';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -30,6 +31,7 @@ export default function ProjectDetailPage() {
   const [progress, setProgress] = useState<{ total: number; unassigned: number; ongoing: number; under_review: number; completed: number; percent: number } | null>(null);
   const [projectStats, setProjectStats] = useState<{ total: number; completed: number; inProgress: number; overdue: number; unassigned: number } | null>(null);
   const [selectedCollaboratorForRole, setSelectedCollaboratorForRole] = useState<Collaborator | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => {
     const projectId = params?.id as string | undefined;
@@ -148,8 +150,17 @@ export default function ProjectDetailPage() {
           <button onClick={() => router.push('/projects-tasks')} className="text-sm text-gray-600 hover:text-gray-900">← Back to Projects & Tasks</button>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <h1 className="text-2xl font-bold text-gray-900 break-words">{project.name}</h1>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-gray-900 break-words">{project.name}</h1>
+                <button
+                  type="button"
+                  className="px-3 py-2 text-sm rounded bg-gray-900 text-white ml-2"
+                  onClick={() => setIsEditOpen(true)}
+                >
+                  Edit
+                </button>
+              </div>
               <button
                 onClick={async () => {
                   if (!token) return;
@@ -339,6 +350,23 @@ export default function ProjectDetailPage() {
               onError={(error) => console.error('Activity log error:', error)}
             />
           </div>
+
+          <EditProjectModal
+            isOpen={isEditOpen}
+            project={project}
+            onClose={() => setIsEditOpen(false)}
+            onSave={async (id, data) => {
+              if (!token) return;
+              const res = await projectService.updateProject(token, id, data);
+              if (res?.status === 'success' && res?.data) {
+                setProject(res.data);
+              } else {
+                if (!res || res.status !== 'success') {
+                  alert(res?.message || 'Failed to update project');
+                }
+              }
+            }}
+          />
         </div>
       </main>
 
