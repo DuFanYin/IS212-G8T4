@@ -57,13 +57,16 @@ src/
 │   ├── projectRoutes.js
 │   ├── taskRoutes.js
 │   ├── subtaskRoutes.js
-│   ├── activityLogRoutes.js
-│   ├── logs.route.js         # Activity log routes
+│   ├── logs.route.js         # Activity log routes (mounted at /api/logs)
+│   ├── activityLogRoutes.js  # Unused (logs.route.js is the active route file)
 │   ├── metricsRoutes.js      # Metrics routes
 │   ├── notificationRoutes.js
 │   └── organizationRoutes.js
 ├── scripts/                  # Utility scripts
 │   └── generateSecret.js
+├── storage/                  # File storage for task attachments
+│   └── <taskId>/             # Dynamic folders per task ID
+│       └── <timestamp>-<random>.<ext>  # Uploaded files (PDF, DOCX, XLSX)
 ├── app.js                    # Express application setup
 ├── server.js                 # Server startup and configuration
 └── db/
@@ -74,7 +77,17 @@ src/
     │   ├── config.js
     │   ├── index.js
     │   ├── seeders/          # Individual seeder files
+    │   │   ├── departments.js
+    │   │   ├── teams.js
+    │   │   ├── users.js
+    │   │   ├── projects.js
+    │   │   ├── tasks.js
+    │   │   ├── subtasks.js
+    │   │   ├── comments.js
+    │   │   └── activityLogs.js
     │   └── utils/            # Seeding utilities
+    │       ├── faker.js
+    │       └── random.js
     └── models/               # Clean schema definitions only
         ├── User.js
         ├── Task.js
@@ -85,6 +98,7 @@ src/
         ├── ActivityLog.js
         ├── Department.js
         ├── Notification.js
+        ├── Invitation.js
         └── index.js
 ```
 
@@ -143,7 +157,7 @@ src/
 - `PATCH  /api/tasks/subtasks/:id/status`           - Update subtask status
 - `DELETE /api/tasks/subtasks/:id`                  - Archive (soft delete) subtask
 
-### **Activity Log Routes** (`src/routes/activityLogRoutes.js`)
+### **Activity Log Routes** (`src/routes/logs.route.js`)
 
 - `GET    /api/logs/`                               - Get activity logs (with optional filters)
 - `POST   /api/logs/`                               - Get activity logs by resource ID (with filters in body)
@@ -157,8 +171,8 @@ src/
 
 ### **Notification Routes** (`src/routes/notificationRoutes.js`)
 
-- `GET    /api/notifications`                        - Get notifications for current user
 - `POST   /api/notifications`                        - Create new notification
+- `GET    /api/notifications`                        - Get notifications for current user
 
 ### **Organization Routes** (`src/routes/organizationRoutes.js`)
 

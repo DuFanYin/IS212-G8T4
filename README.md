@@ -2,79 +2,149 @@
 
 Task Management System for Modern Teams
 
+## Documentation
+
+For detailed documentation on specific parts of the project, see:
+
+- **[Backend README](backend/README.md)** - Backend architecture, API routes, and implementation details
+- **[Frontend README](frontend/README.md)** - Frontend structure, components, and development guide
+- **[Test Documentation](backend/__tests__/README.md)** - Test structure, coverage, and testing guidelines
+
 ## Project Structure
 
 ### Frontend Architecture (Next.js 13+ App Router)
 
-```
-frontend/src/
-├── app/                    # Next.js App Router
-│   ├── layout.tsx         # Root layout
-│   ├── page.tsx           # Root page
-│   ├── globals.css        # Global styles
-│   ├── home/              # Home page
-│   ├── login/             # Authentication pages
-│   ├── users/             # User management pages
-│   ├── tasks/             # Task management pages
-│   └── projects/          # Project pages
-├── components/            # React components
-│   ├── ui/                # Reusable UI primitives
-│   ├── layout/            # Layout components (Header, etc.)
-│   ├── forms/             # Form components (CreateTaskModal, etc.)
-│   └── features/          # Feature-specific components
-│       ├── tasks/         # Task-related components
-│       └── users/         # User-related components
-├── lib/                   # Shared utilities and logic
-│   ├── hooks/             # Custom React hooks
-│   ├── services/          # API services
-│   ├── types/             # TypeScript type definitions
-│   └── utils/             # Utility functions
-└── contexts/              # React contexts
-    └── UserContext.tsx    # User state management
-```
 
-#### Frontend Organization Principles
-
-- **App Router**: Next.js 13+ file-based routing with `app/` directory
-- **Feature-based Components**: Components organized by domain (tasks, users)
-- **Separation of Concerns**: UI primitives, layout, forms, and features separated
-- **Consolidated Library**: All utilities, hooks, services, and types in `lib/`
-- **Type Safety**: Comprehensive TypeScript coverage throughout
-- **Modern Patterns**: Custom hooks, context providers, and component composition
- - **Single Hooks Location**: Use hooks from `src/lib/hooks`. Do not create or use `src/hooks`.
+```
+src/
+├── app/                          # Next.js App Router pages
+│   ├── home/
+│   │   └── page.tsx             # Dashboard/home page
+│   ├── login/
+│   │   ├── page.tsx             # Login page
+│   │   └── reset-password/
+│   │       └── page.tsx         # Password reset page (email-based)
+│   ├── register/
+│   │   └── page.tsx             # Public registration page (invitation-based)
+│   ├── organisation/
+│   │   └── page.tsx             # Organization management
+│   ├── projects-tasks/          # Combined projects and tasks interface
+│   │   ├── page.tsx             # Main projects-tasks page
+│   │   ├── project/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx     # Individual project view with role assignment
+│   │   └── task/
+│   │       └── [id]/
+│   │           └── page.tsx     # Individual task view
+│   ├── report/
+│   │   └── department/
+│   │       └── page.tsx        # Department reports
+│   ├── users/
+│   │   └── page.tsx             # User management (with HR bulk invitations)
+│   ├── layout.tsx               # Root layout with providers
+│   ├── page.tsx                 # Landing page
+│   ├── favicon.ico              # App favicon
+│   └── globals.css              # Global styles
+├── components/                   # Reusable UI components
+│   ├── features/
+│   │   ├── ActivityLogList.tsx  # Activity log display
+│   │   ├── AssignRoleModal.tsx  # Role assignment modal for projects
+│   │   ├── AttachmentList.tsx   # File attachment list
+│   │   ├── AttachmentUpload.tsx # File upload component
+│   │   ├── ProjectProgress.tsx  # Project progress tracking component
+│   │   ├── projects/
+│   │   ├── reports/
+│   │   ├── tasks/
+│   │   ├── TaskFilterBar.tsx     # Task filtering bar component
+│   │   ├── TaskSortSelect.tsx   # Task sorting selector component
+│   │   ├── TaskStatusFilter.tsx  # Task status filter component
+│   │   ├── timeline/            # Timeline-related components (empty directory)
+│   │   └── users/
+│   ├── forms/
+│   ├── layout/
+│   └── timeline/
+├── contexts/
+│   └── UserContext.tsx          # Global user state management
+├── lib/
+│   ├── hooks/
+│   ├── services/                # API service layer (split by domain)
+│   ├── types/                   # TypeScript type definitions
+│   └── utils/
+```
 
 ### Backend Architecture (Express)
 
 ```
-backend/src/
-├── app.js              # Express configuration
-├── server.js           # Server entry point
-├── routes/             # API endpoints
-│   ├── authRoutes.js
-│   ├── userRoutes.js
-│   ├── projectRoutes.js
-│   ├── taskRoutes.js
-│   └── subtaskRoutes.js
-├── controllers/        # Request handlers
-│   ├── authController.js
-│   ├── userController.js
-│   ├── projectController.js
-│   ├── taskController.js
-│   └── subtaskController.js
-├── services/           # Business operations (error messages are minimal and meaningful)
-│   ├── authService.js
-│   ├── userService.js
-│   ├── projectService.js
-│   ├── taskService.js
-│   ├── subtaskService.js
-│   └── activityService.js
-├── middleware/         # Custom middleware
-│   └── authMiddleware.js
-└── db/                 # Database
-    ├── connect.js      # MongoDB connection
-    ├── seed/           # Seed scripts
-    └── models/         # Mongoose schemas
+src/
+├── domain/                    # Pure business logic classes
+├── repositories/              # Data access layer
+├── services/                 # Business operations layer
+├── controllers/              # HTTP request handling
+├── middleware/               # Request processing middleware
+├── utils/                    # Utility helpers
+│   ├── errors.js            # Custom error classes
+│   ├── responseHelper.js    # Standardized API response helpers
+│   └── asyncHandler.js      # Async route wrapper
+├── routes/                   # API route definitions
+├── scripts/                  # Utility scripts
+│   └── generateSecret.js
+├── storage/                  # File storage for task attachments
+│   └── <taskId>/             # Dynamic folders per task ID
+│       └── <timestamp>-<random>.<ext>  # Uploaded files (PDF, DOCX, XLSX)
+├── app.js                    # Express application setup
+├── server.js                 # Server startup and configuration
+└── db/
+    ├── connect.js            # Database connection
+    ├── schema.md             # Database schema documentation
+    ├── seedData.js           # Database seeding script
+    ├── seed/                 # Database seeding infrastructure
+    │   ├── config.js
+    │   ├── index.js
+    │   ├── seeders/          # Individual seeder files
+    │   └── utils/            # Seeding utilities
+    │       ├── faker.js
+    │       └── random.js
+    └── models/               # Clean schema definitions only
 ```
+
+## Architecture Design
+
+### Backend Design
+
+The backend follows a **Domain-Driven Design (DDD)** architecture with clear separation of concerns:
+
+- **Domain Layer**: Pure business logic classes (User, Task, Project, Subtask, ActivityLog) containing validation rules, permission checks, and business operations
+- **Repository Layer**: Data access abstraction handling all MongoDB operations, providing a clean interface for data persistence
+- **Service Layer**: Business operations orchestrating domain logic and repository calls, handling complex workflows and cross-entity operations
+- **Controller Layer**: HTTP request handlers that validate input, call services, and format responses
+- **Middleware**: Centralized authentication, authorization (role-based access control), error handling, and file upload processing
+
+**Key Design Principles:**
+- Separation of concerns with clear layer boundaries
+- Centralized role-based access control via `roleMiddleware`
+- Standardized error handling and API responses
+- Support for file attachments with validation (PDF, DOCX, XLSX)
+- Soft delete pattern for data retention
+
+### Frontend Design
+
+The frontend uses **Next.js 13+ App Router** with a component-based architecture:
+
+- **App Router**: File-based routing with server and client components, organized by feature domains
+- **Component Architecture**: 
+  - Feature components grouped by domain (tasks, projects, users, reports)
+  - Reusable form components for CRUD operations
+  - Layout components for consistent UI structure
+- **State Management**: React Context API for global user state, custom hooks for domain-specific logic
+- **API Layer**: Type-safe service layer split by domain (auth, tasks, projects, etc.) with centralized error handling
+- **Type Safety**: Comprehensive TypeScript coverage with domain-specific type definitions
+
+**Key Design Principles:**
+- Feature-based organization for maintainability
+- Custom hooks for reusable business logic (tasks, metrics, timeline)
+- Type-safe API communication with backend
+- Role-based UI rendering and access control
+- Responsive design with Tailwind CSS
 
 ## Quick Start
 

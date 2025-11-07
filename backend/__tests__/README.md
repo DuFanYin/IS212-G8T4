@@ -2,62 +2,116 @@
 
 This directory contains focused integration tests that verify core functionality as specified in project requirements.
 
+Integration: 180
+Unit: 298
+
 ## Structure
 
 ```
 __tests__/
-├── integration/                 # Integration tests (API endpoints)
-│   ├── auth/
-│   │   ├── login.test.js                #   POST /api/auth/login                      (5)
-│   │   ├── request-reset.test.js        #   POST /api/auth/request-reset              (4)
-│   │   └── reset-password.test.js       #   POST /api/auth/reset-password             (5)
-│   ├── organization/
-│   │   ├── departments.test.js          #   GET  /api/organization/departments        (3)
-│   │   ├── teams.test.js                #   GET  /api/organization/teams              (4)
-│   │   └── department-teams.test.js     #   GET  /api/organization/departments/:id/teams (5)
-│   ├── users/
-│   │   ├── profile.test.js              #   GET  /api/users/profile                   (1)
-│   │   ├── team-members.test.js         #   GET  /api/users/team-members              (3)
-│   │   └── department-members.test.js   #   GET  /api/users/department-members        (3)
-│   ├── tasks/
-│   │   ├── create.test.js               #   POST /api/tasks/                          (4)
-│   │   ├── list.test.js                 #   GET  /api/tasks/                          (2)
-│   │   ├── get-by-id.test.js            #   GET  /api/tasks/:id                       (1)
-│   │   ├── assign.test.js               #   PATCH /api/tasks/:id/assign               (3)
-│   │   ├── status.test.js               #   PATCH /api/tasks/:id/status               (2)
-│   │   ├── archive.test.js              #   DELETE /api/tasks/:id                     (1)
-│   │   ├── update.test.js               #   PUT  /api/tasks/:id                       (4)
-│   │   ├── update-due-date.test.js      #   PUT  /api/tasks/:id                       (3)
-│   │   ├── department-tasks.test.js     #   GET  /api/tasks/department/:id            (4)
-│   │   ├── project-tasks.test.js        #   GET  /api/tasks/project/:id               (3)
-│   │   ├── team-tasks.test.js           #   GET  /api/tasks/team/:id                  (3)
-│   │   ├── unassigned-tasks.test.js     #   GET  /api/tasks/unassigned                (3)
-│   │   ├── priority-tasks.test.js       #   Task priority handling                    (5)
-│   │   └── tasks-grouping.test.js       #   Task grouping across projects/categories
-│   ├── subtasks/
-│   │   ├── create.test.js               #   POST /api/tasks/:id/subtasks              (2)
-│   │   ├── list.test.js                 #   GET  /api/tasks/:id/subtasks              (1)
-│   │   ├── get-by-id.test.js            #   GET  /api/tasks/subtasks/:id              (2)
-│   │   ├── update.test.js               #   PUT  /api/tasks/subtasks/:id              (2)
-│   │   ├── update-status.test.js        #   PATCH /api/tasks/subtasks/:id/status      (2)
-│   │   └── delete.test.js               #   DELETE /api/tasks/subtasks/:id            (2)
-│   ├── projects/
-│   │   ├── create.test.js               #   POST /api/projects                        (4)
-│   │   ├── list.test.js                 #   GET  /api/projects                        (2)
-│   │   ├── update.test.js               #   PUT  /api/projects/:projectId             (3)
-│   │   ├── permissions.test.js          #   Role checks for update                    (2)
-│   │   ├── collaborators.test.js        #   PUT  /api/projects/:projectId/collaborators (3)
-│   │   ├── remove-collaborators.test.js #   DELETE /api/projects/:projectId/collaborators (4)
-│   │   ├── archive.test.js              #   PUT  /api/projects/:projectId/archive     (2)
-│   │   └── department-projects.test.js  #   GET  /api/projects/departments/:id        (3)
-│   ├── activity_log/
-│   │   ├── list-log.test.js             #   GET  /api/activity-log (list recent activity)
-│   │   └── task-log.test.js             #   Task lifecycle logging (create/update/assign/status)
-└── setup.js                             #   Test configuration
-```
+├── integration/ (180)                   # Integration tests (API endpoints)
+│   ├── auth/ (14)
+│   │   ├── login.test.js                  #   POST /api/auth/login                         (5)
+│   │   ├── request-reset.test.js          #   POST /api/auth/request-reset                 (4)
+│   │   └── reset-password.test.js         #   POST /api/auth/reset-password                (5)
+│   ├── organization/ (12)
+│   │   ├── departments.test.js            #   GET  /api/organization/departments           (3)
+│   │   ├── teams.test.js                  #   GET  /api/organization/teams                 (4)
+│   │   └── department-teams.test.js       #   GET  /api/organization/departments/:id/teams (5)
+│   ├── users/ (14)
+│   │   ├── profile.test.js                #   GET  /api/users/profile                      (1)
+│   │   ├── team-members.test.js           #   GET  /api/users/team-members                 (3)
+│   │   ├── department-members.test.js     #   GET  /api/users/department-members           (3)
+│   │   └── userController.integration.test.js     # User controller integration tests         (7)
+│   ├── tasks/ (59)
+│   │   ├── create.test.js                 #   POST /api/tasks/                             (4)
+│   │   ├── list.test.js                   #   GET  /api/tasks/                             (2)
+│   │   ├── get-by-id.test.js              #   GET  /api/tasks/:id                          (1)
+│   │   ├── assign.test.js                 #   PATCH /api/tasks/:id/assign                  (3)
+│   │   ├── status.test.js                 #   PATCH /api/tasks/:id/status                  (2)
+│   │   ├── archive.test.js                #   DELETE /api/tasks/:id                        (1)
+│   │   ├── update.test.js                 #   PUT  /api/tasks/:id                          (4)
+│   │   ├── update-due-date.test.js        #   PUT  /api/tasks/:id                          (3)
+│   │   ├── department-tasks.test.js       #   GET  /api/tasks/department/:id               (6)
+│   │   ├── project-tasks.test.js          #   GET  /api/tasks/project/:id                  (4)
+│   │   ├── team-tasks.test.js             #   GET  /api/tasks/team/:id                     (5)
+│   │   ├── unassigned-tasks.test.js       #   GET  /api/tasks/unassigned                   (5)
+│   │   ├── priority-tasks.test.js         #   Task priority handling                       (5)
+│   │   ├── tasks-grouping.test.js         #   Task grouping across projects/categories     (5)
+│   │   ├── attachments.test.js            #   Task attachments API                         (6)
+│   │   └── recurring-tasks.test.js        #   Recurring tasks functionality                (3)
+│   ├── subtasks/ (11)
+│   │   ├── create.test.js                 #   POST /api/tasks/:id/subtasks                 (2)
+│   │   ├── list.test.js                   #   GET  /api/tasks/:id/subtasks                 (1)
+│   │   ├── get-by-id.test.js              #   GET  /api/tasks/subtasks/:id                 (2)
+│   │   ├── update.test.js                 #   PUT  /api/tasks/subtasks/:id                 (2)
+│   │   ├── update-status.test.js          #   PATCH /api/tasks/subtasks/:id/status         (2)
+│   │   └── delete.test.js                 #   DELETE /api/tasks/subtasks/:id               (2)
+│   ├── projects/ (28)
+│   │   ├── create.test.js                 #   POST /api/projects                           (4)
+│   │   ├── list.test.js                   #   GET  /api/projects                           (2)
+│   │   ├── update.test.js                 #   PUT  /api/projects/:projectId                (3)
+│   │   ├── permissions.test.js            #   Role checks for update                       (2)
+│   │   ├── collaborators.test.js          #   PUT  /api/projects/:projectId/collaborators  (4)
+│   │   ├── remove-collaborators.test.js   #   DELETE /api/projects/:projectId/collaborators (7)
+│   │   ├── archive.test.js                #   PUT  /api/projects/:projectId/archive        (2)
+│   │   └── department-projects.test.js    #   GET  /api/projects/departments/:id           (4)
+│   ├── activity_log/ (7)
+│   │   ├── list-log.test.js               #   GET  /api/logs                               (2)
+│   │   └── task-log.test.js               #   Task lifecycle logging                       (5)
+│   ├── metrics/ (19)
+│   │   ├── departments.test.js            #   GET  /api/metrics/departments                (4)
+│   │   ├── personal.test.js               #   GET  /api/metrics/personal                   (4)
+│   │   ├── single-team.test.js            #   GET  /api/metrics/teams/:teamId              (5)
+│   │   └── teams.test.js                  #   GET  /api/metrics/teams                      (6)
+│   ├── middleware/ (9)
+│   │   └── roleMiddleware.integration.test.js      # Role middleware integration tests        (9)
+│   ├── notifications/ (7)
+│   │   ├── create.test.js                 #   POST /api/notifications                      (3)
+│   │   └── get.test.js                    #   GET  /api/notifications                      (4)
+├── unit/ (298)                          # Unit tests
+│   ├── controllers/ (33)
+│   │   ├── authController.test.js             # Authentication controller tests              (11)
+│   │   ├── organizationController.test.js     # Organization controller tests                (7)
+│   │   ├── projectController.stats.test.js    # Project stats controller tests               (2)
+│   │   └── userController.test.js             # User controller tests                        (13)
+│   ├── domain/ (86)
+│   │   ├── ActivityLog.test.js                # ActivityLog domain model tests               (12)
+│   │   ├── Project.test.js                    # Project domain model tests                   (29)
+│   │   ├── Task.test.js                       # Task domain model tests                      (30)
+│   │   └── User.test.js                       # User domain model tests                      (15)
+│   ├── middleware/ (44)
+│   │   ├── roleMiddleware.functions.test.js   # Role middleware function tests               (32)
+│   │   └── roleMiddleware.middleware.test.js  # Role middleware tests                        (12)
+│   ├── repositories/ (26)
+│   │   ├── ActivityLogRepository.test.js            # ActivityLog repository tests            (8)
+│   │   ├── DepartmentRepository.test.js             # Department repository tests             (3)
+│   │   ├── projectRepository.collaborators.test.js  # Project collaborators tests             (4)
+│   │   ├── ProjectRepository.test.js                # Project repository tests                (4)
+│   │   ├── TeamRepository.test.js                   # Team repository tests                   (3)
+│   │   └── UserRepository.test.js                   # User repository tests                   (4)
+│   └── services/ (109)
+│       ├── activityLogService.test.js              # ActivityLog service tests                (10)
+│       ├── emailService.error.test.js              # Email service error handling tests       (4)
+│       ├── emailService.test.js                    # Email service tests                      (4)
+│       ├── metricsService.test.js                  # Metrics service tests                    (6)
+│       ├── notificationService.test.js             # Notification service tests               (2)
+│       ├── organizationService.test.js             # Organization service tests               (6)
+│       ├── projectService.collaborators.test.js    # Project collaborators service tests      (4)
+│       ├── projectService.extended.test.js         # Extended project service tests           (9)
+│       ├── projectService.getProjectStats.test.js  # Project stats service tests              (3)
+│       ├── projectService.test.js                  # Project service tests                    (20)
+│       ├── taskService.attachments.test.js         # Task attachments service tests           (2)
+│       ├── taskService.filtering.test.js           # Task filtering service tests             (9)
+│       ├── taskService.test.js                     # Task service tests                       (24)
+│       ├── taskService.unassigned.test.js          # Unassigned tasks service tests           (2)
+│       └── userService.test.js                     # User service tests                       (4)
+├── fixtures/                                 # Test fixtures (test files, etc.)
+├── README.md                                 # Test documentation
+└── setup.js                                  # Test configuration
 
 
-## All Test Files and Cases (502)
+## All Test Files and Cases (478)
 
 ### Authentication & Security Tests
 
@@ -160,7 +214,7 @@ __tests__/
 
 ### Middleware Tests
 
-- middleware/roleMiddleware.integration.test.js (10)
+- middleware/roleMiddleware.integration.test.js (9)
   - requireRole › should allow manager to access manager-only routes
   - requireRole › should allow director to access director routes
   - requireRole › should deny staff access to manager routes
@@ -173,13 +227,13 @@ __tests__/
 
 ### User Controller Integration Tests
 
-- users/userController.integration.test.js (6)
+- users/userController.integration.test.js (7)
   - GET /api/users/profile › should return user profile for authenticated user
   - GET /api/users/profile › should return 401 for unauthenticated user
   - GET /api/users/team-members › should return team members for manager
   - GET /api/users/team-members › should return 403 for staff user
   - GET /api/users/team-members › should return team members for HR
-  - GET /api/users/department-members/:departmentId › should return department members for director
+  - GET /api/users/department-members/:departmentId › should return department members for HR
   - GET /api/users/department-members/:departmentId › should return 403 for staff user
 
 ### Task Management Tests
@@ -220,26 +274,33 @@ __tests__/
   - PUT /api/tasks/:id › should reject invalid due date format
   - PUT /api/tasks/:id › should reject past due dates
 
-- tasks/department-tasks.test.js (4)
+- tasks/department-tasks.test.js (6)
   - GET /api/tasks/department/:departmentId › should allow directors to view department tasks
   - GET /api/tasks/department/:departmentId › should allow HR users to view department tasks
+  - GET /api/tasks/department/:departmentId › should allow SM users to view department tasks
   - GET /api/tasks/department/:departmentId › should deny managers from viewing department tasks
   - GET /api/tasks/department/:departmentId › should require authentication
+  - GET /api/tasks/department/:departmentId › should handle non-existent department
 
-- tasks/project-tasks.test.js (3)
+- tasks/project-tasks.test.js (4)
   - GET /api/tasks/project/:projectId › should return tasks for specific project
   - GET /api/tasks/project/:projectId › should require authentication
   - GET /api/tasks/project/:projectId › should handle non-existent project gracefully
+  - GET /api/tasks/project/:projectId › should return empty array when project has no tasks
 
-- tasks/team-tasks.test.js (3)
+- tasks/team-tasks.test.js (5)
   - GET /api/tasks/team/:teamId › should allow managers to view team tasks
   - GET /api/tasks/team/:teamId › should allow directors to view team tasks
   - GET /api/tasks/team/:teamId › should deny staff from viewing team tasks
+  - GET /api/tasks/team/:teamId › should require authentication
+  - GET /api/tasks/team/:teamId › should handle non-existent team gracefully
 
-- tasks/unassigned-tasks.test.js (3)
-  - GET /api/tasks/unassigned › should return all unassigned tasks
-  - GET /api/tasks/unassigned › should require authentication
-  - GET /api/tasks/unassigned › should return empty array when no unassigned tasks exist
+- tasks/unassigned-tasks.test.js (5)
+  - GET /api/tasks/unassigned › should return all unassigned tasks with projectId set to null
+  - GET /api/tasks/unassigned › should return 401 if token is missing
+  - GET /api/tasks/unassigned › should return 401 for invalid JWT token
+  - GET /api/tasks/unassigned › should return an empty array when no unassigned tasks exist
+  - GET /api/tasks/unassigned › should return tasks containing required fields
 
 - tasks/priority-tasks.test.js (5)
   - Task API › should create task with projectId and priority successfully
@@ -248,10 +309,12 @@ __tests__/
   - Task API › should throw error if changing projectId without providing new priority
   - Task API › should allow changing projectId with new priority
 
-- tasks/tasks-grouping.test.js
-  - should allow a task to belong to multiple projects via projects[]
-  - should return tasks by project including those from projects[]
-  - should compute project progress including multi-project tasks
+- tasks/tasks-grouping.test.js (5)
+  - POST /api/tasks › should create tasks with project assignment at creation time
+  - GET /api/tasks/project/:projectId › should filter tasks by individual project
+  - GET /api/tasks/unassigned › should list unassigned tasks that were created
+  - GET /api/projects/:projectId/progress › should return aggregated project progress for managers
+  - PUT /api/projects/:projectId › should block non-owner staff from editing project name
 
 - tasks/attachments.test.js (6)
   - Task Attachments API › should allow a staff user to upload an attachment and save it in storage/<taskId>/
@@ -312,193 +375,179 @@ __tests__/
   - PUT /api/projects/:projectId › should deny HR users from updating projects
   - PUT /api/projects/:projectId › should allow managers to update projects
 
-- projects/collaborators.test.js (3)
+- projects/collaborators.test.js (4)
   - PUT /api/projects/:projectId/collaborators › should add new collaborator
   - PUT /api/projects/:projectId/collaborators › should prevent duplicate collaborators
-  - PUT /api/projects/:projectId/collaborators › should require authentication
+  - DELETE /api/projects/:projectId/collaborators › should remove a collaborator successfully
+  - DELETE /api/projects/:projectId/collaborators › should not allow removing the project owner
 
 - projects/archive.test.js (2)
   - PUT /api/projects/:projectId/archive › should archive project
   - PUT /api/projects/:projectId/archive › should unarchive project
 
-- projects/department-projects.test.js (3)
+- projects/department-projects.test.js (4)
   - GET /api/projects/departments/:departmentId › should return projects for department
   - GET /api/projects/departments/:departmentId › should require authentication
   - GET /api/projects/departments/:departmentId › should handle non-existent department
+  - GET /api/projects/departments/:departmentId › should return an empty array when department has no projects
 
-- projects/remove-collaborators.test.js (4)
+- projects/remove-collaborators.test.js (7)
   - DELETE /api/projects/:projectId/collaborators › should remove collaborator successfully
   - DELETE /api/projects/:projectId/collaborators › should require authentication
-  - DELETE /api/projects/:projectId/collaborators › should validate project ownership
-  - DELETE /api/projects/:projectId/collaborators › should prevent removing project owner
+  - DELETE /api/projects/:projectId/collaborators › should handle non-existent project
+  - DELETE /api/projects/:projectId/collaborators › should handle removing non-existent collaborator
+  - DELETE /api/projects/:projectId/collaborators › should require collaboratorId field
+  - DELETE /api/projects/:projectId/collaborators › should validate project ownership or collaboration
+  - DELETE /api/projects/:projectId/collaborators › should not allow removing project owner
 
 ### Activity Log Tests
 
 - activity_log/list-log.test.js (2)
-  - GET /api/activity-log › should list recent activity entries with pagination
-  - GET /api/activity-log › should require authentication
+  - GET /api/logs › should require authentication
+  - GET /api/logs › should return activity logs for authenticated users
 
-- activity_log/task-log.test.js (2)
-  - should log create/update/assign/status changes for tasks
-  - should return activity entry IDs on task responses where applicable
+- activity_log/task-log.test.js (5)
+  - should create a task and log "created"
+  - should update a task and log "updated"
+  - should assign a task and log "assigned"
+  - should update task status and log "status_changed"
+  - should soft delete a task and log "status_changed"
 
 ### Unit Tests
 
 #### Domain Model Tests
 
-- unit/domain/ActivityLog.test.js (8)
-  - ActivityLog › should create activity log with valid data
-  - ActivityLog › should handle missing required fields
-  - ActivityLog › should validate action types
-  - ActivityLog › should format timestamps correctly
-  - ActivityLog › should handle null/undefined values gracefully
-  - ActivityLog › should serialize to JSON correctly
-  - ActivityLog › should validate resource types
-  - ActivityLog › should handle empty details object
+- unit/domain/ActivityLog.test.js (12)
+  - ActivityLog › Constructor › should initialize with provided data
+  - ActivityLog › Constructor › should handle data with id instead of _id
+  - ActivityLog › Constructor › should handle missing details
+  - ActivityLog › isRecent › should return true for recent activity
+  - ActivityLog › isRecent › should return false for old activity
+  - ActivityLog › isRecent › should respect a custom minutes window
+  - ActivityLog › isToday › should return true for today’s activity
+  - ActivityLog › isToday › should return false for yesterday’s activity
+  - ActivityLog › isThisWeek › should return true for this week’s activity
+  - ActivityLog › isThisWeek › should return false for last week’s activity
+  - ActivityLog › toDTO › should return a complete DTO
+  - ActivityLog › toSafeDTO › should return a safe DTO without sensitive data
 
-- unit/domain/Project.test.js (12)
-  - Project › should create project with valid data
-  - Project › should handle missing required fields
-  - Project › should validate project name
-  - Project › should handle optional fields
-  - Project › should validate deadline format
-  - Project › should handle collaborators array
-  - Project › should check ownership permissions
-  - Project › should check modification permissions
-  - Project › should check access permissions
-  - Project › should serialize to DTO correctly
-  - Project › should handle archived status
-  - Project › should validate department membership
+- unit/domain/Project.test.js (29)
+  - Project › Constructor › should initialize with provided data
+  - Project › Constructor › should handle data with id instead of _id
+  - Project › Constructor › should initialize with default values
+  - Project › Constructor › should not automatically add owner to collaborators
+  - Project › isOwner › should return true for the owner
+  - Project › isOwner › should return false for non-owners
+  - Project › isOwner › should handle string comparison
+  - Project › isCollaborator › should return true for collaborators
+  - Project › isCollaborator › should return true for the owner
+  - Project › isCollaborator › should return false for non-collaborators
+  - Project › canBeAccessedBy › should allow access for the owner
+  - Project › canBeAccessedBy › should allow access for collaborators
+  - Project › canBeAccessedBy › should allow access for users who can see all tasks
+  - Project › canBeAccessedBy › should allow access for department users with permission
+  - Project › canBeAccessedBy › should deny access for unauthorized users
+  - Project › canBeModifiedBy › should allow modification for the owner
+  - Project › canBeModifiedBy › should allow modification for managers
+  - Project › canBeModifiedBy › should deny modification for non-owners and non-managers
+  - Project › addCollaborator › should add new collaborator
+  - Project › addCollaborator › should not add duplicate collaborator
+  - Project › isOverdue › should return true for overdue projects
+  - Project › isOverdue › should return false for future deadlines
+  - Project › isOverdue › should return false for archived projects
+  - Project › isOverdue › should return null when deadline is missing
+  - Project › hasTasks › should return true when project has tasks
+  - Project › hasTasks › should return false when project has no tasks
+  - Project › setHasTasks › should set hasContainedTasks to true
+  - Project › setHasTasks › should set hasContainedTasks to false
+  - Project › toDTO › should return complete DTO
 
-- unit/domain/Subtask.test.js (10)
-  - Subtask › should create subtask with valid data
-  - Subtask › should handle missing required fields
-  - Subtask › should validate parent task reference
-  - Subtask › should handle status transitions
-  - Subtask › should check edit permissions
-  - Subtask › should check completion permissions
-  - Subtask › should serialize to DTO correctly
-  - Subtask › should handle soft deletion
-  - Subtask › should validate due dates
-  - Subtask › should handle priority levels
+- unit/domain/Task.test.js (30)
+  - Task › Constructor › should initialize with provided data
+  - Task › Constructor › should handle data with id instead of _id
+  - Task › Constructor › should initialize with default values
+  - Task › Status checks › should identify overdue tasks correctly
+  - Task › Status checks › should not consider completed tasks as overdue
+  - Task › Status checks › should identify completed tasks
+  - Task › Status checks › should identify unassigned tasks
+  - Task › Status checks › should identify ongoing tasks
+  - Task › Status checks › should identify tasks under review
+  - Task › canBeCompletedBy › should allow completion by task creator
+  - Task › canBeCompletedBy › should allow completion by assignee
+  - Task › canBeCompletedBy › should allow completion by collaborators
+  - Task › canBeCompletedBy › should deny completion by non-collaborators
+  - Task › canBeAssignedBy › should allow assignment by users who can assign tasks
+  - Task › canBeAssignedBy › should deny assignment by users who cannot assign tasks
+  - Task › canBeEditedBy › should allow editing by staff who created the task
+  - Task › canBeEditedBy › should deny editing by staff who did not create the task
+  - Task › canBeEditedBy › should allow editing by managers who are collaborators
+  - Task › canBeEditedBy › should deny editing by managers who are not collaborators
+  - Task › canRemoveAttachment › should allow removal by task creator
+  - Task › canRemoveAttachment › should allow removal by managers who are collaborators
+  - Task › canRemoveAttachment › should deny removal by managers who are not collaborators
+  - Task › canRemoveAttachment › should deny removal by non-managers who are not creators
+  - Task › Business logic methods › should update status correctly
+  - Task › Business logic methods › should assign task to user
+  - Task › Business logic methods › should add collaborator
+  - Task › Business logic methods › should not add duplicate collaborator
+  - Task › Business logic methods › should check if task has attachments
+  - Task › Business logic methods › should check if user is collaborator
+  - Task › toDTO › should return complete DTO
 
-- unit/domain/Task.test.js (15)
-  - Task › should create task with valid data
-  - Task › should handle missing required fields
-  - Task › should validate task title
-  - Task › should handle optional fields
-  - Task › should validate due date format
-  - Task › should handle collaborators array
-  - Task › should check edit permissions
-  - Task › should check assignment permissions
-  - Task › should check completion permissions
-  - Task › should check attachment permissions
-  - Task › should serialize to DTO correctly
-  - Task › should handle soft deletion
-  - Task › should validate priority levels
-  - Task › should handle project associations
-  - Task › should check visibility permissions
-
-- unit/domain/User.test.js (18)
-  - User › should create user with valid data
-  - User › should handle missing required fields
-  - User › should validate email format
-  - User › should validate role types
-  - User › should check task assignment permissions
-  - User › should check task visibility permissions
-  - User › should check department access permissions
-  - User › should check team access permissions
-  - User › should serialize to DTO correctly
-  - User › should serialize to profile DTO correctly
-  - User › should serialize to safe DTO correctly
-  - User › should handle role hierarchy
-  - User › should validate department membership
-  - User › should validate team membership
-  - User › should handle password validation
-  - User › should check collaboration permissions
-  - User › should handle soft deletion
-  - User › should validate user status
+- unit/domain/User.test.js (15)
+  - User › Constructor › should initialize with provided data
+  - User › Constructor › should handle data with id instead of _id
+  - User › Constructor › should handle populated team and department data
+  - User › Role checks › should identify managers correctly
+  - User › Role checks › should identify staff correctly
+  - User › Role checks › should identify HR correctly
+  - User › Role checks › should identify senior management correctly
+  - User › Role checks › should identify directors correctly
+  - User › Permission checks › should allow task assignment for managers, directors, and SM
+  - User › Permission checks › should allow seeing all tasks for HR and SM
+  - User › Permission checks › should allow seeing department tasks for directors
+  - User › Permission checks › should allow seeing team tasks for managers
+  - User › Permission checks › should check department access correctly
+  - User › toProfileDTO › should return complete profile DTO
+  - User › toSafeDTO › should return safe DTO without sensitive data
 
 #### Repository Tests
 
-- unit/repositories/ActivityLogRepository.test.js (12)
-  - ActivityLogRepository › should create activity log successfully
-  - ActivityLogRepository › should find activity logs by user
-  - ActivityLogRepository › should find activity logs by resource
-  - ActivityLogRepository › should find all activity logs
-  - ActivityLogRepository › should handle creation errors
-  - ActivityLogRepository › should handle query errors
-  - ActivityLogRepository › should validate required fields
-  - ActivityLogRepository › should handle pagination
-  - ActivityLogRepository › should filter by action type
-  - ActivityLogRepository › should sort by timestamp
-  - ActivityLogRepository › should handle empty results
-  - ActivityLogRepository › should validate resource references
+- unit/repositories/ActivityLogRepository.test.js (8)
+  - ActivityLogRepository › findById › should find activity log by id
+  - ActivityLogRepository › findByUser › should find activity logs by user id
+  - ActivityLogRepository › findByUser › should apply filters when provided
+  - ActivityLogRepository › findByResource › should find activity logs by resource
+  - ActivityLogRepository › findAll › should return all activity logs
+  - ActivityLogRepository › findAll › should support filters
+  - ActivityLogRepository › create › should create new activity log
+  - ActivityLogRepository › updateById › should update activity log by id
 
-- unit/repositories/DepartmentRepository.test.js (8)
-  - DepartmentRepository › should find department by ID
-  - DepartmentRepository › should find all departments
-  - DepartmentRepository › should handle non-existent department
-  - DepartmentRepository › should validate department data
-  - DepartmentRepository › should handle query errors
-  - DepartmentRepository › should return department with teams
-  - DepartmentRepository › should handle empty results
-  - DepartmentRepository › should validate department structure
+- unit/repositories/DepartmentRepository.test.js (3)
+  - DepartmentRepository › should handle find operations
+  - DepartmentRepository › should handle create and update operations
+  - DepartmentRepository › should handle delete operation
 
-- unit/repositories/ProjectRepository.test.js (15)
-  - ProjectRepository › should create project successfully
-  - ProjectRepository › should find project by ID
-  - ProjectRepository › should find projects by owner
-  - ProjectRepository › should find projects by collaborator
-  - ProjectRepository › should find projects by department
-  - ProjectRepository › should find active projects
-  - ProjectRepository › should find all projects
-  - ProjectRepository › should update project successfully
-  - ProjectRepository › should add collaborators
-  - ProjectRepository › should remove collaborators
-  - ProjectRepository › should handle creation errors
-  - ProjectRepository › should handle update errors
-  - ProjectRepository › should validate project data
-  - ProjectRepository › should handle non-existent project
-  - ProjectRepository › should validate collaborator operations
+- unit/repositories/ProjectRepository.test.js (4)
+  - ProjectRepository › findAllProjects › should find all projects
+  - ProjectRepository › findActiveProjects › should return active projects
+  - ProjectRepository › create › should reject non-Project instances
+  - ProjectRepository › setHasTasks › should update has tasks flag
 
-- unit/repositories/TeamRepository.test.js (10)
-  - TeamRepository › should find team by ID
-  - TeamRepository › should find teams by department
-  - TeamRepository › should find all teams
-  - TeamRepository › should handle non-existent team
-  - TeamRepository › should validate team data
-  - TeamRepository › should handle query errors
-  - TeamRepository › should return team with members
-  - TeamRepository › should handle empty results
-  - TeamRepository › should validate team structure
-  - TeamRepository › should handle department relationships
+- unit/repositories/TeamRepository.test.js (3)
+  - TeamRepository › should handle find operations
+  - TeamRepository › should handle create and update operations
+  - TeamRepository › should handle delete operation
 
-- unit/repositories/UserRepository.test.js (20)
-  - UserRepository › should create user successfully
-  - UserRepository › should find user by ID
-  - UserRepository › should find user by email
-  - UserRepository › should find users by department
-  - UserRepository › should find users by team
-  - UserRepository › should find all users
-  - UserRepository › should update user successfully
-  - UserRepository › should update password hash
-  - UserRepository › should set reset token
-  - UserRepository › should clear reset token
-  - UserRepository › should find user by reset token
-  - UserRepository › should handle creation errors
-  - UserRepository › should handle update errors
-  - UserRepository › should handle query errors
-  - UserRepository › should validate user data
-  - UserRepository › should handle non-existent user
-  - UserRepository › should validate email uniqueness
-  - UserRepository › should handle password operations
-  - UserRepository › should validate reset token operations
-  - UserRepository › should handle soft deletion
+- unit/repositories/UserRepository.test.js (4)
+  - UserRepository › should handle find operations
+  - UserRepository › should handle find by department and team
+  - UserRepository › should handle create and update operations
+  - UserRepository › should handle reset token operations
 
 #### Service Tests
 
-- unit/services/activityLogService.test.js (12)
+- unit/services/activityLogService.test.js (10)
   - ActivityLogService › logActivity › should log activity successfully
   - ActivityLogService › logActivity › should throw error when repository fails
   - ActivityLogService › getUserActivityLogs › should get user activity logs successfully
@@ -509,8 +558,6 @@ __tests__/
   - ActivityLogService › getAllActivityLogs › should get all activity logs successfully
   - ActivityLogService › getAllActivityLogs › should get all activity logs with filters
   - ActivityLogService › getAllActivityLogs › should throw error when repository fails
-  - ActivityLogService › should handle activity log creation
-  - ActivityLogService › should validate activity log data
 
 - unit/services/projectService.test.js (20)
   - ProjectService › getProjectProgress › should get project progress for authorized user
@@ -592,13 +639,13 @@ __tests__/
   - MetricsService › getPersonalMetrics › should return personal metrics successfully
   - MetricsService › getPersonalMetrics › should handle errors when fetching personal metrics
 
-- unit/services/projectService.collaborators.test.js (5)
+- unit/services/projectService.collaborators.test.js (4)
   - ProjectService › addCollaborator › should add collaborator successfully
   - ProjectService › addCollaborator › should handle collaborator not found
   - ProjectService › removeCollaborator › should remove collaborator successfully
   - ProjectService › removeCollaborator › should prevent removing project owner
 
-- unit/services/projectService.extended.test.js (10)
+- unit/services/projectService.extended.test.js (9)
   - ProjectService › getProjectProgress › should return project progress successfully
   - ProjectService › getProjectProgress › should throw Not Authorized error
   - ProjectService › updateProject › should update project successfully
@@ -618,7 +665,7 @@ __tests__/
   - TaskService › removeAttachment › should remove attachment from task successfully
   - TaskService › removeAttachment › should handle errors when attachment not found
 
-- unit/services/taskService.filtering.test.js (5)
+- unit/services/taskService.filtering.test.js (9)
   - TaskService › filterByStatus › should return all tasks when status is all
   - TaskService › filterByStatus › should filter by ongoing/completed/unassigned/under_review status
   - TaskService › sortTasks › should sort by due date ascending/descending
@@ -629,7 +676,7 @@ __tests__/
   - TaskService › calculateTaskStats › should calculate task statistics correctly
   - TaskService › calculateTaskStats › should handle empty task array
 
-- unit/repositories/projectRepository.collaborators.test.js (3)
+- unit/repositories/projectRepository.collaborators.test.js (4)
   - ProjectRepository › assignRole › should assign role to collaborator successfully
   - ProjectRepository › assignRole › should handle project not found
   - ProjectRepository › assignRole › should convert legacy collaborators to new format
@@ -637,7 +684,7 @@ __tests__/
 
 #### Middleware Tests
 
-- unit/middleware/roleMiddleware.functions.test.js (50+)
+- unit/middleware/roleMiddleware.functions.test.js (32)
   - hasRole › should return true when user has the role
   - hasRole › should return false when user does not have the role
   - hasRole › should return true when user has any role in array
@@ -652,7 +699,7 @@ __tests__/
   - canManageTasks › tests for management permissions
   - canSeeTasks › tests for visibility permissions
 
-- unit/middleware/roleMiddleware.middleware.test.js (11)
+- unit/middleware/roleMiddleware.middleware.test.js (12)
   - requireRole › should allow access for authorized role
   - requireRole › should deny access for unauthorized role
   - requireRole › should return 401 when user not authenticated
@@ -665,60 +712,45 @@ __tests__/
   - requireTaskManagement › should handle errors and return 500
   - requireTaskManagement › should handle user not found error
 
-**Note:** Redundant test file `roleMiddleware.test.js` has been removed. All helper function tests are now consolidated in `roleMiddleware.functions.test.js` for better maintainability without reducing coverage.
 
 #### Controller Tests
 
-- unit/controllers/authController.test.js (15)
+- unit/controllers/authController.test.js (11)
   - AuthController › login › should login successfully with valid credentials
   - AuthController › login › should return error when email is missing
   - AuthController › login › should return error when password is missing
   - AuthController › login › should return error for invalid email format
   - AuthController › login › should return error when user not found
   - AuthController › login › should return error when password is invalid
-  - AuthController › login › should handle server errors
   - AuthController › requestPasswordReset › should request password reset successfully
   - AuthController › requestPasswordReset › should return error when user not found
-  - AuthController › requestPasswordReset › should handle server errors
   - AuthController › resetPassword › should reset password successfully
   - AuthController › resetPassword › should return error when user not found
   - AuthController › resetPassword › should return error when token is invalid
-  - AuthController › resetPassword › should handle server errors
-  - AuthController › should validate authentication flows
 
-- unit/controllers/userController.test.js (18)
+- unit/controllers/userController.test.js (13)
   - UserController › getProfile › should return user profile successfully
   - UserController › getProfile › should return 404 when user not found
-  - UserController › getProfile › should handle service errors
-  - UserController › getTeamMembers › should return team members for users with canAssignTasks permission
-  - UserController › getTeamMembers › should return all users for users with canSeeAllTasks permission
-  - UserController › getTeamMembers › should return 404 when current user not found
+  - UserController › getTeamMembers › should return team members for HR or SM users
+  - UserController › getTeamMembers › should return team members for managers
   - UserController › getTeamMembers › should return 403 for users without sufficient permissions
-  - UserController › getTeamMembers › should handle service errors
+  - UserController › getDepartmentMembers › should return department members successfully
+  - UserController › getDepartmentMembers › should return 403 for users without sufficient permissions
   - UserController › sendBulkInvitations › should send invitations successfully for HR users
-  - UserController › sendBulkInvitations › should return 404 when current user not found
   - UserController › sendBulkInvitations › should return 403 for non-HR users
   - UserController › sendBulkInvitations › should return 400 for invalid email array
-  - UserController › sendBulkInvitations › should return 400 for missing emails
   - UserController › sendBulkInvitations › should return 400 for invalid email format
   - UserController › sendBulkInvitations › should return 400 for invalid role
   - UserController › sendBulkInvitations › should skip existing users
-  - UserController › sendBulkInvitations › should handle email sending failures
-  - UserController › sendBulkInvitations › should handle service errors
 
-- unit/controllers/organizationController.test.js (12)
+- unit/controllers/organizationController.test.js (7)
   - OrganizationController › getAllDepartments › should return departments for SM users
-  - OrganizationController › getAllDepartments › should return departments for HR users
-  - OrganizationController › getAllDepartments › should return 403 when user not found
-  - OrganizationController › getAllDepartments › should return 403 for insufficient permissions
-  - OrganizationController › getAllDepartments › should handle service errors
+  - OrganizationController › getAllDepartments › should throw error when user not found
+  - OrganizationController › getAllDepartments › should throw error for insufficient permissions
   - OrganizationController › getTeamsByDepartment › should return teams for director accessing their own department
   - OrganizationController › getTeamsByDepartment › should return 403 for director accessing different department
-  - OrganizationController › getTeamsByDepartment › should allow access for non-existent department
-  - OrganizationController › getTeamsByDepartment › should return teams for manager users
-  - OrganizationController › getTeamsByDepartment › should return teams for SM users
-  - OrganizationController › getTeamsByDepartment › should return teams for HR users
-  - OrganizationController › getTeamsByDepartment › should return 403 for staff users
+  - OrganizationController › getTeamsByDepartment › should return an empty list for non-existent department
+  - OrganizationController › getTeamsByDepartment › should throw error for staff users
 
 - unit/controllers/projectController.stats.test.js (2)
   - ProjectController › getProjectStats › should return project stats successfully
