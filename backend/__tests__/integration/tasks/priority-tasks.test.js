@@ -63,7 +63,7 @@ describe('Task API - Priority & Project Handling', () => {
         expect(response.body.message).toMatch(/task priority must be provided|Error creating task/i);
     });
 
-    it('should return tasks sorted by descending priority', async () => {
+    it('should return tasks sorted by ascending priority', async () => {
         const response = await request(app)
         .get(`/api/tasks/project/${projectA._id}`)
         .set('Authorization', `Bearer ${managerToken}`);
@@ -72,7 +72,7 @@ describe('Task API - Priority & Project Handling', () => {
         const tasks = response.body.data;
         expect(tasks.length).toBeGreaterThan(0);
         for (let i = 0; i < tasks.length - 1; i++) {
-            expect(tasks[i].priority).toBeGreaterThanOrEqual(tasks[i + 1].priority);
+            expect(tasks[i].priority).toBeLessThanOrEqual(tasks[i + 1].priority);
         }
     });
 

@@ -26,7 +26,7 @@ class TaskRepository {
         { projectId },               // legacy single project
         { projects: projectId }      // NEW: array membership
       ]
-    }).sort({ priority: -1 });
+    }).sort({ priority: 1 });
   }
 
   async findTasksByCollaborator(userId) {

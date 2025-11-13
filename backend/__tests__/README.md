@@ -305,7 +305,7 @@ __tests__/
 - tasks/priority-tasks.test.js (5)
   - Task API › should create task with projectId and priority successfully
   - Task API › should require priority when task has projectId
-  - Task API › should return tasks sorted by descending priority
+  - Task API › should return tasks sorted by ascending priority
   - Task API › should throw error if changing projectId without providing new priority
   - Task API › should allow changing projectId with new priority
 

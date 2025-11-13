@@ -26,10 +26,10 @@ export function getStatusColor(status: Task['status']) {
  * Consistent priority visualization across all task displays
  */
 export function getPriorityColor(priority: number) {
-  if (priority >= 8) return 'bg-red-100 text-red-800'; // High priority
-  if (priority >= 6) return 'bg-orange-100 text-orange-800'; // Medium-high
-  if (priority >= 4) return 'bg-yellow-100 text-yellow-800'; // Medium
-  return 'bg-green-100 text-green-800'; // Low priority
+  if (priority <= 3) return 'bg-red-100 text-red-800'; // High priority (1-3)
+  if (priority <= 5) return 'bg-orange-100 text-orange-800'; // Medium-high (4-5)
+  if (priority <= 7) return 'bg-yellow-100 text-yellow-800'; // Medium (6-7)
+  return 'bg-green-100 text-green-800'; // Low priority (8-10)
 }
 
 /**
